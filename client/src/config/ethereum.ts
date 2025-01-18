@@ -1,5 +1,16 @@
 export const ETH_CONFIG = {
-  WALLET_ADDRESS: 'XXX', // Statische Wallet-Adresse
-  STAKING_CONTRACT_ADDRESS: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-  RPC_URL: 'https://mainnet.infura.io/v3/YOUR-PROJECT-ID' // Ethereum Node URL
+  WALLET_ADDRESS: import.meta.env.VITE_ETH_WALLET_ADDRESS || '',
+  STAKING_CONTRACT_ADDRESS: import.meta.env.VITE_ETH_STAKING_CONTRACT || '',
+  RPC_URL: import.meta.env.VITE_ETH_RPC_URL || ''
 };
+
+// Validate config
+if (!ETH_CONFIG.WALLET_ADDRESS) {
+  throw new Error('VITE_ETH_WALLET_ADDRESS environment variable is not set');
+}
+if (!ETH_CONFIG.STAKING_CONTRACT_ADDRESS) {
+  throw new Error('VITE_ETH_STAKING_CONTRACT environment variable is not set');
+}
+if (!ETH_CONFIG.RPC_URL) {
+  throw new Error('VITE_ETH_RPC_URL environment variable is not set');
+}
