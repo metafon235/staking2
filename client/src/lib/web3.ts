@@ -1,15 +1,14 @@
 import Web3 from 'web3';
-import { toast } from '@/hooks/use-toast';
-import { STAKING_ABI, STAKING_CONTRACT_ADDRESS, type StakingData } from './types';
+import { ETH_CONFIG } from '@/config/ethereum';
+import { STAKING_ABI, type StakingData } from './types';
 
 let web3: Web3 | null = null;
 
 export const initWeb3 = async () => {
-  if (typeof window.ethereum !== 'undefined') {
-    web3 = new Web3(window.ethereum);
-    return web3;
+  if (!web3) {
+    web3 = new Web3(ETH_CONFIG.RPC_URL);
   }
-  throw new Error('No Web3 provider found');
+  return web3;
 };
 
 export const stakeETH = async (amount: number) => {
@@ -18,18 +17,21 @@ export const stakeETH = async (amount: number) => {
   }
 
   try {
-    const accounts = await web3!.eth.getAccounts();
     const stakingContract = new web3!.eth.Contract(
       STAKING_ABI,
-      STAKING_CONTRACT_ADDRESS
+      ETH_CONFIG.STAKING_CONTRACT_ADDRESS
     );
 
-    await stakingContract.methods.stake().send({
-      from: accounts[0],
-      value: web3!.utils.toWei(amount.toString(), 'ether')
-    });
+    const data = stakingContract.methods.stake().encodeABI();
 
-    return true;
+    const tx = {
+      from: ETH_CONFIG.WALLET_ADDRESS,
+      to: ETH_CONFIG.STAKING_CONTRACT_ADDRESS,
+      data: data,
+      value: web3!.utils.toWei(amount.toString(), 'ether')
+    };
+
+    return tx;
   } catch (error) {
     console.error('Staking error:', error);
     throw error;
@@ -42,17 +44,16 @@ export const getStakingData = async (): Promise<StakingData> => {
   }
 
   try {
-    const accounts = await web3!.eth.getAccounts();
     const stakingContract = new web3!.eth.Contract(
       STAKING_ABI,
-      STAKING_CONTRACT_ADDRESS
+      ETH_CONFIG.STAKING_CONTRACT_ADDRESS
     );
 
     const [totalStaked, rewards, projected, rewardsHistory] = await Promise.all([
-      stakingContract.methods.getTotalStaked(accounts[0]).call(),
-      stakingContract.methods.getRewards(accounts[0]).call(),
-      stakingContract.methods.getProjectedEarnings(accounts[0]).call(),
-      stakingContract.methods.getRewardsHistory(accounts[0]).call()
+      stakingContract.methods.getTotalStaked(ETH_CONFIG.WALLET_ADDRESS).call(),
+      stakingContract.methods.getRewards(ETH_CONFIG.WALLET_ADDRESS).call(),
+      stakingContract.methods.getProjectedEarnings(ETH_CONFIG.WALLET_ADDRESS).call(),
+      stakingContract.methods.getRewardsHistory(ETH_CONFIG.WALLET_ADDRESS).call()
     ]);
 
     return {

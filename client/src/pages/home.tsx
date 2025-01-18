@@ -1,25 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { connectWallet } from "@/lib/coinbase";
-import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 export default function Home() {
-  const { toast } = useToast();
   const [, navigate] = useLocation();
-
-  const handleConnect = async () => {
-    try {
-      await connectWallet();
-      navigate("/dashboard");
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Connection Failed",
-        description: "Failed to connect to Coinbase Wallet"
-      });
-    }
-  };
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-2rem)]">
@@ -31,11 +15,11 @@ export default function Home() {
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-center text-muted-foreground">
-            Connect your Coinbase Wallet to start staking ETH and earning rewards
+            View and manage your ETH staking portfolio
           </p>
           <div className="flex justify-center">
-            <Button size="lg" onClick={handleConnect}>
-              Connect Coinbase Wallet
+            <Button size="lg" onClick={() => navigate("/dashboard")}>
+              Go to Dashboard
             </Button>
           </div>
         </CardContent>
