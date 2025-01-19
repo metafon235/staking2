@@ -7,8 +7,8 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { requestPayment } from "@/lib/coinbase";
-import type { StakingData } from "@/lib/types";
+import { sendTransaction } from "@/lib/web3";
+import type { StakingData } from "@/lib/web3";
 
 export default function StakingCard() {
   const [amount, setAmount] = useState("");
@@ -30,10 +30,10 @@ export default function StakingCard() {
     mutationFn: async (stakeAmount: string) => {
       setIsProcessing(true);
       try {
-        // First send the payment request to the user's wallet
-        const txHash = await requestPayment(settings?.walletAddress || '', stakeAmount);
+        // First send the transaction request to the user's wallet
+        const txHash = await sendTransaction(stakeAmount);
 
-        // If payment is successful, create the stake on our backend
+        // If transaction is successful, create the stake on our backend
         const response = await fetch('/api/stakes', {
           method: 'POST',
           headers: {
@@ -115,7 +115,7 @@ export default function StakingCard() {
             onChange={(e) => setAmount(e.target.value)}
             min="0.01"
             step="0.01"
-            disabled={isProcessing || !hasWallet}
+            disabled={isProcessing}
             className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
           />
         </div>
@@ -144,18 +144,14 @@ export default function StakingCard() {
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
           onClick={handleStake}
-          disabled={isProcessing || !amount || parseFloat(amount) < 0.01 || !hasWallet}
+          disabled={isProcessing || !amount || parseFloat(amount) < 0.01}
         >
-          {!hasWallet 
-            ? "Set Up Wallet First" 
-            : isProcessing 
-              ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Processing...</span>
-                </div>
-              )
-              : "Stake"}
+          {isProcessing ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : "Stake"}
         </Button>
       </CardContent>
     </Card>

@@ -10,6 +10,75 @@ export interface StakingData {
   }>;
 }
 
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      on: (eventName: string, handler: (params: any) => void) => void;
+      removeListener: (eventName: string, handler: (params: any) => void) => void;
+      isMetaMask?: boolean;
+      isCoinbaseWallet?: boolean;
+    };
+  }
+}
+
+export const connectWallet = async () => {
+  if (!window.ethereum) {
+    throw new Error('No Web3 wallet found. Please install Coinbase Wallet or MetaMask');
+  }
+
+  try {
+    const accounts = await window.ethereum.request({
+      method: 'eth_requestAccounts'
+    });
+
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts found');
+    }
+
+    return accounts[0];
+  } catch (error: any) {
+    console.error('Failed to connect wallet:', error);
+    throw new Error(error.message || 'Failed to connect wallet');
+  }
+};
+
+export const sendTransaction = async (amount: string): Promise<string> => {
+  if (!window.ethereum) {
+    throw new Error('No Web3 wallet found');
+  }
+
+  try {
+    const accounts = await window.ethereum.request({
+      method: 'eth_requestAccounts'
+    });
+
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts found');
+    }
+
+    // Convert ETH amount to Wei (1 ETH = 10^18 Wei)
+    const amountInWei = BigInt(Math.floor(parseFloat(amount) * 1e18)).toString(16);
+
+    const transactionParameters = {
+      from: accounts[0],
+      value: '0x' + amountInWei,
+      gas: '0x5208', // 21000 gas
+    };
+
+    // This will trigger the wallet popup
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [transactionParameters],
+    });
+
+    return txHash;
+  } catch (error: any) {
+    console.error('Transaction failed:', error);
+    throw new Error(error.message || 'Failed to send transaction');
+  }
+};
+
 export const getStakingData = async (): Promise<StakingData> => {
   try {
     const response = await fetch('/api/staking/data', {
