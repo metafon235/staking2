@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
 import { setupAuth } from "./auth";
-import { stakes, rewards, transactions } from "@db/schema";
+import { stakes, rewards, transactions, users } from "@db/schema"; // Added import for users
 import { eq, count, avg, sql, sum } from "drizzle-orm";
 
 // Network base statistics
@@ -394,12 +394,12 @@ export function registerRoutes(app: Express): Server {
       // Set all stakes to withdrawn and amount to 0
       for (const stake of userStakes) {
         await db.update(stakes)
-          .set({ 
-            status: 'withdrawn', 
+          .set({
+            status: 'withdrawn',
             amount: '0',
             // Reset createdAt to stop rewards generation
             createdAt: new Date(),
-            updatedAt: new Date() 
+            updatedAt: new Date()
           })
           .where(eq(stakes.id, stake.id));
       }
@@ -621,6 +621,53 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching portfolio data:', error);
       res.status(500).json({ error: 'Failed to fetch portfolio data' });
+    }
+  });
+
+  // Add settings endpoints
+  app.get('/api/settings', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+        columns: {
+          walletAddress: true
+        }
+      });
+
+      res.json({
+        walletAddress: user?.walletAddress || ''
+      });
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
+  app.post('/api/settings/wallet', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { walletAddress } = req.body;
+
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'Wallet address is required' });
+      }
+
+      // Update user's wallet address
+      await db.update(users)
+        .set({ walletAddress })
+        .where(eq(users.id, req.user.id));
+
+      res.json({ message: 'Wallet address updated successfully' });
+    } catch (error) {
+      console.error('Error updating wallet address:', error);
+      res.status(500).json({ error: 'Failed to update wallet address' });
     }
   });
 

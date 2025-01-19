@@ -8,6 +8,7 @@ import AuthPage from "@/pages/auth-page";
 import Home from "@/pages/home";
 import CoinDetail from "@/pages/coin-detail";
 import Portfolio from "@/pages/portfolio";
+import Settings from "@/pages/settings";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
@@ -23,7 +24,7 @@ function Router() {
     );
   }
 
-  // Nur nicht-authentifizierte Routen für nicht eingeloggte User
+  // Non-authenticated routes for non-logged in users
   if (!user) {
     return (
       <Switch>
@@ -35,7 +36,7 @@ function Router() {
     );
   }
 
-  // Authentifizierte Routen für eingeloggte User
+  // Authenticated routes for logged in users
   return (
     <div className="flex min-h-screen bg-black">
       <Navigation />
@@ -44,6 +45,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/portfolio" component={Portfolio} />
           <Route path="/coins/:symbol" component={CoinDetail} />
+          <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
       </main>
