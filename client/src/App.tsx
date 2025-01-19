@@ -38,8 +38,8 @@ function Router() {
   return (
     <div className="flex min-h-screen bg-black">
       <Navigation />
-      {/* Main content area with padding for sidebar on desktop */}
-      <main className="flex-1 p-6 lg:pl-72">
+      {/* Main content area with dynamic padding for sidebar */}
+      <main className="flex-1 p-6 transition-[margin] duration-300 ease-in-out lg:ml-64 group-data-[state=collapsed]:lg:ml-16">
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />

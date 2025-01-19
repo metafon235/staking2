@@ -22,10 +22,13 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className={cn(
-        "fixed left-0 top-0 z-40 h-screen transition-all duration-300 hidden lg:block",
-        isCollapsed ? "w-16" : "w-64"
-      )}>
+      <aside 
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen transition-all duration-300 hidden lg:block",
+          isCollapsed ? "w-16" : "w-64"
+        )}
+        data-state={isCollapsed ? "collapsed" : "expanded"}
+      >
         <div className="flex h-full flex-col border-r border-zinc-800 bg-zinc-900">
           <div className="flex h-16 items-center justify-between px-4">
             {!isCollapsed && (
