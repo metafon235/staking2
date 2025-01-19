@@ -10,6 +10,7 @@ import CoinDetail from "@/pages/coin-detail";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 function Router() {
   const { user, isLoading } = useUser();
@@ -38,17 +39,14 @@ function Router() {
   return (
     <div className="flex min-h-screen bg-black">
       <Navigation />
-      {/* Main content area with dynamic padding for sidebar */}
-      <main className="flex-1 p-6 transition-[margin] duration-300 ease-in-out lg:ml-64 group-data-[state=collapsed]:lg:ml-16">
+      <SidebarInset>
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/coins/:symbol" component={CoinDetail} />
           <Route component={NotFound} />
         </Switch>
-      </main>
-      {/* Add padding bottom for mobile navigation */}
-      <div className="h-16 lg:hidden" />
+      </SidebarInset>
     </div>
   );
 }
