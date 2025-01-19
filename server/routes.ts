@@ -207,9 +207,9 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Generate response data with 9 decimal precision
+      // Generate response data with appropriate decimal precision
       const stakingData = {
-        totalStaked,
+        totalStaked: parseFloat(totalStaked.toFixed(6)), // Changed to 6 decimal places
         rewards: parseFloat(currentRewards.toFixed(9)),
         monthlyRewards: parseFloat(monthlyRewards.toFixed(9)),
         rewardsHistory,
