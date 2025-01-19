@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 
 interface Transaction {
   id: number;
-  type: 'stake' | 'withdraw' | 'claim';
+  type: 'stake' | 'withdraw' | 'claim' | 'reward';
   amount: string;
   status: 'pending' | 'completed' | 'failed';
   createdAt: string;
@@ -48,8 +48,24 @@ export default function TransactionHistory() {
         return 'Withdraw';
       case 'claim':
         return 'Claim Rewards';
+      case 'reward':
+        return 'Reward Earned';
       default:
         return type;
+    }
+  };
+
+  const getAmountColor = (type: string) => {
+    switch (type) {
+      case 'stake':
+        return 'text-white';
+      case 'withdraw':
+      case 'claim':
+        return 'text-red-500';
+      case 'reward':
+        return 'text-green-500';
+      default:
+        return 'text-white';
     }
   };
 
@@ -80,7 +96,7 @@ export default function TransactionHistory() {
                     <td className="py-4 text-white">
                       {getTypeLabel(tx.type)}
                     </td>
-                    <td className="py-4 text-white">
+                    <td className={`py-4 ${getAmountColor(tx.type)}`}>
                       {parseFloat(tx.amount).toFixed(9)} ETH
                     </td>
                     <td className={`py-4 ${getStatusColor(tx.status)} capitalize`}>
