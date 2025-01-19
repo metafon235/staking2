@@ -177,12 +177,22 @@ export function registerRoutes(app: Express): Server {
       // Get earliest stake timestamp
       const earliestStake = userStakes[0]?.createdAt || new Date();
 
-      // Calculate current rewards based on total staked amount and earliest stake time
+      // Calculate current total accumulated rewards
       const currentRewards = calculateRewardsForTimestamp(
         req.user.id,
         totalStaked,
         earliestStake.getTime(),
-        Date.now()
+        Date.now(),
+        false // Not for transaction
+      );
+
+      // Calculate the per-minute reward for transaction recording
+      calculateRewardsForTimestamp(
+        req.user.id,
+        totalStaked,
+        Date.now() - 60000, // One minute ago
+        Date.now(),
+        true // For transaction
       );
 
       // Calculate monthly rewards based on 3% APY
@@ -199,7 +209,8 @@ export function registerRoutes(app: Express): Server {
           req.user.id,
           totalStaked,
           earliestStake.getTime(),
-          timestamp
+          timestamp,
+          false // Not for transaction
         );
         rewardsHistory.push({
           timestamp,
@@ -209,8 +220,8 @@ export function registerRoutes(app: Express): Server {
 
       // Generate response data with appropriate decimal precision
       const stakingData = {
-        totalStaked: parseFloat(totalStaked.toFixed(6)), // Changed to 6 decimal places
-        rewards: parseFloat(currentRewards.toFixed(9)),
+        totalStaked: parseFloat(totalStaked.toFixed(6)), // 6 decimal places for total staked
+        rewards: parseFloat(currentRewards.toFixed(9)), // 9 decimal places for rewards
         monthlyRewards: parseFloat(monthlyRewards.toFixed(9)),
         rewardsHistory,
         lastUpdated: Date.now()
@@ -353,7 +364,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       const earliestStake = userStakes[0]?.createdAt || new Date();
-      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now());
+      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(),false);
 
       if (amount > currentRewards) {
         return res.status(400).json({ error: 'Insufficient rewards balance' });
@@ -408,7 +419,7 @@ export function registerRoutes(app: Express): Server {
         sum + parseFloat(stake.amount.toString()), 0);
 
       const earliestStake = userStakes[0].createdAt;
-      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now());
+      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       const totalAmount = totalStaked + currentRewards;
 
       if (totalAmount <= 0) {
@@ -480,7 +491,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       const earliestStake = userStakes[0]?.createdAt || new Date();
-      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now());
+      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       const totalAvailable = totalStaked + currentRewards;
 
       if (amount > totalAvailable) {
@@ -561,7 +572,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Calculate rewards based on 3% APY for a specific time period
-  function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
+  function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): number {
     // Only generate rewards if stake amount is at least 0.01 ETH
     if (stakedAmount < 0.01) {
       return 0;
@@ -571,14 +582,19 @@ export function registerRoutes(app: Express): Server {
     const minutesElapsed = timePassedMs / (60 * 1000); // Convert to minutes
     const yearlyRate = 0.03; // 3% APY
     const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
-    const reward = stakedAmount * minutelyRate; // Just calculate one minute's reward
 
-    // Record transaction if it's a meaningful reward
-    if (reward >= 0.00000001) { // Reduced threshold to 8 decimals
-      recordRewardTransaction(userId, reward);
+    if (forTransaction) {
+      // For transaction records, return just one minute's reward
+      const reward = stakedAmount * minutelyRate; // Just calculate one minute's reward
+      // Record transaction if it's a meaningful reward
+      if (reward >= 0.00000001) { // Reduced threshold to 8 decimals
+        recordRewardTransaction(userId, reward);
+      }
+      return reward;
+    } else {
+      // For total rewards calculation (withdrawal, display), calculate accumulated rewards
+      return stakedAmount * minutelyRate * minutesElapsed;
     }
-
-    return reward;
   }
 
   // Generate rewards history based on time range
@@ -639,7 +655,7 @@ export function registerRoutes(app: Express): Server {
       let currentRewards = 0;
       if (userStakes.length > 0) {
         const earliestStake = userStakes[0].createdAt;
-        currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now());
+        currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
       const portfolioData = {
@@ -724,7 +740,7 @@ export function registerRoutes(app: Express): Server {
       let currentRewards = 0;
       if (userStakes.length > 0) {
         const earliestStake = userStakes[0].createdAt;
-        currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now());
+        currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
       // Calculate ROI
@@ -740,7 +756,7 @@ export function registerRoutes(app: Express): Server {
 
       for (let timestamp = thirtyDaysAgo; timestamp <= now; timestamp += 24 * 60 * 60 * 1000) {
         // Calculate rewards at each point in time
-        const rewards = calculateRewardsForTimestamp(req.user.id, totalStaked, userStakes[0]?.createdAt?.getTime() || timestamp, timestamp);
+        const rewards = calculateRewardsForTimestamp(req.user.id, totalStaked, userStakes[0]?.createdAt?.getTime() || timestamp, timestamp, false);
         rewardsHistory.push({ timestamp, value: rewards });
 
         // Simulate price variations for demo
