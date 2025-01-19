@@ -571,7 +571,7 @@ export function registerRoutes(app: Express): Server {
     const minutesElapsed = timePassedMs / (60 * 1000); // Convert to minutes
     const yearlyRate = 0.03; // 3% APY
     const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
-    const reward = stakedAmount * minutelyRate * minutesElapsed; 
+    const reward = stakedAmount * minutelyRate; // Just calculate one minute's reward
 
     // Record transaction if it's a meaningful reward
     if (reward >= 0.00000001) { // Reduced threshold to 8 decimals
@@ -818,7 +818,7 @@ export function registerRoutes(app: Express): Server {
           .values({
             userId,
             type: 'reward',
-            amount: reward.toFixed(9),
+            amount: reward.toFixed(9), // This is now the per-minute reward
             status: 'completed',
             createdAt: new Date()
           });
