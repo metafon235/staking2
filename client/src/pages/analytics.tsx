@@ -5,7 +5,7 @@ import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
-import { getEthPrice, getEthPriceHistory, getEthStats } from "@/lib/binance";
+import { getEthPrice, getEthStats } from "@/lib/binance";
 
 interface AnalyticsData {
   performance: {
@@ -91,7 +91,7 @@ export default function Analytics() {
   const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * ethPrice;
   const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * ethPrice;
 
-  const priceHistory = ethPriceHistory || analytics?.portfolio?.priceHistory || [];
+  const priceHistory = analytics?.portfolio?.priceHistory || [];
 
   return (
     <div className="space-y-6">
