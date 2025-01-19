@@ -22,9 +22,11 @@ export default function StakingCard() {
 
   // Force refresh when component mounts and set up interval
   useEffect(() => {
+    // Initial fetch
     queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
 
     const interval = setInterval(() => {
+      console.log('Refreshing staking data...', new Date().toISOString());
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
     }, 60000);
 

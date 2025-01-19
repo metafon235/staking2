@@ -42,9 +42,9 @@ export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      // Mock data for testing
+      // Mock data for testing - using current timestamp for accurate rewards
       const totalStaked = 100; // Mock 100 ETH staked
-      const startTime = Date.now() - (60 * 60 * 1000); // Started staking 1 hour ago
+      const startTime = Date.now() - (24 * 60 * 60 * 1000); // Mock: Started staking 24 hours ago
       const currentRewards = calculateRewards(totalStaked, startTime);
 
       // Project rewards for the next month (30 days)
@@ -57,6 +57,12 @@ export function registerRoutes(app: Express): Server {
         rewardsHistory: generateRewardsHistory(totalStaked),
         lastUpdated: Date.now() // Add timestamp for client-side refresh logic
       };
+
+      console.log('Returning staking data:', { 
+        rewards: currentRewards,
+        projected: projectedRewards,
+        lastUpdated: new Date().toISOString()
+      });
 
       res.json(mockData);
     } catch (error) {
