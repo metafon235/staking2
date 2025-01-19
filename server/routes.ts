@@ -17,10 +17,9 @@ const stakeRequestSchema = z.object({
   })
 });
 
-// Calculate rewards based on 3% APY
-function calculateRewards(stakedAmount: number, startTimeMs: number): number {
-  const now = Date.now();
-  const timePassedMs = now - startTimeMs;
+// Calculate rewards based on 3% APY for a specific time period
+function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
+  const timePassedMs = endTimeMs - startTimeMs;
   const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
   return stakedAmount * 0.03 * yearsElapsed; // 3% APY
 }
@@ -32,14 +31,15 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
   const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
   const intervalMinutes = 5; // Data points every 5 minutes
 
-  // Generate data points for the last week
+  // Generate data points with progressive rewards calculation
   for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += intervalMinutes * 60 * 1000) {
-    const rewards = calculateRewards(totalStaked, startTime);
+    const rewards = calculateRewardsForTimestamp(totalStaked, startTime, timestamp);
     history.push({
       timestamp,
       rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
     });
   }
+
   return history;
 }
 
@@ -66,7 +66,7 @@ export function registerRoutes(app: Express): Server {
         return res.json({
           totalStaked: 0,
           rewards: 0,
-          monthlyRewards: 0, // Renamed from projected
+          monthlyRewards: 0,
           rewardsHistory: [],
           lastUpdated: Date.now()
         });
@@ -76,7 +76,7 @@ export function registerRoutes(app: Express): Server {
       const earliestStake = userStakes[0]?.createdAt || new Date();
 
       // Calculate current rewards based on total staked amount and earliest stake time
-      const currentRewards = calculateRewards(totalStaked, earliestStake.getTime());
+      const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
 
       // Calculate monthly rewards based on 3% APY
       const monthlyRewards = (totalStaked * 0.03) / 12; // Monthly rewards based on 3% APY
@@ -85,7 +85,7 @@ export function registerRoutes(app: Express): Server {
       const stakingData = {
         totalStaked,
         rewards: parseFloat(currentRewards.toFixed(9)),
-        monthlyRewards: parseFloat(monthlyRewards.toFixed(9)), // Renamed from projected
+        monthlyRewards: parseFloat(monthlyRewards.toFixed(9)),
         rewardsHistory: generateRewardsHistory(totalStaked, earliestStake.getTime()),
         lastUpdated: Date.now()
       };
