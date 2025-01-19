@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
 import { getEthPrice, getEthStats } from "@/lib/binance";
+import MarketStatsChart from "@/components/market/MarketStatsChart";
 
 interface AnalyticsData {
   performance: {
@@ -277,72 +278,16 @@ export default function Analytics() {
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">24h Price Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-400">24h Change</span>
-                    <span className={`font-medium ${
-                      (ethStats?.priceChangePercent24h || 0) >= 0 
-                        ? 'text-green-500 flex items-center' 
-                        : 'text-red-500 flex items-center'
-                    }`}>
-                      {(ethStats?.priceChangePercent24h || 0) >= 0 ? (
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4 mr-1" />
-                      )}
-                      {ethStats?.priceChangePercent24h.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">24h High</span>
-                    <span className="font-medium text-white">
-                      ${ethStats?.highPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">24h Low</span>
-                    <span className="font-medium text-white">
-                      ${ethStats?.lowPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Market Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">24h Volume (ETH)</span>
-                    <span className="font-medium text-white">
-                      {(ethStats?.volume24h || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Weighted Avg Price</span>
-                    <span className="font-medium text-white">
-                      ${ethStats?.weightedAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Price Change (24h)</span>
-                    <span className={`font-medium ${(ethStats?.priceChange24h || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      ${Math.abs(ethStats?.priceChange24h || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {ethStats && (
+            <MarketStatsChart
+              priceChange24h={ethStats.priceChange24h}
+              priceChangePercent24h={ethStats.priceChangePercent24h}
+              volume24h={ethStats.volume24h}
+              highPrice24h={ethStats.highPrice24h}
+              lowPrice24h={ethStats.lowPrice24h}
+              weightedAvgPrice={ethStats.weightedAvgPrice}
+            />
+          )}
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader>
