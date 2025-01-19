@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { stakeETH } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -13,12 +13,23 @@ export default function StakingCard() {
   const queryClient = useQueryClient();
 
   // Fetch staking data every minute
-  const { data: stakingData } = useQuery<StakingData>({
+  const { data: stakingData, error } = useQuery<StakingData>({
     queryKey: ['/api/staking/data'],
     refetchInterval: 60000, // Refetch every minute
     refetchIntervalInBackground: true,
     staleTime: 55000, // Consider data stale after 55 seconds
   });
+
+  // Force refresh when component mounts and set up interval
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
+
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [queryClient]);
 
   const stakeMutation = useMutation({
     mutationFn: () => stakeETH(parseFloat(amount)),
@@ -50,6 +61,16 @@ export default function StakingCard() {
     }
     stakeMutation.mutate();
   };
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-red-500">Failed to load staking data. Please try again later.</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

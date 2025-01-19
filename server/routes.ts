@@ -42,7 +42,15 @@ export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      const totalStaked = 32.5; // Mock staked amount
+      // Check if user is authenticated
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Get user's stakes from the store
+      const userStakes = store.getStakesByUser(req.session.userId);
+      const totalStaked = userStakes.reduce((sum, stake) => sum + parseFloat(stake.amount), 0);
+
       const startTime = Date.now() - (60 * 60 * 1000); // Started staking 1 hour ago
       const currentRewards = calculateRewards(totalStaked, startTime);
 
@@ -53,7 +61,8 @@ export function registerRoutes(app: Express): Server {
         totalStaked,
         rewards: currentRewards,
         projected: projectedRewards,
-        rewardsHistory: generateRewardsHistory(totalStaked)
+        rewardsHistory: generateRewardsHistory(totalStaked),
+        lastUpdated: Date.now() // Add timestamp for client-side refresh logic
       };
 
       res.json(mockData);
