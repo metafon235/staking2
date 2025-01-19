@@ -1,4 +1,4 @@
-import { Home, LineChart, Coins, Settings, Menu, LogOut } from "lucide-react";
+import { Home, LineChart, Coins, Settings, Menu, LogOut, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/use-user";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/" },
+  { icon: Wallet, label: "Portfolio", href: "/portfolio" },
   { icon: Coins, label: "Coins", href: "/coins/eth" },
   { icon: LineChart, label: "Analytics", href: "/analytics" },
   { icon: Settings, label: "Settings", href: "/settings" },

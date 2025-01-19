@@ -7,6 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
 import Home from "@/pages/home";
 import CoinDetail from "@/pages/coin-detail";
+import Portfolio from "@/pages/portfolio";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
@@ -42,6 +43,7 @@ function Router() {
       <main className="flex-1 p-6 lg:pl-72">
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/portfolio" component={Portfolio} />
           <Route path="/coins/:symbol" component={CoinDetail} />
           <Route component={NotFound} />
         </Switch>
