@@ -6,6 +6,8 @@ import { useState } from "react";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const COIN_DATA = {
   eth: {
@@ -37,11 +39,34 @@ const COIN_DATA = {
   }
 };
 
+interface NetworkStats {
+  tvl: number;
+  validators: number;
+  avgStake: number;
+  totalStakers: number;
+  lastUpdated: string;
+}
+
+async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
+  const response = await fetch(`/api/network-stats/${symbol}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch network statistics');
+  }
+  return response.json();
+}
+
 export default function CoinDetail() {
   const { symbol } = useParams();
   const [stakeAmount, setStakeAmount] = useState("");
   const { user } = useUser();
   const [, navigate] = useLocation();
+
+  const { data: networkStats, isLoading: isLoadingStats } = useQuery({
+    queryKey: [`/api/network-stats/${symbol}`],
+    queryFn: () => fetchNetworkStats(symbol || ''),
+    enabled: !!symbol,
+    refetchInterval: 60000, // Refresh every minute
+  });
 
   const coinData = COIN_DATA[symbol as keyof typeof COIN_DATA];
 
@@ -152,24 +177,53 @@ export default function CoinDetail() {
                 <CardTitle className="text-white">Network Statistics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-zinc-400">Total Value Locked</p>
-                    <p className="text-2xl font-bold text-white">Coming Soon</p>
+                {isLoadingStats ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} className="h-20 bg-zinc-800" />
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Active Validators</p>
-                    <p className="text-2xl font-bold text-white">Coming Soon</p>
+                ) : networkStats ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-zinc-400">Total Value Locked</p>
+                      <p className="text-2xl font-bold text-white">
+                        {networkStats.tvl.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })} {coinData.symbol}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400">Active Validators</p>
+                      <p className="text-2xl font-bold text-white">
+                        {networkStats.validators.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400">Average Stake Size</p>
+                      <p className="text-2xl font-bold text-white">
+                        {networkStats.avgStake.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })} {coinData.symbol}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400">Total Stakers</p>
+                      <p className="text-2xl font-bold text-white">
+                        {networkStats.totalStakers.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="col-span-2 mt-2">
+                      <p className="text-xs text-zinc-500 text-right">
+                        Last updated: {new Date(networkStats.lastUpdated).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Average Stake Size</p>
-                    <p className="text-2xl font-bold text-white">Coming Soon</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Total Stakers</p>
-                    <p className="text-2xl font-bold text-white">Coming Soon</p>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-zinc-400 text-center py-4">Failed to load network statistics</p>
+                )}
               </CardContent>
             </Card>
 
