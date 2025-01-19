@@ -1,8 +1,13 @@
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
+import { useUser } from "@/hooks/use-user";
+import { Link } from "wouter";
 
 export default function Home() {
+  const { user } = useUser();
+
   return (
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
@@ -15,6 +20,22 @@ export default function Home() {
             Start earning rewards with as little as 0.01 ETH. No technical knowledge required.
             Secure, transparent, and efficient staking platform.
           </p>
+
+          {/* CTA Section */}
+          {!user && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+              <Link href="/auth">
+                <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg">
+                  Start Staking Now
+                </Button>
+              </Link>
+              <Link href="/auth">
+                <Button variant="outline" className="border-purple-600 text-purple-400 hover:bg-purple-600/10 px-8 py-6 text-lg">
+                  Login to Dashboard
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Coin Cards Grid */}
@@ -66,6 +87,27 @@ export default function Home() {
             </p>
           </Card>
         </div>
+
+        {/* Bottom CTA Section */}
+        {!user && (
+          <div className="mt-24 text-center">
+            <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20 p-12">
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Ready to Start Earning?
+              </h2>
+              <p className="text-lg text-zinc-300 mb-8 max-w-2xl mx-auto">
+                Join thousands of investors already earning passive income through our staking platform.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/auth">
+                  <Button className="bg-white hover:bg-zinc-100 text-purple-600 px-8 py-6 text-lg">
+                    Create Free Account
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
