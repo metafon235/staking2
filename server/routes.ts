@@ -297,6 +297,63 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add new withdraw endpoint
+  app.post('/api/withdraw', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { amount, coin } = req.body;
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid withdrawal amount' });
+      }
+
+      // For now, we only support ETH withdrawals
+      if (coin.toUpperCase() !== 'ETH') {
+        return res.status(400).json({ error: 'Unsupported coin for withdrawal' });
+      }
+
+      // Get user's current rewards
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      if (totalStaked < 0.01) {
+        return res.status(400).json({ error: 'No active stakes found' });
+      }
+
+      const earliestStake = userStakes[0]?.createdAt || new Date();
+      const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
+
+      if (amount > currentRewards) {
+        return res.status(400).json({ error: 'Insufficient rewards balance' });
+      }
+
+      // Record the withdrawal transaction
+      await db.insert(transactions)
+        .values({
+          userId: req.user.id,
+          type: 'withdraw',
+          amount: amount.toString(),
+          status: 'completed',
+        });
+
+      res.json({ 
+        message: 'Withdrawal successful',
+        amount: amount,
+        coin: coin
+      });
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      res.status(500).json({ error: 'Failed to process withdrawal' });
+    }
+  });
 
   // Validation schema for stake request
   const stakeRequestSchema = z.object({

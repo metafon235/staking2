@@ -3,6 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiEthereum, SiSolana } from "react-icons/si";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PortfolioData {
   eth: {
@@ -20,18 +33,89 @@ async function fetchPortfolioData(): Promise<PortfolioData> {
   return response.json();
 }
 
+async function withdrawRewards(amount: number, coin: string) {
+  const response = await fetch('/api/withdraw', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ amount, coin }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to withdraw rewards');
+  }
+  return response.json();
+}
+
 export default function Portfolio() {
-  const { data: portfolio, isLoading } = useQuery({
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const { toast } = useToast();
+
+  const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
     queryFn: fetchPortfolioData,
     refetchInterval: 60000, // Refresh every minute
     staleTime: 0 // Always consider data stale to force refresh
   });
 
+  const handleWithdraw = async (coin: string) => {
+    if (!withdrawAmount) return;
+
+    setIsWithdrawing(true);
+    try {
+      await withdrawRewards(parseFloat(withdrawAmount), coin);
+      toast({
+        title: "Withdrawal Successful",
+        description: `${withdrawAmount} ${coin} has been withdrawn to your wallet.`
+      });
+      setWithdrawAmount("");
+      refetch();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Withdrawal Failed",
+        description: error.message
+      });
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  // Calculate totals
+  const totalStaked = portfolio ? portfolio.eth.staked : 0;
+  const totalRewards = portfolio ? portfolio.eth.rewards : 0;
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
-      
+
+      {/* Total Overview Card */}
+      <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
+        <CardHeader>
+          <CardTitle className="text-xl font-medium text-white">
+            Total Portfolio Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm text-zinc-300">Total Value Staked</p>
+              <p className="text-3xl font-bold text-white">
+                {totalStaked.toFixed(9)} ETH
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-300">Total Current Rewards</p>
+              <p className="text-3xl font-bold text-green-400">
+                {totalRewards.toFixed(9)} ETH
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* ETH Staking Card */}
         <Card className="bg-zinc-900/50 border-zinc-800">
@@ -61,7 +145,7 @@ export default function Portfolio() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-zinc-400">Total Rewards</p>
+                  <p className="text-sm text-zinc-400">Current Rewards</p>
                   <p className="text-2xl font-bold text-green-500">
                     +{portfolio.eth.rewards.toFixed(9)} ETH
                   </p>
@@ -72,6 +156,43 @@ export default function Portfolio() {
                     {portfolio.eth.apy.toFixed(2)}%
                   </p>
                 </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                      Withdraw Rewards
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-zinc-900 border-zinc-800">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Withdraw ETH Rewards</DialogTitle>
+                      <DialogDescription className="text-zinc-400">
+                        Enter the amount of ETH rewards you want to withdraw.
+                        Available: {portfolio.eth.rewards.toFixed(9)} ETH
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        className="bg-zinc-800 border-zinc-700 text-white"
+                        min={0}
+                        max={portfolio.eth.rewards}
+                        step="0.000000001"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        className="bg-purple-600 hover:bg-purple-700"
+                        onClick={() => handleWithdraw('ETH')}
+                        disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) > portfolio.eth.rewards}
+                      >
+                        {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             ) : (
               <p className="text-zinc-400">Failed to load data</p>
