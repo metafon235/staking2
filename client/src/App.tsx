@@ -41,8 +41,8 @@ function Router() {
       {/* Main content area with padding for sidebar on desktop */}
       <main className="flex-1 p-6 lg:pl-72">
         <Switch>
-          <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/" component={Dashboard} />
           <Route path="/coins/:symbol" component={CoinDetail} />
           <Route component={NotFound} />
         </Switch>
