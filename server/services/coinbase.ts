@@ -1,4 +1,5 @@
 import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
+import { createHmac } from 'crypto';
 import type { Account } from '@coinbase/wallet-sdk';
 
 interface StakingResponse {
@@ -39,7 +40,13 @@ class CoinbaseService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch Ethereum balance');
+        const errorText = await response.text();
+        console.error('Coinbase API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`Failed to fetch Ethereum balance: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -58,6 +65,12 @@ class CoinbaseService {
         currency: 'ETH'
       });
 
+      console.log('Initiating staking request:', {
+        url: `${this.baseUrl}${path}`,
+        amount,
+        headers: this.getHeaders('POST', path, body)
+      });
+
       const response = await fetch(`${this.baseUrl}${path}`, {
         method: 'POST',
         headers: this.getHeaders('POST', path, body),
@@ -65,11 +78,18 @@ class CoinbaseService {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Staking failed');
+        const errorResponse = await response.json();
+        console.error('Staking API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorResponse
+        });
+        throw new Error(errorResponse.message || 'Staking failed');
       }
 
       const data = await response.json();
+      console.log('Staking response:', data);
+
       return {
         id: data.data.id,
         status: data.data.status,
@@ -112,8 +132,7 @@ class CoinbaseService {
   private getHeaders(method: string, path: string, body: string = ''): HeadersInit {
     const timestamp = Date.now().toString();
     const message = timestamp + method + path + body;
-    const signature = require('crypto')
-      .createHmac('sha256', this.apiSecret)
+    const signature = createHmac('sha256', this.apiSecret)
       .update(message)
       .digest('hex');
 
