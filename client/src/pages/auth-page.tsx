@@ -35,21 +35,19 @@ export default function AuthPage() {
         return;
       }
 
-      // Warte auf die Aktualisierung des User-Status
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const user = queryClient.getQueryData(['user']);
-
-      if (!user) {
-        throw new Error("Failed to update user status");
-      }
-
       toast({
         title: isLogin ? "Login Successful" : "Registration Successful",
         description: "Welcome to the Staking Platform"
       });
 
-      // Jetzt können wir sicher zum Dashboard navigieren
-      navigate("/dashboard");
+      // Warte auf die nächste Tick des Event-Loops
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Prüfe explizit den User-Status
+      const user = queryClient.getQueryData(['user']);
+      if (user) {
+        navigate("/");
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",

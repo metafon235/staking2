@@ -65,7 +65,8 @@ export function useUser() {
     queryKey: ['user'],
     queryFn: fetchUser,
     staleTime: Infinity,
-    retry: false
+    retry: false,
+    refetchOnMount: true
   });
 
   const loginMutation = useMutation<RequestResult, Error, InsertUser>({
@@ -98,7 +99,7 @@ export function useUser() {
 
   return {
     user,
-    isLoading,
+    isLoading: isLoading || loginMutation.isPending || registerMutation.isPending,
     error,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,

@@ -41,15 +41,21 @@ export function setupAuth(app: Express) {
     secret: process.env.REPL_ID || "porygon-supremacy",
     resave: false,
     saveUninitialized: false,
-    cookie: {},
     store: new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     }),
+    cookie: {
+      maxAge: 86400000, // 24 hours
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    },
   };
 
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
     sessionSettings.cookie = {
+      ...sessionSettings.cookie,
       secure: true,
     };
   }
@@ -130,7 +136,7 @@ export function setupAuth(app: Express) {
       const [newUser] = await db
         .insert(users)
         .values({
-          ...result.data,
+          email,
           password: hashedPassword,
         })
         .returning();
