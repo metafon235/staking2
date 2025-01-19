@@ -17,7 +17,7 @@ export default function StakingCard() {
     queryKey: ['/api/staking/data'],
     refetchInterval: 60000, // Refetch every minute
     refetchIntervalInBackground: true,
-    staleTime: 30000, // Consider data stale after 30 seconds
+    staleTime: 0, // Always consider data stale to force refresh
   });
 
   // Force refresh when component mounts and set up interval
@@ -95,15 +95,15 @@ export default function StakingCard() {
           <div className="space-y-2 pt-4">
             <div className="flex justify-between text-sm">
               <span>Current Rewards:</span>
-              <span>{Number(stakingData.rewards.toFixed(6))} ETH</span>
+              <span>{stakingData.rewards.toFixed(6)} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Projected Monthly:</span>
-              <span>{Number(stakingData.projected.toFixed(6))} ETH</span>
+              <span>{stakingData.projected.toFixed(6)} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Total Staked:</span>
-              <span>{Number(stakingData.totalStaked.toFixed(6))} ETH</span>
+              <span>{stakingData.totalStaked.toFixed(2)} ETH</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>APY:</span>
