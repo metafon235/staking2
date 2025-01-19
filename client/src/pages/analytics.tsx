@@ -69,7 +69,8 @@ export default function Analytics() {
   const { data: ethStats } = useQuery({
     queryKey: ['binanceEthStats'],
     queryFn: getEthStats,
-    refetchInterval: 30000,
+    // Removed refetchInterval for static data that only updates on page reload
+    staleTime: Infinity, // Prevents background refetches
   });
 
   if (isLoadingAnalytics) {
