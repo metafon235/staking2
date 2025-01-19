@@ -575,6 +575,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add portfolio endpoint
+  app.get('/api/portfolio', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's stakes and calculate rewards
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      // Calculate rewards if there are stakes
+      let currentRewards = 0;
+      if (userStakes.length > 0) {
+        const earliestStake = userStakes[0].createdAt;
+        currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
+      }
+
+      const portfolioData = {
+        eth: {
+          staked: totalStaked,
+          rewards: parseFloat(currentRewards.toFixed(9)),
+          apy: 3.00
+        }
+      };
+
+      res.json(portfolioData);
+    } catch (error) {
+      console.error('Error fetching portfolio data:', error);
+      res.status(500).json({ error: 'Failed to fetch portfolio data' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
 
 function Router() {
-  const { user, isLoading } = useUser();
+  const { user, isLoading, error } = useUser();
 
   if (isLoading) {
     return (
@@ -23,7 +23,7 @@ function Router() {
     );
   }
 
-  // Show home page and coin details for non-authenticated users
+  // Nur nicht-authentifizierte Routen für nicht eingeloggte User
   if (!user) {
     return (
       <Switch>
@@ -35,11 +35,10 @@ function Router() {
     );
   }
 
-  // Show dashboard for authenticated users
+  // Authentifizierte Routen für eingeloggte User
   return (
     <div className="flex min-h-screen bg-black">
       <Navigation />
-      {/* Main content area with padding for sidebar on desktop */}
       <main className="flex-1 p-6 lg:pl-72">
         <Switch>
           <Route path="/" component={Dashboard} />
