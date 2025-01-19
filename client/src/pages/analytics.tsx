@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
-import { getEthPrice, getEthPriceHistory } from "@/lib/binance";
+import { getEthPrice, getEthPriceHistory, getEthStats } from "@/lib/binance";
 
 interface AnalyticsData {
   performance: {
@@ -30,7 +30,7 @@ interface AnalyticsData {
   portfolio: {
     totalValue: number;
     profitLoss: number;
-    ethPrice: number; 
+    ethPrice: number;
     priceHistory: Array<{
       timestamp: number;
       price: number;
@@ -62,13 +62,13 @@ export default function Analytics() {
   const { data: liveEthPrice } = useQuery({
     queryKey: ['binanceEthPrice'],
     queryFn: getEthPrice,
-    refetchInterval: 30000, 
+    refetchInterval: 30000,
   });
 
-  const { data: ethPriceHistory } = useQuery({
-    queryKey: ['binanceEthPriceHistory'],
-    queryFn: () => getEthPriceHistory(7), 
-    refetchInterval: 300000, 
+  const { data: ethStats } = useQuery({
+    queryKey: ['binanceEthStats'],
+    queryFn: getEthStats,
+    refetchInterval: 30000,
   });
 
   if (isLoadingAnalytics) {
@@ -273,6 +273,73 @@ export default function Analytics() {
                 <p className="text-sm text-zinc-400">
                   {liveEthPrice ? 'Updates every 30 seconds' : 'Fetching price...'}
                 </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-white">24h Price Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">24h Change</span>
+                    <span className={`font-medium ${
+                      (ethStats?.priceChangePercent24h || 0) >= 0 
+                        ? 'text-green-500 flex items-center' 
+                        : 'text-red-500 flex items-center'
+                    }`}>
+                      {(ethStats?.priceChangePercent24h || 0) >= 0 ? (
+                        <TrendingUp className="w-4 h-4 mr-1" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 mr-1" />
+                      )}
+                      {ethStats?.priceChangePercent24h.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">24h High</span>
+                    <span className="font-medium text-white">
+                      ${ethStats?.highPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">24h Low</span>
+                    <span className="font-medium text-white">
+                      ${ethStats?.lowPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-white">Market Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">24h Volume (ETH)</span>
+                    <span className="font-medium text-white">
+                      {(ethStats?.volume24h || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Weighted Avg Price</span>
+                    <span className="font-medium text-white">
+                      ${ethStats?.weightedAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Price Change (24h)</span>
+                    <span className={`font-medium ${(ethStats?.priceChange24h || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      ${Math.abs(ethStats?.priceChange24h || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
