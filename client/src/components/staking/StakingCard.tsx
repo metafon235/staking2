@@ -16,6 +16,8 @@ export default function StakingCard() {
   const { data: stakingData } = useQuery<StakingData>({
     queryKey: ['/api/staking/data'],
     refetchInterval: 60000, // Refetch every minute
+    refetchIntervalInBackground: true,
+    staleTime: 55000, // Consider data stale after 55 seconds
   });
 
   const stakeMutation = useMutation({
@@ -70,15 +72,15 @@ export default function StakingCard() {
           <div className="space-y-2 pt-4">
             <div className="flex justify-between text-sm">
               <span>Current Rewards:</span>
-              <span>{stakingData.rewards.toFixed(6)} ETH</span>
+              <span>{Number(stakingData.rewards.toFixed(6))} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Projected Monthly:</span>
-              <span>{stakingData.projected.toFixed(6)} ETH</span>
+              <span>{Number(stakingData.projected.toFixed(6))} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Total Staked:</span>
-              <span>{stakingData.totalStaked.toFixed(6)} ETH</span>
+              <span>{Number(stakingData.totalStaked.toFixed(6))} ETH</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>APY:</span>

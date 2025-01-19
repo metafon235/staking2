@@ -18,7 +18,8 @@ function calculateRewards(stakedAmount: number, timestampMs: number): number {
   const now = Date.now();
   const timePassedMs = now - timestampMs;
   const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-  return stakedAmount * APY * yearsElapsed;
+  // Round to 6 decimal places to avoid floating point imprecision
+  return Math.round(stakedAmount * APY * yearsElapsed * 1000000) / 1000000;
 }
 
 // Generate minute-by-minute rewards history
@@ -28,9 +29,10 @@ function generateRewardsHistory(totalStaked: number): Array<{ timestamp: number;
   // Generate data points for the last 60 minutes
   for (let i = 59; i >= 0; i--) {
     const timestamp = now - (i * 60 * 1000); // Every minute
+    const rewards = calculateRewards(totalStaked, now - (60 * 60 * 1000)) * ((60 - i) / 60);
     history.push({
       timestamp,
-      rewards: calculateRewards(totalStaked, now - (60 * 60 * 1000)) * ((60 - i) / 60)
+      rewards: Math.round(rewards * 1000000) / 1000000 // Round to 6 decimal places
     });
   }
   return history;
@@ -44,8 +46,8 @@ export function registerRoutes(app: Express): Server {
       const startTime = Date.now() - (60 * 60 * 1000); // Started staking 1 hour ago
       const currentRewards = calculateRewards(totalStaked, startTime);
 
-      // Project rewards for the next month
-      const projectedRewards = calculateRewards(totalStaked, startTime) * (30 * 24); // 30 days projection
+      // Project rewards for the next month (30 days)
+      const projectedRewards = Math.round(calculateRewards(totalStaked, startTime) * (30 * 24) * 1000000) / 1000000;
 
       const mockData = {
         totalStaked,
