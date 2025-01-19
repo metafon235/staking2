@@ -4,27 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiEthereum, SiSolana } from "react-icons/si";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
-import { Wallet } from "lucide-react";
 
 interface PortfolioData {
   eth: {
     staked: number;
     rewards: number;
     apy: number;
-    status: 'active' | 'ended';
   };
 }
 
@@ -36,23 +24,8 @@ async function fetchPortfolioData(): Promise<PortfolioData> {
   return response.json();
 }
 
-async function withdrawRewards(amount: number, coin: string) {
-  const response = await fetch('/api/withdraw', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ amount, coin }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to withdraw rewards');
-  }
-  return response.json();
-}
-
-async function endStaking(coin: string) {
-  const response = await fetch('/api/staking/end', {
+async function withdrawAll(coin: string) {
+  const response = await fetch('/api/withdraw-all', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -61,30 +34,13 @@ async function endStaking(coin: string) {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to end staking');
-  }
-  return response.json();
-}
-
-async function transferToWallet(amount: number, coin: string) {
-  const response = await fetch('/api/transfer', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ amount, coin }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to transfer funds');
+    throw new Error('Failed to withdraw funds');
   }
   return response.json();
 }
 
 export default function Portfolio() {
-  const [transferAmount, setTransferAmount] = useState("");
-  const [isTransferring, setIsTransferring] = useState(false);
-  const [isEndingStake, setIsEndingStake] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const { toast } = useToast();
 
   const { data: portfolio, isLoading, refetch } = useQuery({
@@ -94,46 +50,23 @@ export default function Portfolio() {
     staleTime: 0
   });
 
-  const handleEndStaking = async () => {
-    setIsEndingStake(true);
+  const handleWithdrawAll = async (coin: string) => {
+    setIsWithdrawing(true);
     try {
-      await endStaking('ETH');
+      await withdrawAll(coin);
       toast({
-        title: "Staking Ended",
-        description: "Your staking position has been ended. You can now withdraw your full amount."
+        title: "Withdrawal Successful",
+        description: "Your stake and rewards have been withdrawn to your wallet."
       });
       refetch();
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Failed to End Staking",
+        title: "Withdrawal Failed",
         description: error.message
       });
     } finally {
-      setIsEndingStake(false);
-    }
-  };
-
-  const handleTransfer = async (coin: string) => {
-    if (!transferAmount) return;
-
-    setIsTransferring(true);
-    try {
-      await transferToWallet(parseFloat(transferAmount), coin);
-      toast({
-        title: "Transfer Successful",
-        description: `${transferAmount} ${coin} has been transferred to your wallet.`
-      });
-      setTransferAmount("");
-      refetch();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Transfer Failed",
-        description: error.message
-      });
-    } finally {
-      setIsTransferring(false);
+      setIsWithdrawing(false);
     }
   };
 
@@ -181,8 +114,8 @@ export default function Portfolio() {
                 Ethereum Staking
               </div>
             </CardTitle>
-            <Badge variant="secondary" className={portfolio?.eth.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}>
-              {portfolio?.eth.status === 'active' ? 'Active' : 'Ended'}
+            <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+              Active
             </Badge>
           </CardHeader>
           <CardContent>
@@ -217,59 +150,13 @@ export default function Portfolio() {
                     {portfolio.eth.apy.toFixed(2)}%
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  {portfolio.eth.status === 'active' ? (
-                    <Button 
-                      className="flex-1 bg-yellow-600 hover:bg-yellow-700"
-                      onClick={handleEndStaking}
-                      disabled={isEndingStake}
-                    >
-                      {isEndingStake ? 'Ending Stake...' : 'End Staking'}
-                    </Button>
-                  ) : null}
-
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        disabled={portfolio.eth.status === 'active'}
-                      >
-                        <Wallet className="w-4 h-4 mr-2" />
-                        Transfer Total to Wallet
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Transfer Total ETH to Wallet</DialogTitle>
-                        <DialogDescription className="text-zinc-400">
-                          Enter the amount of ETH you want to transfer to your wallet.
-                          Maximum Available: {totalValue.toFixed(9)} ETH (Stake + Rewards)
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={transferAmount}
-                          onChange={(e) => setTransferAmount(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white"
-                          min={0}
-                          max={totalValue}
-                          step="0.000000001"
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleTransfer('ETH')}
-                          disabled={isTransferring || !transferAmount || parseFloat(transferAmount) > totalValue}
-                        >
-                          {isTransferring ? 'Transferring...' : 'Transfer to Wallet'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => handleWithdrawAll('ETH')}
+                  disabled={isWithdrawing || totalValue <= 0}
+                >
+                  {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
+                </Button>
               </div>
             ) : (
               <p className="text-zinc-400">Failed to load data</p>
