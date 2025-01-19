@@ -4,12 +4,18 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { stakeETH } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 
 export default function StakingCard() {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch staking data every minute
+  const { data: stakingData } = useQuery({
+    queryKey: ['/api/staking/data'],
+    refetchInterval: 60000, // Refetch every minute
+  });
 
   const stakeMutation = useMutation({
     mutationFn: () => stakeETH(parseFloat(amount)),
@@ -58,6 +64,28 @@ export default function StakingCard() {
             disabled={stakeMutation.isPending}
           />
         </div>
+
+        {stakingData && (
+          <div className="space-y-2 pt-4">
+            <div className="flex justify-between text-sm">
+              <span>Current Rewards:</span>
+              <span>{stakingData.rewards.toFixed(6)} ETH</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Projected Monthly:</span>
+              <span>{stakingData.projected.toFixed(6)} ETH</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Total Staked:</span>
+              <span>{stakingData.totalStaked.toFixed(2)} ETH</span>
+            </div>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>APY:</span>
+              <span>3.00%</span>
+            </div>
+          </div>
+        )}
+
         <Button 
           className="w-full" 
           onClick={handleStake}

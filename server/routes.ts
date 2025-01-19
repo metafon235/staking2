@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
 import { store } from "./store";
-import { coinbaseService } from "./services/coinbase";
 
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
@@ -13,20 +12,46 @@ const stakeRequestSchema = z.object({
   })
 });
 
+// Calculate rewards based on 3% APY
+function calculateRewards(stakedAmount: number, timestampMs: number): number {
+  const APY = 0.03; // 3% annual yield
+  const now = Date.now();
+  const timePassedMs = now - timestampMs;
+  const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
+  return stakedAmount * APY * yearsElapsed;
+}
+
+// Generate minute-by-minute rewards history
+function generateRewardsHistory(totalStaked: number): Array<{ timestamp: number; rewards: number }> {
+  const history = [];
+  const now = Date.now();
+  // Generate data points for the last 60 minutes
+  for (let i = 59; i >= 0; i--) {
+    const timestamp = now - (i * 60 * 1000); // Every minute
+    history.push({
+      timestamp,
+      rewards: calculateRewards(totalStaked, now - (60 * 60 * 1000)) * ((60 - i) / 60)
+    });
+  }
+  return history;
+}
+
 export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
+      const totalStaked = 32.5; // Mock staked amount
+      const startTime = Date.now() - (60 * 60 * 1000); // Started staking 1 hour ago
+      const currentRewards = calculateRewards(totalStaked, startTime);
+
+      // Project rewards for the next month
+      const projectedRewards = calculateRewards(totalStaked, startTime) * (30 * 24); // 30 days projection
+
       const mockData = {
-        totalStaked: 32.5,
-        rewards: 0.85,
-        projected: 1.2,
-        rewardsHistory: [
-          { timestamp: Date.now() - 86400000 * 30, rewards: 0.2 },
-          { timestamp: Date.now() - 86400000 * 20, rewards: 0.4 },
-          { timestamp: Date.now() - 86400000 * 10, rewards: 0.6 },
-          { timestamp: Date.now(), rewards: 0.85 }
-        ]
+        totalStaked,
+        rewards: currentRewards,
+        projected: projectedRewards,
+        rewardsHistory: generateRewardsHistory(totalStaked)
       };
 
       res.json(mockData);
@@ -51,23 +76,11 @@ export function registerRoutes(app: Express): Server {
 
       const { userId, amount } = validationResult.data;
 
-      // Get user's ETH balance
-      const balance = await coinbaseService.getEthereumBalance();
-      if (parseFloat(balance) < parseFloat(amount)) {
-        return res.status(400).json({ error: 'Insufficient ETH balance' });
-      }
-
-      // Initiate staking with Coinbase
-      console.log('Initiating staking with amount:', amount);
-      const stakingResponse = await coinbaseService.initiateStaking(amount);
-      console.log('Staking response:', stakingResponse);
-
-      // Record the stake in our database
+      // Create mock stake
       const stake = store.createStake({
         userId,
         amount: amount.toString(),
-        status: stakingResponse.status,
-        transactionHash: stakingResponse.transactionId,
+        status: 'active',
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -77,8 +90,7 @@ export function registerRoutes(app: Express): Server {
         userId,
         type: 'stake',
         amount: amount.toString(),
-        status: 'pending',
-        transactionHash: stakingResponse.transactionId,
+        status: 'completed',
         createdAt: new Date()
       });
 

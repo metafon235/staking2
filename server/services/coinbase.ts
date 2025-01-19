@@ -19,7 +19,7 @@ interface RewardsResponse {
 }
 
 class CoinbaseService {
-  private readonly baseUrl = 'https://api.coinbase.com';
+  private readonly baseUrl = 'https://api-public.sandbox.exchange.coinbase.com';
   private readonly apiKey: string;
   private readonly apiSecret: string;
 
@@ -31,13 +31,13 @@ class CoinbaseService {
       throw new Error('Coinbase API credentials are not configured');
     }
 
-    console.log('CoinbaseService initialized with API key:', this.apiKey.substring(0, 4) + '...');
+    console.log('CoinbaseService initialized with sandbox API key:', this.apiKey.substring(0, 4) + '...');
   }
 
   async getEthereumBalance(): Promise<string> {
     try {
-      const path = '/v2/accounts/ETH2';
-      console.log('Fetching ETH balance from:', `${this.baseUrl}${path}`);
+      const path = '/api/v3/brokerage/accounts';
+      console.log('Fetching ETH balance from sandbox:', `${this.baseUrl}${path}`);
 
       const response = await fetch(`${this.baseUrl}${path}`, {
         headers: this.getHeaders('GET', path),
@@ -45,7 +45,7 @@ class CoinbaseService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Coinbase API Error:', {
+        console.error('Coinbase Sandbox API Error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorText,
@@ -55,24 +55,26 @@ class CoinbaseService {
       }
 
       const data = await response.json();
-      console.log('Balance response:', data);
-      return data.data.balance.amount;
+      console.log('Sandbox balance response:', data);
+
+      // Find ETH account in the list
+      const ethAccount = data.accounts.find((acc: any) => acc.currency === 'ETH');
+      return ethAccount ? ethAccount.available_balance.value : '0';
     } catch (error) {
-      console.error('Error fetching Ethereum balance:', error);
+      console.error('Error fetching Ethereum balance from sandbox:', error);
       throw error;
     }
   }
 
   async initiateStaking(amount: string): Promise<StakingResponse> {
     try {
-      const path = '/v2/eth2/staking/stake';
+      const path = '/api/v3/brokerage/staking/ethereum2/stake';
       const body = JSON.stringify({
         amount,
         currency: 'ETH',
-        staking_period: 'flexible'
       });
 
-      console.log('Initiating staking request:', {
+      console.log('Initiating sandbox staking request:', {
         url: `${this.baseUrl}${path}`,
         amount,
         headers: this.getHeaders('POST', path, body)
@@ -86,7 +88,7 @@ class CoinbaseService {
 
       if (!response.ok) {
         const errorResponse = await response.json();
-        console.error('Staking API Error:', {
+        console.error('Sandbox Staking API Error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorResponse,
@@ -96,25 +98,25 @@ class CoinbaseService {
       }
 
       const data = await response.json();
-      console.log('Staking response:', data);
+      console.log('Sandbox staking response:', data);
 
       return {
-        id: data.data.id,
-        status: data.data.status,
-        amount: data.data.amount,
+        id: data.stake_id,
+        status: data.status,
+        amount: amount,
         currency: 'ETH',
-        transactionId: data.data.transaction_id
+        transactionId: data.transaction_id
       };
     } catch (error) {
-      console.error('Error initiating staking:', error);
+      console.error('Error initiating staking in sandbox:', error);
       throw error;
     }
   }
 
   async getStakingRewards(): Promise<RewardsResponse> {
     try {
-      const path = '/v2/eth2/staking/rewards';
-      console.log('Fetching staking rewards from:', `${this.baseUrl}${path}`);
+      const path = '/api/v3/brokerage/staking/ethereum2/rewards';
+      console.log('Fetching staking rewards from sandbox:', `${this.baseUrl}${path}`);
 
       const response = await fetch(`${this.baseUrl}${path}`, {
         headers: this.getHeaders('GET', path),
@@ -122,7 +124,7 @@ class CoinbaseService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Rewards API Error:', {
+        console.error('Sandbox Rewards API Error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorText,
@@ -132,35 +134,35 @@ class CoinbaseService {
       }
 
       const data = await response.json();
-      console.log('Rewards response:', data);
+      console.log('Sandbox rewards response:', data);
 
       return {
-        items: data.data.items.map((item: any) => ({
+        items: data.rewards.map((item: any) => ({
           id: item.id,
           amount: item.amount,
-          currency: item.currency,
+          currency: 'ETH',
           created_at: item.created_at
         }))
       };
     } catch (error) {
-      console.error('Error fetching staking rewards:', error);
+      console.error('Error fetching staking rewards from sandbox:', error);
       throw error;
     }
   }
 
   private getHeaders(method: string, path: string, body: string = ''): HeadersInit {
-    const timestamp = Date.now().toString();
-    const message = timestamp + method + path + body;
+    const timestamp = Date.now() / 1000;
+    const message = `${timestamp}${method}${path}${body}`;
     const signature = createHmac('sha256', this.apiSecret)
       .update(message)
-      .digest('hex');
+      .digest('base64');
 
     return {
       'Content-Type': 'application/json',
       'CB-ACCESS-KEY': this.apiKey,
       'CB-ACCESS-SIGN': signature,
-      'CB-ACCESS-TIMESTAMP': timestamp,
-      'CB-VERSION': '2021-11-01'
+      'CB-ACCESS-TIMESTAMP': timestamp.toString(),
+      'CB-ACCESS-PASSPHRASE': process.env.COINBASE_SANDBOX_PASSPHRASE || '',
     };
   }
 }
