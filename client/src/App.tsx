@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
 import Home from "@/pages/home";
+import CoinDetail from "@/pages/coin-detail";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 
@@ -20,24 +21,26 @@ function Router() {
     );
   }
 
-  // Show home page for non-authenticated users
+  // Show home page and coin details for non-authenticated users
   if (!user) {
     return (
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/coins/:symbol" component={CoinDetail} />
         <Route component={NotFound} />
       </Switch>
     );
   }
 
-  // Show dashboard for authenticated users
+  // Show dashboard and coin details for authenticated users
   return (
     <div className="flex min-h-screen bg-black">
       <main className="flex-1 p-6">
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/coins/:symbol" component={CoinDetail} />
           <Route component={NotFound} />
         </Switch>
       </main>
