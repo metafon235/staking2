@@ -44,8 +44,7 @@ export default function Navigation() {
           <nav className="flex-1 space-y-2 p-4">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location === item.href || 
-                (item.href === "/" && location === "/dashboard");
+              const isActive = location === item.href;
 
               return (
                 <Link key={item.href} href={item.href}>
@@ -70,8 +69,7 @@ export default function Navigation() {
         <div className="grid h-full grid-cols-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location === item.href || 
-              (item.href === "/" && location === "/dashboard");
+            const isActive = location === item.href;
 
             return (
               <Link key={item.href} href={item.href}>
