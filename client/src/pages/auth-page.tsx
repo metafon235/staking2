@@ -40,8 +40,10 @@ export default function AuthPage() {
         description: "Welcome to the Staking Platform"
       });
 
+      // Warte auf die nächste Tick des Event-Loops
       await new Promise(resolve => setTimeout(resolve, 0));
 
+      // Prüfe explizit den User-Status
       const user = queryClient.getQueryData(['user']);
       if (user) {
         navigate("/");
@@ -58,13 +60,13 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#090C08] p-4">
-      <Card className="w-full max-w-md bg-[#474056] border-[#757083]">
+    <div className="min-h-screen flex items-center justify-center bg-black/95 p-4">
+      <Card className="w-full max-w-md bg-zinc-900 border-zinc-800">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-white">
             {isLogin ? "Login" : "Create Account"}
           </CardTitle>
-          <CardDescription className="text-[#77F311]">
+          <CardDescription className="text-zinc-400">
             {isLogin
               ? "Enter your credentials to access your account"
               : "Create an account to start staking"}
@@ -78,7 +80,7 @@ export default function AuthPage() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#090C08]/20 border-[#757083] text-white placeholder:text-[#8A95A5]"
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 disabled={isLoading}
                 required
               />
@@ -89,7 +91,7 @@ export default function AuthPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#090C08]/20 border-[#757083] text-white placeholder:text-[#8A95A5]"
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 disabled={isLoading}
                 required
               />
@@ -97,19 +99,19 @@ export default function AuthPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-[#77F311] hover:bg-[#77F311]/80 text-[#090C08]"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
               disabled={!email || !password || isLoading}
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {isLogin ? "Sign In" : "Create Account"}
             </Button>
 
-            <p className="text-center text-sm text-[#8A95A5]">
+            <p className="text-center text-sm text-zinc-400">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="ml-1 text-[#77F311] hover:text-[#77F311]/80"
+                className="ml-1 text-purple-400 hover:text-purple-300"
                 disabled={isLoading}
               >
                 {isLogin ? "Sign up" : "Sign in"}
