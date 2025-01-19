@@ -1,4 +1,3 @@
-{/* Moving the content from components/StakingChart.tsx to components/staking/StakingChart.tsx */}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
@@ -56,7 +55,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
           <div>
             <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
             <CardDescription className="text-zinc-400">
-              Real-time rewards accumulation for {totalStaked.toFixed(9)} ETH staked
+              Real-time rewards accumulation for {totalStaked.toFixed(6)} ETH staked
             </CardDescription>
           </div>
           <ToggleGroup 
@@ -139,7 +138,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
           </div>
           <div className="bg-zinc-800 p-4 rounded-lg">
             <p className="text-sm text-zinc-400">Total Staked</p>
-            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(9)} ETH</p>
+            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(6)} ETH</p>
           </div>
         </div>
       </CardContent>
