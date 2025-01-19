@@ -46,7 +46,7 @@ export default function CoinDetail() {
     queryFn: () => fetchNetworkStats(symbol || ''),
     enabled: !!symbol,
     refetchInterval: 60000, // Refresh every minute
-    staleTime: 0 // Consider data stale immediately to force refresh
+    staleTime: 0 // Always consider data stale to force refresh
   });
 
   const coinData = COIN_DATA[symbol as keyof typeof COIN_DATA];
@@ -193,8 +193,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Network Rewards</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.rewards.toLocaleString(undefined, {
-                          minimumFractionDigits: 4,
-                          maximumFractionDigits: 4
+                          minimumFractionDigits: 8,
+                          maximumFractionDigits: 8
                         })} {coinData.symbol}
                       </p>
                     </div>
