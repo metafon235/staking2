@@ -18,11 +18,12 @@ export default function Dashboard() {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
         <Skeleton className="h-[400px] rounded-lg bg-zinc-800" />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           <Skeleton className="h-[120px] rounded-lg bg-zinc-800" />
           <Skeleton className="h-[120px] rounded-lg bg-zinc-800" />
           <Skeleton className="h-[120px] rounded-lg bg-zinc-800" />
         </div>
+        <Skeleton className="h-[300px] rounded-lg bg-zinc-800" />
       </div>
     );
   }
@@ -44,7 +45,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         <StakingStats 
           totalStaked={stakingData?.totalStaked || 0}
           rewards={stakingData?.rewards || 0}
@@ -52,7 +53,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6">
         <StakingCard />
       </div>
     </div>
