@@ -1,5 +1,5 @@
-import { Client } from '@coinbase/coinbase-sdk';
-import type { Account } from '@coinbase/coinbase-sdk';
+import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
+import type { Account } from '@coinbase/wallet-sdk';
 
 interface StakingResponse {
   id: string;
@@ -19,31 +19,31 @@ interface RewardsResponse {
 }
 
 class CoinbaseService {
-  private client: Client;
-  private readonly baseUrl = 'https://api.coinbase.com/v2';
+  private readonly baseUrl = 'https://api.cdp.coinbase.com';
+  private readonly apiKey: string;
+  private readonly apiSecret: string;
 
   constructor() {
-    this.client = new Client({
-      apiKey: process.env.COINBASE_API_KEY || '',
-      apiSecret: process.env.COINBASE_API_SECRET || '',
-      strictSSL: true
-    });
-  }
+    this.apiKey = process.env.COINBASE_API_KEY || '';
+    this.apiSecret = process.env.COINBASE_API_SECRET || '';
 
-  async getEthereumAccount(): Promise<Account | null> {
-    try {
-      const accounts = await this.client.getAccounts();
-      return accounts.find(account => account.currency === 'ETH') || null;
-    } catch (error) {
-      console.error('Error fetching Ethereum account:', error);
-      throw new Error('Failed to fetch Ethereum account');
+    if (!this.apiKey || !this.apiSecret) {
+      throw new Error('Coinbase API credentials are not configured');
     }
   }
 
   async getEthereumBalance(): Promise<string> {
     try {
-      const ethAccount = await this.getEthereumAccount();
-      return ethAccount ? ethAccount.balance.amount : '0';
+      const response = await fetch(`${this.baseUrl}/v2/accounts/ETH`, {
+        headers: this.getHeaders('GET', '/v2/accounts/ETH'),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch Ethereum balance');
+      }
+
+      const data = await response.json();
+      return data.data.balance.amount;
     } catch (error) {
       console.error('Error fetching Ethereum balance:', error);
       throw new Error('Failed to fetch Ethereum balance');
@@ -52,22 +52,21 @@ class CoinbaseService {
 
   async initiateStaking(amount: string): Promise<StakingResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/staking/ethereum2`, {
+      const path = '/v2/eth2/staking';
+      const body = JSON.stringify({
+        amount,
+        currency: 'ETH'
+      });
+
+      const response = await fetch(`${this.baseUrl}${path}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.COINBASE_API_KEY}`,
-          'CB-ACCESS-SIGN': this.generateSignature('POST', '/staking/ethereum2', amount),
-          'CB-ACCESS-TIMESTAMP': Date.now().toString(),
-        },
-        body: JSON.stringify({
-          amount,
-          currency: 'ETH'
-        })
+        headers: this.getHeaders('POST', path, body),
+        body
       });
 
       if (!response.ok) {
-        throw new Error(`Staking failed: ${response.statusText}`);
+        const error = await response.json();
+        throw new Error(error.message || 'Staking failed');
       }
 
       const data = await response.json();
@@ -86,16 +85,13 @@ class CoinbaseService {
 
   async getStakingRewards(): Promise<RewardsResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/staking/ethereum2/rewards`, {
-        headers: {
-          'Authorization': `Bearer ${process.env.COINBASE_API_KEY}`,
-          'CB-ACCESS-SIGN': this.generateSignature('GET', '/staking/ethereum2/rewards', ''),
-          'CB-ACCESS-TIMESTAMP': Date.now().toString(),
-        }
+      const path = '/v2/eth2/rewards';
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        headers: this.getHeaders('GET', path),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch rewards: ${response.statusText}`);
+        throw new Error('Failed to fetch rewards');
       }
 
       const data = await response.json();
@@ -113,14 +109,20 @@ class CoinbaseService {
     }
   }
 
-  private generateSignature(method: string, path: string, body: string): string {
+  private getHeaders(method: string, path: string, body: string = ''): HeadersInit {
     const timestamp = Date.now().toString();
     const message = timestamp + method + path + body;
     const signature = require('crypto')
-      .createHmac('sha256', process.env.COINBASE_API_SECRET || '')
+      .createHmac('sha256', this.apiSecret)
       .update(message)
       .digest('hex');
-    return signature;
+
+    return {
+      'Content-Type': 'application/json',
+      'CB-ACCESS-KEY': this.apiKey,
+      'CB-ACCESS-SIGN': signature,
+      'CB-ACCESS-TIMESTAMP': timestamp,
+    };
   }
 }
 

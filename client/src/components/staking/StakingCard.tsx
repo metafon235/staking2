@@ -4,26 +4,42 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { stakeETH } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function StakingCard() {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleStake = async () => {
-    try {
-      await stakeETH(parseFloat(amount));
+  const stakeMutation = useMutation({
+    mutationFn: () => stakeETH(parseFloat(amount)),
+    onSuccess: () => {
       toast({
         title: "Staking Successful",
-        description: `Successfully staked ${amount} ETH`
+        description: `Successfully initiated staking of ${amount} ETH`
       });
       setAmount("");
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
+    },
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Staking Failed",
-        description: "Failed to stake ETH. Please try again."
+        description: error.message
       });
     }
+  });
+
+  const handleStake = () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Amount",
+        description: "Please enter a valid amount to stake"
+      });
+      return;
+    }
+    stakeMutation.mutate();
   };
 
   return (
@@ -39,14 +55,15 @@ export default function StakingCard() {
             placeholder="0.0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            disabled={stakeMutation.isPending}
           />
         </div>
         <Button 
           className="w-full" 
           onClick={handleStake}
-          disabled={!amount || parseFloat(amount) <= 0}
+          disabled={!amount || parseFloat(amount) <= 0 || stakeMutation.isPending}
         >
-          Stake
+          {stakeMutation.isPending ? "Staking..." : "Stake"}
         </Button>
       </CardContent>
     </Card>
