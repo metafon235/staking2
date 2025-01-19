@@ -180,38 +180,38 @@ export default function CoinDetail() {
                 {isLoadingStats ? (
                   <div className="grid grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map((i) => (
-                      <Skeleton key={i} className="h-20 bg-zinc-800" />
+                      <Skeleton key={i} className="h-16 bg-zinc-800" />
                     ))}
                   </div>
                 ) : networkStats ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-zinc-400">Total Value Locked</p>
-                      <p className="text-2xl font-bold text-white">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <p className="text-xs text-zinc-400">Total Value Locked</p>
+                      <p className="text-lg font-semibold text-white">
                         {networkStats.tvl.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })} {coinData.symbol}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm text-zinc-400">Active Validators</p>
-                      <p className="text-2xl font-bold text-white">
+                    <div className="space-y-1">
+                      <p className="text-xs text-zinc-400">Active Validators</p>
+                      <p className="text-lg font-semibold text-white">
                         {networkStats.validators.toLocaleString()}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm text-zinc-400">Average Stake Size</p>
-                      <p className="text-2xl font-bold text-white">
+                    <div className="space-y-1">
+                      <p className="text-xs text-zinc-400">Average Stake Size</p>
+                      <p className="text-lg font-semibold text-white">
                         {networkStats.avgStake.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })} {coinData.symbol}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm text-zinc-400">Total Stakers</p>
-                      <p className="text-2xl font-bold text-white">
+                    <div className="space-y-1">
+                      <p className="text-xs text-zinc-400">Total Stakers</p>
+                      <p className="text-lg font-semibold text-white">
                         {networkStats.totalStakers.toLocaleString()}
                       </p>
                     </div>
