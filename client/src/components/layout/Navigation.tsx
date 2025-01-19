@@ -1,4 +1,4 @@
-import { Home, LineChart, Coins, Settings, Menu, LogOut, LogIn } from "lucide-react";
+import { Home, LineChart, Coins, Settings, Menu, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -72,18 +72,17 @@ export default function Navigation() {
               );
             })}
 
-            {/* Logout Button */}
-            <Button
-              variant="ghost"
+            {/* Logout Button - mit gleichem Styling wie die Menüpunkte */}
+            <button
               onClick={handleLogout}
               className={cn(
-                "w-full flex items-center space-x-2 text-left rounded-lg px-3 py-2 text-sm transition-colors",
+                "flex w-full items-center space-x-2 rounded-lg px-3 py-2 text-sm transition-colors",
                 "text-zinc-400 hover:bg-zinc-800 hover:text-white"
               )}
             >
               <LogOut className="h-5 w-5" />
-              {!isCollapsed && <span>Logout</span>}
-            </Button>
+              {!isCollapsed && <span className="ml-2">Logout</span>}
+            </button>
           </nav>
         </div>
       </aside>
