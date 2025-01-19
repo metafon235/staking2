@@ -4,7 +4,7 @@ import { db } from "@db";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import { stakes, rewards, transactions, users } from "@db/schema";
-import { eq, count, avg, sql, sum } from "drizzle-orm";
+import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
 
 // Network base statistics
 const BASE_STATS = {
@@ -103,9 +103,61 @@ const statsCache = new Map<string, {
   timestamp: number;
 }>();
 
+// Active rewards generation interval
+let rewardsGenerationInterval: NodeJS.Timeout | null = null;
+
+async function generateRewardsForAllActiveStakes() {
+  try {
+    // Get all active stakes
+    const activeStakes = await db.query.stakes.findMany({
+      where: eq(stakes.status, 'active'),
+    });
+
+    // Group stakes by user
+    const userStakes = activeStakes.reduce((acc, stake) => {
+      if (!acc[stake.userId]) {
+        acc[stake.userId] = [];
+      }
+      acc[stake.userId].push(stake);
+      return acc;
+    }, {} as Record<number, typeof activeStakes>);
+
+    // Generate rewards for each user's total staked amount
+    for (const [userId, stakes] of Object.entries(userStakes)) {
+      const totalStaked = stakes.reduce((sum, stake) => 
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      if (totalStaked >= 0.01) {
+        const yearlyRate = 0.03; // 3% APY
+        const minutelyRate = yearlyRate / (365 * 24 * 60);
+        const reward = totalStaked * minutelyRate;
+
+        if (reward >= 0.00000001) {
+          await db.insert(transactions)
+            .values({
+              userId: parseInt(userId),
+              type: 'reward',
+              amount: reward.toFixed(9),
+              status: 'completed',
+              createdAt: new Date()
+            });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error generating rewards:', error);
+  }
+}
+
+
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
+
+  // Start rewards generation interval
+  if (!rewardsGenerationInterval) {
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
+  }
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
