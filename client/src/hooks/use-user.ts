@@ -3,6 +3,7 @@ import type { InsertUser, SelectUser } from "@db/schema";
 
 type RequestResult = {
   ok: true;
+  user?: SelectUser;
 } | {
   ok: false;
   message: string;
@@ -30,7 +31,8 @@ async function handleRequest(
       return { ok: false, message };
     }
 
-    return { ok: true };
+    const data = await response.json();
+    return { ok: true, user: data.user };
   } catch (e: any) {
     return { ok: false, message: e.toString() };
   }
@@ -68,22 +70,29 @@ export function useUser() {
 
   const loginMutation = useMutation<RequestResult, Error, InsertUser>({
     mutationFn: (userData) => handleRequest('/api/login', 'POST', userData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+    onSuccess: async (data) => {
+      if (data.ok && data.user) {
+        // Setze den User direkt in den Cache
+        queryClient.setQueryData(['user'], data.user);
+      }
     },
   });
 
   const logoutMutation = useMutation<RequestResult, Error>({
     mutationFn: () => handleRequest('/api/logout', 'POST'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+      // Setze den User-Cache direkt auf null
+      queryClient.setQueryData(['user'], null);
     },
   });
 
   const registerMutation = useMutation<RequestResult, Error, InsertUser>({
     mutationFn: (userData) => handleRequest('/api/register', 'POST', userData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+    onSuccess: async (data) => {
+      if (data.ok && data.user) {
+        // Setze den User direkt in den Cache
+        queryClient.setQueryData(['user'], data.user);
+      }
     },
   });
 

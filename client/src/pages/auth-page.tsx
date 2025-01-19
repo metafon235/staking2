@@ -18,8 +18,9 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (isLoading) return;
 
+    setIsLoading(true);
     try {
       const result = await (isLogin ? login : register)({ email, password });
 
@@ -32,12 +33,13 @@ export default function AuthPage() {
         return;
       }
 
+      // Wenn wir hier ankommen, wurde der User bereits im Cache aktualisiert
       toast({
         title: isLogin ? "Login Successful" : "Registration Successful",
         description: "Welcome to the Staking Platform"
       });
 
-      // Redirect to dashboard after successful login/register
+      // Jetzt können wir sicher zum Dashboard navigieren
       navigate("/dashboard");
     } catch (error: any) {
       toast({
@@ -73,6 +75,7 @@ export default function AuthPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -83,6 +86,7 @@ export default function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 disabled={isLoading}
+                required
               />
             </div>
 
@@ -91,9 +95,7 @@ export default function AuthPage() {
               className="w-full bg-purple-600 hover:bg-purple-700 text-white"
               disabled={!email || !password || isLoading}
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {isLogin ? "Sign In" : "Create Account"}
             </Button>
 
