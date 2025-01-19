@@ -23,6 +23,9 @@ export const getStakingData = async (): Promise<StakingData> => {
   }
 };
 
+// TODO: Replace with actual user authentication
+const MOCK_USER_ID = 1;
+
 export const stakeETH = async (amount: number): Promise<void> => {
   const response = await fetch('/api/stakes', {
     method: 'POST',
@@ -30,6 +33,7 @@ export const stakeETH = async (amount: number): Promise<void> => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      userId: MOCK_USER_ID,
       amount: amount.toString(),
     }),
   });

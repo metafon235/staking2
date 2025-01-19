@@ -5,6 +5,14 @@ import { z } from "zod";
 import { store } from "./store";
 import { coinbaseService } from "./services/coinbase";
 
+// Validation schema for stake request
+const stakeRequestSchema = z.object({
+  userId: z.number(),
+  amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+    message: "Amount must be a positive number"
+  })
+});
+
 export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
@@ -23,6 +31,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(mockData);
     } catch (error) {
+      console.error('Error fetching staking data:', error);
       res.status(500).json({ error: 'Failed to fetch staking data' });
     }
   });
@@ -30,12 +39,17 @@ export function registerRoutes(app: Express): Server {
   // Initiate staking
   app.post('/api/stakes', async (req, res) => {
     try {
-      const { userId, amount } = req.body;
-
-      // Validate input
-      if (!userId || !amount) {
-        return res.status(400).json({ error: 'Missing required fields' });
+      // Validate request body
+      const validationResult = stakeRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        console.error('Validation error:', validationResult.error);
+        return res.status(400).json({ 
+          error: 'Invalid request data',
+          details: validationResult.error.issues
+        });
       }
+
+      const { userId, amount } = validationResult.data;
 
       // Get user's ETH balance
       const balance = await coinbaseService.getEthereumBalance();
@@ -44,7 +58,9 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Initiate staking with Coinbase
+      console.log('Initiating staking with amount:', amount);
       const stakingResponse = await coinbaseService.initiateStaking(amount);
+      console.log('Staking response:', stakingResponse);
 
       // Record the stake in our database
       const stake = store.createStake({
