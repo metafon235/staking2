@@ -5,7 +5,7 @@ import { z } from "zod";
 import { store } from "./store";
 import { setupAuth } from "./auth";
 import { stakes, rewards, transactions } from "@db/schema";
-import { eq, count, avg, sql } from "drizzle-orm";
+import { eq, count, avg, sql, sum } from "drizzle-orm";
 
 // Network base statistics
 const BASE_STATS = {
@@ -29,10 +29,41 @@ const BASE_STATS = {
   }
 };
 
+// Calculate real-time network rewards based on staking data
+async function calculateNetworkRewards(symbol: string): Promise<number> {
+  if (symbol.toLowerCase() !== 'eth') {
+    return BASE_STATS[symbol as keyof typeof BASE_STATS].rewards;
+  }
+
+  try {
+    // Get all active stakes
+    const result = await db.select({
+      totalStaked: sql<string>`sum(amount)::numeric`,
+      avgStakeTime: sql<string>`avg(extract(epoch from (now() - created_at)))::numeric`
+    })
+    .from(stakes)
+    .where(eq(stakes.status, 'active'));
+
+    const totalStaked = parseFloat(result[0]?.totalStaked || '0');
+    const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
+
+    // Calculate rewards based on 3% APY
+    // Convert time to years for APY calculation
+    const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
+    const networkRewards = totalStaked * 0.03 * timeInYears;
+
+    return parseFloat(networkRewards.toFixed(6));
+  } catch (error) {
+    console.error('Error calculating network rewards:', error);
+    return BASE_STATS.eth.rewards;
+  }
+}
+
 // Generate sample historical data for a coin
-function generateHistoricalData(baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
+async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
   const now = Date.now();
   const data = [];
+  const dailyRewardRate = baseStats.rewards / 30; // Average daily rewards
 
   // Generate data points for the last 30 days
   for (let i = 30; i >= 0; i--) {
@@ -40,72 +71,82 @@ function generateHistoricalData(baseStats: typeof BASE_STATS[keyof typeof BASE_S
     // Add some random variation to make the data look realistic
     const variation = () => 1 + (Math.random() * 0.1 - 0.05); // ±5% variation
 
+    const rewards = symbol.toLowerCase() === 'eth' 
+      ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
+      : dailyRewardRate * (30 - i) * variation();
+
     data.push({
       date,
       tvl: baseStats.tvl * variation(),
       validators: Math.floor(baseStats.validators * variation()),
       avgStake: baseStats.avgStake * variation(),
-      rewards: baseStats.rewards * variation(),
+      rewards: parseFloat(rewards.toFixed(6))
     });
   }
 
   return data;
 }
 
-// Network statistics for each coin
-const NETWORK_STATS = {
-  eth: {
-    current: BASE_STATS.eth,
-    history: generateHistoricalData(BASE_STATS.eth)
-  },
-  dot: {
-    current: BASE_STATS.dot,
-    history: generateHistoricalData(BASE_STATS.dot)
-  },
-  sol: {
-    current: BASE_STATS.sol,
-    history: generateHistoricalData(BASE_STATS.sol)
-  }
-};
+// Get current network statistics
+async function getCurrentNetworkStats(symbol: string) {
+  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
+  const currentRewards = await calculateNetworkRewards(symbol);
 
-// Validation schema for stake request
-const stakeRequestSchema = z.object({
-  amount: z.string().refine((val) => {
-    const amount = parseFloat(val);
-    return !isNaN(amount) && amount >= 0.01;
-  }, {
-    message: "Minimum stake amount is 0.01 ETH"
-  })
-});
-
-// Calculate rewards based on 3% APY for a specific time period
-function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
-  const timePassedMs = endTimeMs - startTimeMs;
-  const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-  return stakedAmount * 0.03 * yearsElapsed; // 3% APY
+  return {
+    ...baseStats,
+    rewards: currentRewards
+  };
 }
 
-// Generate rewards history based on time range
-function generateRewardsHistory(totalStaked: number, startTime: number): Array<{ timestamp: number; rewards: number }> {
-  const history = [];
-  const now = Date.now();
-  const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-  const intervalMinutes = 5; // Data points every 5 minutes
-
-  // Generate data points with progressive rewards calculation
-  for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += intervalMinutes * 60 * 1000) {
-    const rewards = calculateRewardsForTimestamp(totalStaked, startTime, timestamp);
-    history.push({
-      timestamp,
-      rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
-    });
-  }
-
-  return history;
-}
+// Network statistics cache with 1-minute TTL
+const statsCache = new Map<string, {
+  data: any;
+  timestamp: number;
+}>();
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
+
+  // Get network statistics for a specific coin
+  app.get('/api/network-stats/:symbol', async (req, res) => {
+    const symbol = req.params.symbol.toLowerCase();
+
+    if (!BASE_STATS[symbol as keyof typeof BASE_STATS]) {
+      return res.status(404).json({ error: 'Coin not found' });
+    }
+
+    try {
+      const now = Date.now();
+      const cached = statsCache.get(symbol);
+
+      // Return cached data if it's less than 1 minute old
+      if (cached && (now - cached.timestamp) < 60000) {
+        return res.json(cached.data);
+      }
+
+      // Get fresh data
+      const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
+      const current = await getCurrentNetworkStats(symbol);
+      const history = await generateHistoricalData(symbol, baseStats);
+
+      const stats = {
+        current,
+        history,
+        lastUpdated: new Date().toISOString()
+      };
+
+      // Update cache
+      statsCache.set(symbol, {
+        data: stats,
+        timestamp: now
+      });
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching network statistics:', error);
+      res.status(500).json({ error: 'Failed to fetch network statistics' });
+    }
+  });
 
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
@@ -158,57 +199,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get network statistics for a specific coin
-  app.get('/api/network-stats/:symbol', async (req, res) => {
-    const symbol = req.params.symbol.toLowerCase();
-
-    if (!NETWORK_STATS[symbol as keyof typeof NETWORK_STATS]) {
-      return res.status(404).json({ error: 'Coin not found' });
-    }
-
-    const stats = NETWORK_STATS[symbol as keyof typeof NETWORK_STATS];
-
-    // For ETH, we'll also include actual platform statistics
-    if (symbol === 'eth') {
-      try {
-        // Get platform statistics from our database
-        const platformStats = await db.select({
-          totalStakers: count(stakes.userId),
-          avgStake: avg(stakes.amount),
-        })
-          .from(stakes)
-          .where(eq(stakes.status, 'active'));
-
-        // Get total value locked
-        const tvlResult = await db.select({
-          sum: sql<string>`sum(amount)::numeric`
-        })
-          .from(stakes)
-          .where(eq(stakes.status, 'active'));
-
-        const platformTvl = parseFloat(tvlResult[0]?.sum || '0');
-
-        // Combine real platform data with network data
-        stats.current.rewards = platformStats[0]?.totalStakers || 0; // updated to use rewards instead of totalStakers
-        stats.current.avgStake = parseFloat(platformStats[0]?.avgStake?.toString() || '0');
-        stats.current.tvl = platformTvl + stats.current.tvl;
-
-        // Update historical data with platform data
-        stats.history = stats.history.map(point => ({
-          ...point,
-          tvl: point.tvl + platformTvl,
-        }));
-      } catch (error) {
-        console.error('Error fetching platform statistics:', error);
-      }
-    }
-
-    res.json({
-      current: stats.current,
-      history: stats.history,
-      lastUpdated: new Date().toISOString()
-    });
-  });
 
   // Initiate staking
   app.post('/api/stakes', async (req, res) => {
@@ -307,6 +297,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Validation schema for stake request
+  const stakeRequestSchema = z.object({
+    amount: z.string().refine((val) => {
+      const amount = parseFloat(val);
+      return !isNaN(amount) && amount >= 0.01;
+    }, {
+      message: "Minimum stake amount is 0.01 ETH"
+    })
+  });
+
+  // Calculate rewards based on 3% APY for a specific time period
+  function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
+    const timePassedMs = endTimeMs - startTimeMs;
+    const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
+    return stakedAmount * 0.03 * yearsElapsed; // 3% APY
+  }
+
+  // Generate rewards history based on time range
+  function generateRewardsHistory(totalStaked: number, startTime: number): Array<{ timestamp: number; rewards: number }> {
+    const history = [];
+    const now = Date.now();
+    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const intervalMinutes = 5; // Data points every 5 minutes
+
+    // Generate data points with progressive rewards calculation
+    for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += intervalMinutes * 60 * 1000) {
+      const rewards = calculateRewardsForTimestamp(totalStaked, startTime, timestamp);
+      history.push({
+        timestamp,
+        rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
+      });
+    }
+
+    return history;
+  }
 
   const httpServer = createServer(app);
   return httpServer;
