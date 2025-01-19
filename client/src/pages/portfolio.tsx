@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
+import { Wallet } from "lucide-react";
 
 interface PortfolioData {
   eth: {
@@ -49,9 +50,26 @@ async function withdrawRewards(amount: number, coin: string) {
   return response.json();
 }
 
+async function transferToWallet(amount: number, coin: string) {
+  const response = await fetch('/api/transfer', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ amount, coin }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to transfer funds');
+  }
+  return response.json();
+}
+
 export default function Portfolio() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
   const { toast } = useToast();
 
   const { data: portfolio, isLoading, refetch } = useQuery({
@@ -69,7 +87,7 @@ export default function Portfolio() {
       await withdrawRewards(parseFloat(withdrawAmount), coin);
       toast({
         title: "Withdrawal Successful",
-        description: `${withdrawAmount} ${coin} has been withdrawn to your wallet.`
+        description: `${withdrawAmount} ${coin} has been withdrawn.`
       });
       setWithdrawAmount("");
       refetch();
@@ -84,9 +102,33 @@ export default function Portfolio() {
     }
   };
 
+  const handleTransfer = async (coin: string) => {
+    if (!transferAmount) return;
+
+    setIsTransferring(true);
+    try {
+      await transferToWallet(parseFloat(transferAmount), coin);
+      toast({
+        title: "Transfer Successful",
+        description: `${transferAmount} ${coin} has been transferred to your wallet.`
+      });
+      setTransferAmount("");
+      refetch();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Transfer Failed",
+        description: error.message
+      });
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   // Calculate totals
   const totalStaked = portfolio ? portfolio.eth.staked : 0;
   const totalRewards = portfolio ? portfolio.eth.rewards : 0;
+  const totalValue = totalStaked + totalRewards;
 
   return (
     <div className="space-y-6">
@@ -152,48 +194,95 @@ export default function Portfolio() {
                   </p>
                 </div>
                 <div>
+                  <p className="text-sm text-zinc-400">Total Value</p>
+                  <p className="text-2xl font-bold text-purple-500">
+                    {totalValue.toFixed(9)} ETH
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-zinc-400">Current APY</p>
                   <p className="text-lg text-purple-400">
                     {portfolio.eth.apy.toFixed(2)}%
                   </p>
                 </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                      Withdraw Rewards
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-zinc-900 border-zinc-800">
-                    <DialogHeader>
-                      <DialogTitle className="text-white">Withdraw ETH Rewards</DialogTitle>
-                      <DialogDescription className="text-zinc-400">
-                        Enter the amount of ETH rewards you want to withdraw.
-                        Available: {portfolio.eth.rewards.toFixed(9)} ETH
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                        className="bg-zinc-800 border-zinc-700 text-white"
-                        min={0}
-                        max={portfolio.eth.rewards}
-                        step="0.000000001"
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        className="bg-purple-600 hover:bg-purple-700"
-                        onClick={() => handleWithdraw('ETH')}
-                        disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) > portfolio.eth.rewards}
-                      >
-                        {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
+                        Withdraw Rewards
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Withdraw ETH Rewards</DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                          Enter the amount of ETH rewards you want to withdraw.
+                          Available: {portfolio.eth.rewards.toFixed(9)} ETH
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          value={withdrawAmount}
+                          onChange={(e) => setWithdrawAmount(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white"
+                          min={0}
+                          max={portfolio.eth.rewards}
+                          step="0.000000001"
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          className="bg-purple-600 hover:bg-purple-700"
+                          onClick={() => handleWithdraw('ETH')}
+                          disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) > portfolio.eth.rewards}
+                        >
+                          {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="flex-1 bg-green-600 hover:bg-green-700">
+                        <Wallet className="w-4 h-4 mr-2" />
+                        Transfer to Wallet
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-zinc-900 border-zinc-800">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Transfer ETH to Wallet</DialogTitle>
+                        <DialogDescription className="text-zinc-400">
+                          Enter the amount of ETH you want to transfer to your wallet.
+                          Available: {totalValue.toFixed(9)} ETH
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          value={transferAmount}
+                          onChange={(e) => setTransferAmount(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white"
+                          min={0}
+                          max={totalValue}
+                          step="0.000000001"
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleTransfer('ETH')}
+                          disabled={isTransferring || !transferAmount || parseFloat(transferAmount) > totalValue}
+                        >
+                          {isTransferring ? 'Transferring...' : 'Transfer to Wallet'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             ) : (
               <p className="text-zinc-400">Failed to load data</p>

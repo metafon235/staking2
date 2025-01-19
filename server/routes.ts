@@ -40,8 +40,8 @@ async function calculateNetworkRewards(symbol: string): Promise<number> {
       totalStaked: sql<string>`sum(amount)::numeric`,
       avgStakeTime: sql<string>`avg(extract(epoch from (now() - created_at)))::numeric`
     })
-    .from(stakes)
-    .where(eq(stakes.status, 'active'));
+      .from(stakes)
+      .where(eq(stakes.status, 'active'));
 
     const totalStaked = parseFloat(result[0]?.totalStaked || '0');
     const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
@@ -70,7 +70,7 @@ async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STA
     // Add some random variation to make the data look realistic
     const variation = () => 1 + (Math.random() * 0.1 - 0.05); // ±5% variation
 
-    const rewards = symbol.toLowerCase() === 'eth' 
+    const rewards = symbol.toLowerCase() === 'eth'
       ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
       : dailyRewardRate * (30 - i) * variation();
 
@@ -344,7 +344,7 @@ export function registerRoutes(app: Express): Server {
           status: 'completed',
         });
 
-      res.json({ 
+      res.json({
         message: 'Withdrawal successful',
         amount: amount,
         coin: coin
@@ -352,6 +352,108 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Withdrawal error:', error);
       res.status(500).json({ error: 'Failed to process withdrawal' });
+    }
+  });
+
+  // Add new transfer endpoint
+  app.post('/api/transfer', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { amount, coin } = req.body;
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid transfer amount' });
+      }
+
+      // For now, we only support ETH transfers
+      if (coin.toUpperCase() !== 'ETH') {
+        return res.status(400).json({ error: 'Unsupported coin for transfer' });
+      }
+
+      // Get user's current stakes and rewards
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      if (totalStaked < 0.01) {
+        return res.status(400).json({ error: 'No active stakes found' });
+      }
+
+      const earliestStake = userStakes[0]?.createdAt || new Date();
+      const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
+      const totalAvailable = totalStaked + currentRewards;
+
+      if (amount > totalAvailable) {
+        return res.status(400).json({ error: 'Insufficient balance' });
+      }
+
+      // Record the transfer transaction
+      await db.insert(transactions)
+        .values({
+          userId: req.user.id,
+          type: 'transfer',
+          amount: amount.toString(),
+          status: 'completed',
+        });
+
+      // Update stakes to reflect the transfer
+      // First use rewards, then staked amount if needed
+      let remainingAmount = amount;
+
+      // Use rewards first
+      if (currentRewards > 0) {
+        const rewardsToUse = Math.min(currentRewards, remainingAmount);
+        remainingAmount -= rewardsToUse;
+
+        // Record rewards withdrawal
+        await db.insert(transactions)
+          .values({
+            userId: req.user.id,
+            type: 'withdraw',
+            amount: rewardsToUse.toString(),
+            status: 'completed',
+          });
+      }
+
+      // If we still need to use staked amount
+      if (remainingAmount > 0) {
+        // Update the stake amount
+        // Note: In a real implementation, you would need to handle unstaking
+        // from the actual staking contract
+        const [updatedStake] = await db
+          .update(stakes)
+          .set({
+            amount: (totalStaked - remainingAmount).toString(),
+            updatedAt: new Date(),
+          })
+          .where(eq(stakes.id, userStakes[0].id))
+          .returning();
+
+        // Record stake withdrawal
+        await db.insert(transactions)
+          .values({
+            userId: req.user.id,
+            type: 'unstake',
+            amount: remainingAmount.toString(),
+            status: 'completed',
+          });
+      }
+
+      res.json({
+        message: 'Transfer successful',
+        amount: amount,
+        coin: coin
+      });
+    } catch (error) {
+      console.error('Transfer error:', error);
+      res.status(500).json({ error: 'Failed to process transfer' });
     }
   });
 
