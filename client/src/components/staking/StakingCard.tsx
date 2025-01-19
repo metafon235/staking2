@@ -70,15 +70,15 @@ export default function StakingCard() {
           <div className="space-y-2 pt-4">
             <div className="flex justify-between text-sm">
               <span>Current Rewards:</span>
-              <span>{stakingData.rewards.toFixed(8)} ETH</span>
+              <span>{stakingData.rewards.toFixed(6)} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Projected Monthly:</span>
-              <span>{stakingData.projected.toFixed(8)} ETH</span>
+              <span>{stakingData.projected.toFixed(6)} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Total Staked:</span>
-              <span>{stakingData.totalStaked.toFixed(8)} ETH</span>
+              <span>{stakingData.totalStaked.toFixed(6)} ETH</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>APY:</span>
