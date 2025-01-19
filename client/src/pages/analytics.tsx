@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
-import { getEthPrice, getEthPriceHistory } from "@/lib/binance"; // Changed import
+import { getEthPrice, getEthPriceHistory } from "@/lib/binance";
 
 interface AnalyticsData {
   performance: {
@@ -30,7 +30,7 @@ interface AnalyticsData {
   portfolio: {
     totalValue: number;
     profitLoss: number;
-    ethPrice: number; // Current ETH price in USD
+    ethPrice: number; 
     priceHistory: Array<{
       timestamp: number;
       price: number;
@@ -53,25 +53,22 @@ async function fetchAnalyticsData(): Promise<AnalyticsData> {
 }
 
 export default function Analytics() {
-  // Fetch analytics data
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['/api/analytics'],
     queryFn: fetchAnalyticsData,
     refetchInterval: 60000,
   });
 
-  // Fetch live ETH price
   const { data: liveEthPrice } = useQuery({
     queryKey: ['binanceEthPrice'],
     queryFn: getEthPrice,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000, 
   });
 
-  // Fetch ETH price history
   const { data: ethPriceHistory } = useQuery({
     queryKey: ['binanceEthPriceHistory'],
-    queryFn: () => getEthPriceHistory(7), // Get 7 days of history
-    refetchInterval: 300000, // Refresh every 5 minutes
+    queryFn: () => getEthPriceHistory(7), 
+    refetchInterval: 300000, 
   });
 
   if (isLoadingAnalytics) {
@@ -90,12 +87,10 @@ export default function Analytics() {
     );
   }
 
-  // Calculate USD values with null checks and proper fallbacks
   const ethPrice = liveEthPrice ?? analytics?.portfolio?.ethPrice ?? 0;
   const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * ethPrice;
   const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * ethPrice;
 
-  // Use either live price history or fallback to analytics data
   const priceHistory = ethPriceHistory || analytics?.portfolio?.priceHistory || [];
 
   return (
@@ -284,53 +279,6 @@ export default function Analytics() {
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-white">ETH Price History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={priceHistory.map(point => ({
-                    ...point,
-                    date: format(point.timestamp, 'MMM dd HH:mm')
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#888"
-                      tick={{ fill: '#888' }}
-                    />
-                    <YAxis 
-                      stroke="#888"
-                      tick={{ fill: '#888' }}
-                      tickFormatter={(value) => `$${value.toLocaleString()}`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#18181b',
-                        border: '1px solid #3f3f46',
-                        borderRadius: '6px',
-                      }}
-                      labelStyle={{ color: '#e4e4e7' }}
-                      formatter={(value: number) => [
-                        `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
-                        'ETH Price'
-                      ]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="price"
-                      stroke="#8b5cf6"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader>
               <CardTitle className="text-white">Staking Positions</CardTitle>
             </CardHeader>
             <CardContent>
@@ -353,28 +301,6 @@ export default function Analytics() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white">Price History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.portfolio.priceHistory.map(point => ({
-                    ...point,
-                    date: format(point.timestamp, 'MMM dd')
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="date" stroke="#888" />
-                    <YAxis stroke="#888" />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="price" stroke="#82ca9d" />
-                  </LineChart>
-                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
