@@ -5,6 +5,7 @@ import { useState } from "react";
 import { stakeETH } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import type { StakingData } from "@/lib/types";
 
 export default function StakingCard() {
   const [amount, setAmount] = useState("");
@@ -12,7 +13,7 @@ export default function StakingCard() {
   const queryClient = useQueryClient();
 
   // Fetch staking data every minute
-  const { data: stakingData } = useQuery({
+  const { data: stakingData } = useQuery<StakingData>({
     queryKey: ['/api/staking/data'],
     refetchInterval: 60000, // Refetch every minute
   });
@@ -69,15 +70,15 @@ export default function StakingCard() {
           <div className="space-y-2 pt-4">
             <div className="flex justify-between text-sm">
               <span>Current Rewards:</span>
-              <span>{stakingData.rewards.toFixed(6)} ETH</span>
+              <span>{stakingData.rewards.toFixed(8)} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Projected Monthly:</span>
-              <span>{stakingData.projected.toFixed(6)} ETH</span>
+              <span>{stakingData.projected.toFixed(8)} ETH</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Total Staked:</span>
-              <span>{stakingData.totalStaked.toFixed(2)} ETH</span>
+              <span>{stakingData.totalStaked.toFixed(8)} ETH</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>APY:</span>
@@ -89,7 +90,7 @@ export default function StakingCard() {
         <Button 
           className="w-full" 
           onClick={handleStake}
-          disabled={!amount || parseFloat(amount) <= 0 || stakeMutation.isPending}
+          disabled={stakeMutation.isPending || !amount || parseFloat(amount) <= 0}
         >
           {stakeMutation.isPending ? "Staking..." : "Stake"}
         </Button>
