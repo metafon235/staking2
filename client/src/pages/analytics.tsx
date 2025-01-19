@@ -90,10 +90,10 @@ export default function Analytics() {
     );
   }
 
-  // Calculate USD values with null checks
-  const ethPrice = liveEthPrice || analytics?.portfolio?.ethPrice || 0;
-  const totalValueUSD = analytics?.portfolio?.totalValue ? analytics.portfolio.totalValue * ethPrice : 0;
-  const profitLossUSD = analytics?.portfolio?.profitLoss ? analytics.portfolio.profitLoss * ethPrice : 0;
+  // Calculate USD values with null checks and proper fallbacks
+  const ethPrice = liveEthPrice ?? analytics?.portfolio?.ethPrice ?? 0;
+  const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * ethPrice;
+  const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * ethPrice;
 
   // Use either live price history or fallback to analytics data
   const priceHistory = ethPriceHistory || analytics?.portfolio?.priceHistory || [];
@@ -273,10 +273,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  ${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0.00'}
                 </p>
                 <p className="text-sm text-zinc-400">
-                  Updates every 30 seconds
+                  {liveEthPrice ? 'Updates every 30 seconds' : 'Fetching price...'}
                 </p>
               </CardContent>
             </Card>
