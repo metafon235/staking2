@@ -1,37 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { stakeETH } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { StakingData } from "@/lib/types";
 
 export default function StakingCard() {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Fetch staking data every minute
-  const { data: stakingData, error } = useQuery<StakingData>({
-    queryKey: ['/api/staking/data'],
-    refetchInterval: 60000, // Refetch every minute
-    refetchIntervalInBackground: true,
-    staleTime: 0, // Always consider data stale to force refresh
-  });
-
-  // Force refresh when component mounts and set up interval
-  useEffect(() => {
-    // Initial fetch
-    queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
-
-    const interval = setInterval(() => {
-      console.log('Refreshing staking data...', new Date().toISOString());
-      queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [queryClient]);
 
   const stakeMutation = useMutation({
     mutationFn: () => stakeETH(parseFloat(amount)),
@@ -65,24 +44,16 @@ export default function StakingCard() {
     stakeMutation.mutate();
   };
 
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-red-500">Failed to load staking data. Please try again later.</div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const stakingData = queryClient.getQueryData<StakingData>(['/api/staking/data']);
 
   return (
-    <Card>
+    <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
-        <CardTitle>Stake ETH</CardTitle>
+        <CardTitle className="text-white">Stake ETH</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Amount (ETH)</label>
+          <label className="text-sm font-medium text-zinc-400">Amount (ETH)</label>
           <Input
             type="number"
             placeholder="Min. 0.01 ETH"
@@ -91,24 +62,25 @@ export default function StakingCard() {
             min="0.01"
             step="0.01"
             disabled={stakeMutation.isPending}
+            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
           />
         </div>
 
         {stakingData && (
           <div className="space-y-2 pt-4">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-zinc-400">
               <span>Current Rewards:</span>
               <span>{stakingData.rewards.toFixed(9)} ETH</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-zinc-400">
               <span>Monthly Rewards:</span>
               <span>{stakingData.monthlyRewards.toFixed(9)} ETH</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-zinc-400">
               <span>Total Staked:</span>
               <span>{stakingData.totalStaked.toFixed(9)} ETH</span>
             </div>
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-sm text-zinc-400">
               <span>APY:</span>
               <span>3.00%</span>
             </div>
@@ -116,7 +88,7 @@ export default function StakingCard() {
         )}
 
         <Button 
-          className="w-full" 
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
           onClick={handleStake}
           disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 0.01}
         >

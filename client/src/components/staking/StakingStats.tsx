@@ -13,29 +13,29 @@ export default function StakingStats({
 }: StakingStatsProps) {
   return (
     <>
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-6">
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Total Staked</p>
-            <h2 className="text-3xl font-bold">{totalStaked} ETH</h2>
+            <p className="text-sm text-zinc-400">Total Staked</p>
+            <h2 className="text-3xl font-bold text-white">{totalStaked.toFixed(9)} ETH</h2>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-6">
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Current Rewards</p>
-            <h2 className="text-3xl font-bold">{rewards} ETH</h2>
+            <p className="text-sm text-zinc-400">Current Rewards</p>
+            <h2 className="text-3xl font-bold text-white">{rewards.toFixed(9)} ETH</h2>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-6">
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Monthly Rewards</p>
-            <h2 className="text-3xl font-bold">{monthlyRewards} ETH</h2>
+            <p className="text-sm text-zinc-400">Monthly Rewards</p>
+            <h2 className="text-3xl font-bold text-white">{monthlyRewards.toFixed(9)} ETH</h2>
           </div>
         </CardContent>
       </Card>
