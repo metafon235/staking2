@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
+import { getEthPrice, getEthPriceHistory } from "@/lib/coingecko";
 
 interface AnalyticsData {
   performance: {
@@ -52,13 +53,28 @@ async function fetchAnalyticsData(): Promise<AnalyticsData> {
 }
 
 export default function Analytics() {
-  const { data: analytics, isLoading } = useQuery({
+  // Fetch analytics data
+  const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['/api/analytics'],
     queryFn: fetchAnalyticsData,
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
-  if (isLoading) {
+  // Fetch live ETH price
+  const { data: liveEthPrice } = useQuery({
+    queryKey: ['ethPrice'],
+    queryFn: getEthPrice,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch ETH price history
+  const { data: ethPriceHistory } = useQuery({
+    queryKey: ['ethPriceHistory'],
+    queryFn: () => getEthPriceHistory(7), // Get 7 days of history
+    refetchInterval: 300000, // Refresh every 5 minutes
+  });
+
+  if (isLoadingAnalytics) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -75,13 +91,12 @@ export default function Analytics() {
   }
 
   // Calculate USD values with null checks
-  const totalValueUSD = analytics?.portfolio?.totalValue && analytics?.portfolio?.ethPrice
-    ? analytics.portfolio.totalValue * analytics.portfolio.ethPrice
-    : 0;
+  const ethPrice = liveEthPrice || analytics?.portfolio?.ethPrice || 0;
+  const totalValueUSD = analytics?.portfolio?.totalValue ? analytics.portfolio.totalValue * ethPrice : 0;
+  const profitLossUSD = analytics?.portfolio?.profitLoss ? analytics.portfolio.profitLoss * ethPrice : 0;
 
-  const profitLossUSD = analytics?.portfolio?.profitLoss && analytics?.portfolio?.ethPrice
-    ? analytics.portfolio.profitLoss * analytics.portfolio.ethPrice
-    : 0;
+  // Use either live price history or fallback to analytics data
+  const priceHistory = ethPriceHistory || analytics?.portfolio?.priceHistory || [];
 
   return (
     <div className="space-y-6">
@@ -254,11 +269,14 @@ export default function Analytics() {
 
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-white">ETH Price</CardTitle>
+                <CardTitle className="text-white">Live ETH Price</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  ${(analytics?.portfolio?.ethPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-sm text-zinc-400">
+                  Updates every 30 seconds
                 </p>
               </CardContent>
             </Card>
@@ -271,7 +289,7 @@ export default function Analytics() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={(analytics?.portfolio?.priceHistory || []).map(point => ({
+                  <LineChart data={priceHistory.map(point => ({
                     ...point,
                     date: format(point.timestamp, 'MMM dd HH:mm')
                   }))}>
