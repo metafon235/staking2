@@ -6,7 +6,7 @@ import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 
 const menuItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
+  { icon: Home, label: "Dashboard", href: "/" },
   { icon: Coins, label: "Coins", href: "/coins/eth" },
   { icon: LineChart, label: "Analytics", href: "/analytics" },
   { icon: Settings, label: "Settings", href: "/settings" },
@@ -44,11 +44,14 @@ export default function Navigation() {
           <nav className="flex-1 space-y-2 p-4">
             {menuItems.map((item) => {
               const Icon = item.icon;
+              const isActive = location === item.href || 
+                (item.href === "/" && location === "/dashboard");
+
               return (
                 <Link key={item.href} href={item.href}>
                   <a className={cn(
                     "flex items-center space-x-2 rounded-lg px-3 py-2 text-sm transition-colors",
-                    location === item.href 
+                    isActive 
                       ? "bg-purple-600 text-white" 
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                   )}>
@@ -67,11 +70,14 @@ export default function Navigation() {
         <div className="grid h-full grid-cols-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = location === item.href || 
+              (item.href === "/" && location === "/dashboard");
+
             return (
               <Link key={item.href} href={item.href}>
                 <a className={cn(
                   "flex flex-col items-center justify-center space-y-1",
-                  location === item.href
+                  isActive
                     ? "text-purple-600"
                     : "text-zinc-400 hover:text-white"
                 )}>
