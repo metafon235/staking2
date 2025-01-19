@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import CoinDetail from "@/pages/coin-detail";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
+import Navigation from "@/components/layout/Navigation";
 
 function Router() {
   const { user, isLoading } = useUser();
@@ -36,7 +37,9 @@ function Router() {
   // Show dashboard and coin details for authenticated users
   return (
     <div className="flex min-h-screen bg-black">
-      <main className="flex-1 p-6">
+      <Navigation />
+      {/* Main content area with padding for sidebar on desktop */}
+      <main className="flex-1 p-6 lg:pl-72">
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
@@ -44,6 +47,8 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
+      {/* Add padding bottom for mobile navigation */}
+      <div className="h-16 lg:hidden" />
     </div>
   );
 }
