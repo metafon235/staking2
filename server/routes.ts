@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
 import { store } from "./store";
+import { coinbaseService } from "./services/coinbase";
 
 export function registerRoutes(app: Express): Server {
   // Get staking overview data
@@ -26,19 +27,48 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Create new stake
+  // Initiate staking
   app.post('/api/stakes', async (req, res) => {
     try {
       const { userId, amount } = req.body;
+
+      // Validate input
+      if (!userId || !amount) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      // Get user's ETH balance
+      const balance = await coinbaseService.getEthereumBalance();
+      if (parseFloat(balance) < parseFloat(amount)) {
+        return res.status(400).json({ error: 'Insufficient ETH balance' });
+      }
+
+      // Initiate staking with Coinbase
+      const stakingResponse = await coinbaseService.initiateStaking(amount);
+
+      // Record the stake in our database
       const stake = store.createStake({
         userId,
         amount: amount.toString(),
-        status: 'pending',
+        status: stakingResponse.status,
+        transactionHash: stakingResponse.transactionId,
         createdAt: new Date(),
         updatedAt: new Date()
       });
+
+      // Record the transaction
+      store.createTransaction({
+        userId,
+        type: 'stake',
+        amount: amount.toString(),
+        status: 'pending',
+        transactionHash: stakingResponse.transactionId,
+        createdAt: new Date()
+      });
+
       res.json(stake);
     } catch (error) {
+      console.error('Staking error:', error);
       res.status(500).json({ error: 'Failed to create stake' });
     }
   });
