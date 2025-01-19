@@ -29,15 +29,16 @@ interface AnalyticsData {
   portfolio: {
     totalValue: number;
     profitLoss: number;
+    ethPrice: number; // Current ETH price in USD
+    priceHistory: Array<{
+      timestamp: number;
+      price: number;
+    }>;
     stakingPositions: Array<{
       coin: string;
       amount: number;
       value: number;
       apy: number;
-    }>;
-    priceHistory: Array<{
-      timestamp: number;
-      price: number;
     }>;
   };
 }
@@ -72,6 +73,10 @@ export default function Analytics() {
       </div>
     );
   }
+
+  // Calculate USD values
+  const totalValueUSD = analytics.portfolio.totalValue * analytics.portfolio.ethPrice;
+  const profitLossUSD = analytics.portfolio.profitLoss * analytics.portfolio.ethPrice;
 
   return (
     <div className="space-y-6">
@@ -214,7 +219,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics.portfolio.totalValue.toFixed(2)} ETH
+                  {analytics.portfolio.totalValue.toFixed(6)} ETH
+                </p>
+                <p className="text-lg text-zinc-400">
+                  ${totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
@@ -228,11 +236,75 @@ export default function Analytics() {
                   analytics.portfolio.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
                   {analytics.portfolio.profitLoss >= 0 ? '+' : ''}
-                  {analytics.portfolio.profitLoss.toFixed(2)} ETH
+                  {analytics.portfolio.profitLoss.toFixed(6)} ETH
+                </p>
+                <p className={`text-lg ${
+                  profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {profitLossUSD >= 0 ? '+' : ''}
+                  ${Math.abs(profitLossUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-white">ETH Price</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-purple-500">
+                  ${analytics.portfolio.ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
           </div>
+
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle className="text-white">ETH Price History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={analytics.portfolio.priceHistory.map(point => ({
+                    ...point,
+                    date: format(point.timestamp, 'MMM dd HH:mm')
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#888"
+                      tick={{ fill: '#888' }}
+                    />
+                    <YAxis 
+                      stroke="#888"
+                      tick={{ fill: '#888' }}
+                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#18181b',
+                        border: '1px solid #3f3f46',
+                        borderRadius: '6px',
+                      }}
+                      labelStyle={{ color: '#e4e4e7' }}
+                      formatter={(value: number) => [
+                        `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                        'ETH Price'
+                      ]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#8b5cf6"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader>
