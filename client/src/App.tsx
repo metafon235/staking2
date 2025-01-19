@@ -12,6 +12,7 @@ import Settings from "@/pages/settings";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
+import Analytics from "@/pages/analytics";
 
 function Router() {
   const { user, isLoading, error } = useUser();
@@ -45,6 +46,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/portfolio" component={Portfolio} />
           <Route path="/coins/:symbol" component={CoinDetail} />
+          <Route path="/analytics" component={Analytics} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>

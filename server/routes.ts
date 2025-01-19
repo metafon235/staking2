@@ -671,6 +671,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add new analytics endpoint
+  app.get('/api/analytics', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's stakes and calculate total value
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      // Calculate current rewards
+      let currentRewards = 0;
+      if (userStakes.length > 0) {
+        const earliestStake = userStakes[0].createdAt;
+        currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
+      }
+
+      // Calculate ROI
+      const totalValue = totalStaked + currentRewards;
+      const roi = totalStaked > 0 ? ((totalValue - totalStaked) / totalStaked) * 100 : 0;
+
+      // Generate historical data
+      const now = Date.now();
+      const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+      const rewardsHistory = [];
+      const priceHistory = [];
+      const validatorHistory = [];
+
+      for (let timestamp = thirtyDaysAgo; timestamp <= now; timestamp += 24 * 60 * 60 * 1000) {
+        // Calculate rewards at each point in time
+        const rewards = calculateRewardsForTimestamp(totalStaked, userStakes[0]?.createdAt?.getTime() || timestamp, timestamp);
+        rewardsHistory.push({ timestamp, value: rewards });
+
+        // Simulate price variations for demo
+        const basePrice = 2500; // Base ETH price in USD
+        const priceVariation = Math.sin(timestamp / (2 * Math.PI * 1000000)) * 100;
+        priceHistory.push({ timestamp, price: basePrice + priceVariation });
+
+        // Generate validator metrics
+        const baseValidators = 100000;
+        const validatorVariation = Math.cos(timestamp / (2 * Math.PI * 1000000)) * 1000;
+        validatorHistory.push({
+          timestamp,
+          activeValidators: Math.floor(baseValidators + validatorVariation),
+          effectiveness: 95 + (Math.sin(timestamp / (2 * Math.PI * 1000000)) * 3)
+        });
+      }
+
+      // Calculate network health metrics
+      const networkHealth = 98.5 + (Math.random() * 1); // 98.5-99.5%
+      const participationRate = 95 + (Math.random() * 3); // 95-98%
+      const validatorEffectiveness = 96 + (Math.random() * 2); // 96-98%
+
+      // Prepare response data
+      const analyticsData = {
+        performance: {
+          roi,
+          apy: 3.00, // Current fixed APY
+          totalRewards: currentRewards,
+          rewardsHistory
+        },
+        network: {
+          validatorEffectiveness,
+          networkHealth,
+          participationRate,
+          validatorHistory
+        },
+        portfolio: {
+          totalValue,
+          profitLoss: currentRewards,
+          stakingPositions: [
+            {
+              coin: 'ETH',
+              amount: totalStaked,
+              value: totalValue,
+              apy: 3.00
+            }
+          ],
+          priceHistory
+        }
+      };
+
+      res.json(analyticsData);
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics data' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
