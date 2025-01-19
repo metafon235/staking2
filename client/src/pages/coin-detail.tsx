@@ -165,7 +165,9 @@ export default function CoinDetail() {
                 ) : networkStats ? (
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1">
-                      <p className="text-xs text-zinc-400">Total Value Locked</p>
+                      <p className="text-xs text-zinc-400">
+                        Total {coinData.symbol} Staking
+                      </p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.tvl.toLocaleString(undefined, {
                           maximumFractionDigits: 0
@@ -182,8 +184,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Average Stake Size</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.avgStake.toLocaleString(undefined, {
-                          minimumFractionDigits: 6,
-                          maximumFractionDigits: 6
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
                         })} {coinData.symbol}
                       </p>
                     </div>
@@ -191,8 +193,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Network Rewards</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.rewards.toLocaleString(undefined, {
-                          minimumFractionDigits: 8,
-                          maximumFractionDigits: 8
+                          minimumFractionDigits: 4,
+                          maximumFractionDigits: 4
                         })} {coinData.symbol}
                       </p>
                     </div>
