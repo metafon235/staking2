@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
 import { store } from "./store";
+import { setupAuth } from "./auth";
 
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
@@ -44,13 +45,16 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
 }
 
 export function registerRoutes(app: Express): Server {
+  // Setup authentication routes first
+  setupAuth(app);
+
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
       // Get user's total staked amount
       const userId = 1; // For testing, we'll use a fixed user ID
       const userStakes = store.getStakesByUser(userId);
-      const totalStaked = userStakes.reduce((sum, stake) => 
+      const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount), 0);
 
       if (totalStaked < 0.01) {
@@ -65,8 +69,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Get earliest stake timestamp or use mock start time
-      const earliestStake = userStakes.reduce((earliest, stake) => 
-        stake.createdAt < earliest ? stake.createdAt : earliest, 
+      const earliestStake = userStakes.reduce((earliest, stake) =>
+        stake.createdAt < earliest ? stake.createdAt : earliest,
         new Date(MOCK_STAKING_START_TIME));
 
       // Calculate current rewards based on total staked amount and earliest stake time
@@ -83,7 +87,7 @@ export function registerRoutes(app: Express): Server {
         lastUpdated: Date.now()
       };
 
-      console.log('Returning staking data:', { 
+      console.log('Returning staking data:', {
         totalStaked,
         rewards: mockData.rewards,
         projected: mockData.projected,
@@ -104,7 +108,7 @@ export function registerRoutes(app: Express): Server {
       const validationResult = stakeRequestSchema.safeParse(req.body);
       if (!validationResult.success) {
         console.error('Validation error:', validationResult.error);
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Invalid request data',
           details: validationResult.error.issues
         });
