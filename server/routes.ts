@@ -573,7 +573,7 @@ export function registerRoutes(app: Express): Server {
 
     // Only record transaction if there's a meaningful reward
     if (reward >= 0.000000001) { // 9 decimal places
-      recordRewardTransaction(userId, reward);
+      recordRewardTransaction(userId, reward / (365 * 24 * 60)); // Convert yearly reward to per-minute reward
     }
 
     return reward;
@@ -803,13 +803,27 @@ export function registerRoutes(app: Express): Server {
 
 async function recordRewardTransaction(userId: number, reward: number) {
   if (reward > 0) {
-    await db.insert(transactions)
-      .values({
-        userId,
-        type: 'reward',
-        amount: reward.toFixed(9),
-        status: 'completed',
-        createdAt: new Date()
-      });
+    // Check if we already have a reward transaction in the last minute
+    const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
+
+    const recentReward = await db.query.transactions.findFirst({
+      where: (transactions, { and, eq, gt }) => and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'reward'),
+        gt(transactions.createdAt, lastMinute)
+      )
+    });
+
+    // Only create new reward transaction if none exists in the last minute
+    if (!recentReward) {
+      await db.insert(transactions)
+        .values({
+          userId,
+          type: 'reward',
+          amount: reward.toFixed(9),
+          status: 'completed',
+          createdAt: new Date()
+        });
+    }
   }
 }
