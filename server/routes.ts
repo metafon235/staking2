@@ -4,10 +4,11 @@ import { db } from "@db";
 import { z } from "zod";
 import { store } from "./store";
 import { setupAuth } from "./auth";
+import { stakes, rewards, transactions } from "@db/schema";
+import { eq } from "drizzle-orm";
 
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
-  userId: z.number(),
   amount: z.string().refine((val) => {
     const amount = parseFloat(val);
     return !isNaN(amount) && amount >= 0.01; // Minimum 0.01 ETH
@@ -15,9 +16,6 @@ const stakeRequestSchema = z.object({
     message: "Minimum stake amount is 0.01 ETH"
   })
 });
-
-// Fixed start time for mock data (24 hours ago)
-const MOCK_STAKING_START_TIME = Date.now() - (24 * 60 * 60 * 1000);
 
 // Calculate rewards based on 3% APY
 function calculateRewards(stakedAmount: number, startTimeMs: number): number {
@@ -38,27 +36,32 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
     const rewards = calculateRewards(totalStaked, startTime);
     history.push({
       timestamp,
-      rewards: Math.round(rewards * 100000000) / 100000000 // 8 decimal places
+      rewards: parseFloat(rewards.toFixed(8)) // Ensure 8 decimal precision
     });
   }
   return history;
 }
 
 export function registerRoutes(app: Express): Server {
-  // Setup authentication routes first
   setupAuth(app);
 
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      // Get user's total staked amount
-      const userId = 1; // For testing, we'll use a fixed user ID
-      const userStakes = store.getStakesByUser(userId);
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's total staked amount and earliest stake
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
       const totalStaked = userStakes.reduce((sum, stake) =>
-        sum + parseFloat(stake.amount), 0);
+        sum + parseFloat(stake.amount.toString()), 0);
 
       if (totalStaked < 0.01) {
-        // Return zero rewards if user hasn't staked minimum amount
         return res.json({
           totalStaked: 0,
           rewards: 0,
@@ -68,10 +71,8 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Get earliest stake timestamp or use mock start time
-      const earliestStake = userStakes.reduce((earliest, stake) =>
-        stake.createdAt < earliest ? stake.createdAt : earliest,
-        new Date(MOCK_STAKING_START_TIME));
+      // Get earliest stake timestamp
+      const earliestStake = userStakes[0]?.createdAt || new Date();
 
       // Calculate current rewards based on total staked amount and earliest stake time
       const currentRewards = calculateRewards(totalStaked, earliestStake.getTime());
@@ -79,22 +80,24 @@ export function registerRoutes(app: Express): Server {
       // Project rewards for next month (30 days)
       const projectedRewards = (totalStaked * 0.03) / 12; // Monthly projection based on 3% APY
 
-      const mockData = {
+      // Generate response data with 8 decimal precision
+      const stakingData = {
         totalStaked,
-        rewards: Math.round(currentRewards * 100000000) / 100000000, // 8 decimal places
-        projected: Math.round(projectedRewards * 100000000) / 100000000, // 8 decimal places
+        rewards: parseFloat(currentRewards.toFixed(8)),
+        projected: parseFloat(projectedRewards.toFixed(8)),
         rewardsHistory: generateRewardsHistory(totalStaked, earliestStake.getTime()),
         lastUpdated: Date.now()
       };
 
       console.log('Returning staking data:', {
+        userId: req.user.id,
         totalStaked,
-        rewards: mockData.rewards,
-        projected: mockData.projected,
+        rewards: stakingData.rewards,
+        projected: stakingData.projected,
         lastUpdated: new Date().toISOString()
       });
 
-      res.json(mockData);
+      res.json(stakingData);
     } catch (error) {
       console.error('Error fetching staking data:', error);
       res.status(500).json({ error: 'Failed to fetch staking data' });
@@ -104,44 +107,46 @@ export function registerRoutes(app: Express): Server {
   // Initiate staking
   app.post('/api/stakes', async (req, res) => {
     try {
-      // Validate request body
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
       const validationResult = stakeRequestSchema.safeParse(req.body);
       if (!validationResult.success) {
-        console.error('Validation error:', validationResult.error);
         return res.status(400).json({
           error: 'Invalid request data',
           details: validationResult.error.issues
         });
       }
 
-      const { userId, amount } = validationResult.data;
+      const { amount } = validationResult.data;
 
-      // Create stake
-      const stake = store.createStake({
-        userId,
-        amount: amount.toString(),
-        status: 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      // Create stake in database
+      const [newStake] = await db.insert(stakes)
+        .values({
+          userId: req.user.id,
+          amount: amount,
+          status: 'active',
+        })
+        .returning();
 
       // Record the transaction
-      store.createTransaction({
-        userId,
-        type: 'stake',
-        amount: amount.toString(),
-        status: 'completed',
-        createdAt: new Date()
-      });
+      await db.insert(transactions)
+        .values({
+          userId: req.user.id,
+          type: 'stake',
+          amount: amount,
+          status: 'completed',
+        });
 
       console.log('New stake created:', {
-        userId,
+        userId: req.user.id,
         amount,
-        stakeId: stake.id,
+        stakeId: newStake.id,
         timestamp: new Date().toISOString()
       });
 
-      res.json(stake);
+      res.json(newStake);
     } catch (error) {
       console.error('Staking error:', error);
       res.status(500).json({ error: 'Failed to create stake' });
