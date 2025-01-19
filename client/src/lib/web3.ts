@@ -3,7 +3,7 @@ import { z } from 'zod';
 export interface StakingData {
   totalStaked: number;
   rewards: number;
-  projected: number;
+  monthlyRewards: number; // Renamed from projected
   rewardsHistory: Array<{
     timestamp: number;
     rewards: number;
@@ -22,15 +22,15 @@ export const getStakingData = async (): Promise<StakingData> => {
 
     const data = await response.json();
 
-    // Ensure 8 decimal precision for numeric values
+    // Ensure 9 decimal precision for numeric values
     return {
       ...data,
-      totalStaked: parseFloat(data.totalStaked.toFixed(8)),
-      rewards: parseFloat(data.rewards.toFixed(8)),
-      projected: parseFloat(data.projected.toFixed(8)),
+      totalStaked: parseFloat(data.totalStaked.toFixed(9)),
+      rewards: parseFloat(data.rewards.toFixed(9)),
+      monthlyRewards: parseFloat(data.monthlyRewards.toFixed(9)),
       rewardsHistory: data.rewardsHistory.map((point: any) => ({
         timestamp: point.timestamp,
-        rewards: parseFloat(point.rewards.toFixed(8))
+        rewards: parseFloat(point.rewards.toFixed(9))
       }))
     };
   } catch (error) {

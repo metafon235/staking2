@@ -43,7 +43,7 @@ export default function Dashboard() {
         <StakingStats 
           totalStaked={stakingData?.totalStaked || 0}
           rewards={stakingData?.rewards || 0}
-          projectedEarnings={stakingData?.projected || 0}
+          monthlyRewards={stakingData?.monthlyRewards || 0}
         />
       </div>
 

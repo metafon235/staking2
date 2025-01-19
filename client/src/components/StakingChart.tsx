@@ -15,7 +15,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
   const formattedData = data.map(point => ({
     ...point,
     time: format(new Date(point.timestamp), 'HH:mm'),
-    rewards: point.rewards.toFixed(8)
+    rewards: point.rewards.toFixed(9)
   }));
 
   return (
@@ -23,7 +23,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
       <CardHeader>
         <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
         <CardDescription className="text-zinc-400">
-          Real-time rewards accumulation for {totalStaked} ETH staked
+          Real-time rewards accumulation for {totalStaked.toFixed(9)} ETH staked
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -48,7 +48,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={value => Number(value).toFixed(8)}
+                tickFormatter={value => Number(value).toFixed(9)}
               />
               <Tooltip
                 contentStyle={{
@@ -58,7 +58,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
                 }}
                 labelStyle={{ color: "#e4e4e7" }}
                 itemStyle={{ color: "#a78bfa" }}
-                formatter={(value: string) => [Number(value).toFixed(8), "ETH"]}
+                formatter={(value: string) => [`${Number(value).toFixed(9)}`, "ETH"]}
                 labelFormatter={(label) => `Time: ${label}`}
               />
               <Area
@@ -75,11 +75,11 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div className="bg-zinc-800 p-4 rounded-lg">
             <p className="text-sm text-zinc-400">Current Rewards</p>
-            <p className="text-lg font-semibold text-white">{currentRewards.toFixed(8)} ETH</p>
+            <p className="text-lg font-semibold text-white">{currentRewards.toFixed(9)} ETH</p>
           </div>
           <div className="bg-zinc-800 p-4 rounded-lg">
             <p className="text-sm text-zinc-400">Total Staked</p>
-            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(8)} ETH</p>
+            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(9)} ETH</p>
           </div>
         </div>
       </CardContent>

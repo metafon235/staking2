@@ -36,7 +36,7 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
     const rewards = calculateRewards(totalStaked, startTime);
     history.push({
       timestamp,
-      rewards: parseFloat(rewards.toFixed(8)) // Ensure 8 decimal precision
+      rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
     });
   }
   return history;
@@ -65,7 +65,7 @@ export function registerRoutes(app: Express): Server {
         return res.json({
           totalStaked: 0,
           rewards: 0,
-          projected: 0,
+          monthlyRewards: 0, // Renamed from projected
           rewardsHistory: [],
           lastUpdated: Date.now()
         });
@@ -77,14 +77,14 @@ export function registerRoutes(app: Express): Server {
       // Calculate current rewards based on total staked amount and earliest stake time
       const currentRewards = calculateRewards(totalStaked, earliestStake.getTime());
 
-      // Project rewards for next month (30 days)
-      const projectedRewards = (totalStaked * 0.03) / 12; // Monthly projection based on 3% APY
+      // Calculate monthly rewards based on 3% APY
+      const monthlyRewards = (totalStaked * 0.03) / 12; // Monthly rewards based on 3% APY
 
-      // Generate response data with 8 decimal precision
+      // Generate response data with 9 decimal precision
       const stakingData = {
         totalStaked,
-        rewards: parseFloat(currentRewards.toFixed(8)),
-        projected: parseFloat(projectedRewards.toFixed(8)),
+        rewards: parseFloat(currentRewards.toFixed(9)),
+        monthlyRewards: parseFloat(monthlyRewards.toFixed(9)), // Renamed from projected
         rewardsHistory: generateRewardsHistory(totalStaked, earliestStake.getTime()),
         lastUpdated: Date.now()
       };
@@ -93,7 +93,7 @@ export function registerRoutes(app: Express): Server {
         userId: req.user.id,
         totalStaked,
         rewards: stakingData.rewards,
-        projected: stakingData.projected,
+        monthlyRewards: stakingData.monthlyRewards,
         lastUpdated: new Date().toISOString()
       });
 
