@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
-import { getEthPrice, getEthPriceHistory } from "@/lib/coingecko";
+import { getEthPrice, getEthPriceHistory } from "@/lib/binance"; // Changed import
 
 interface AnalyticsData {
   performance: {
@@ -62,14 +62,14 @@ export default function Analytics() {
 
   // Fetch live ETH price
   const { data: liveEthPrice } = useQuery({
-    queryKey: ['ethPrice'],
+    queryKey: ['binanceEthPrice'],
     queryFn: getEthPrice,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Fetch ETH price history
   const { data: ethPriceHistory } = useQuery({
-    queryKey: ['ethPriceHistory'],
+    queryKey: ['binanceEthPriceHistory'],
     queryFn: () => getEthPriceHistory(7), // Get 7 days of history
     refetchInterval: 300000, // Refresh every 5 minutes
   });
