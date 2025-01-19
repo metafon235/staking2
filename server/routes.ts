@@ -584,9 +584,9 @@ export function registerRoutes(app: Express): Server {
     const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
 
     if (forTransaction) {
-      const reward = stakedAmount * minutelyRate; // Just calculate one minute's reward
+      const reward = stakedAmount * minutelyRate; // Calculate one minute's reward
       // Record transaction if it's a meaningful reward
-      if (reward >= 0.00000001) { // Reduced threshold to 8 decimals
+      if (reward >= 0.00000001) { // Threshold at 8 decimals
         recordRewardTransaction(userId, reward);
       }
       return reward;
@@ -606,7 +606,8 @@ export function registerRoutes(app: Express): Server {
           eq(transactions.userId, userId),
           eq(transactions.type, 'reward'),
           gt(transactions.createdAt, lastMinute)
-        )
+        ),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
       });
 
       // Only create new reward transaction if none exists in the last minute
@@ -615,7 +616,7 @@ export function registerRoutes(app: Express): Server {
           .values({
             userId,
             type: 'reward',
-            amount: reward.toFixed(9), // This is now the per-minute reward
+            amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
             status: 'completed',
             createdAt: new Date()
           });

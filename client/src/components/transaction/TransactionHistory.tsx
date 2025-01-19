@@ -24,7 +24,8 @@ export default function TransactionHistory() {
   const { data: transactions, isLoading } = useQuery({
     queryKey: ['/api/transactions'],
     queryFn: fetchTransactionHistory,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchIntervalInBackground: true, // Keep refreshing even when tab is not active
   });
 
   const getStatusColor = (status: string) => {
@@ -49,7 +50,7 @@ export default function TransactionHistory() {
       case 'claim':
         return 'Claim Rewards';
       case 'reward':
-        return 'Reward'; // Corrected to capitalize 'Reward' for consistency
+        return 'Reward';
       default:
         return type;
     }
