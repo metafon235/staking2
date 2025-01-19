@@ -397,6 +397,8 @@ export function registerRoutes(app: Express): Server {
           .set({ 
             status: 'withdrawn', 
             amount: '0',
+            // Reset createdAt to stop rewards generation
+            createdAt: new Date(),
             updatedAt: new Date() 
           })
           .where(eq(stakes.id, stake.id));
