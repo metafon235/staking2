@@ -10,6 +10,7 @@ import CoinDetail from "@/pages/coin-detail";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
+import Header from "@/components/layout/Header";
 
 function Router() {
   const { user, isLoading } = useUser();
@@ -25,12 +26,15 @@ function Router() {
   // Show home page and coin details for non-authenticated users
   if (!user) {
     return (
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/auth" component={AuthPage} />
-        <Route path="/coins/:symbol" component={CoinDetail} />
-        <Route component={NotFound} />
-      </Switch>
+      <>
+        <Header />
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/auth" component={AuthPage} />
+          <Route path="/coins/:symbol" component={CoinDetail} />
+          <Route component={NotFound} />
+        </Switch>
+      </>
     );
   }
 
@@ -38,6 +42,7 @@ function Router() {
   return (
     <div className="flex min-h-screen bg-black">
       <Navigation />
+      <Header />
       {/* Main content area with padding for sidebar on desktop */}
       <main className="flex-1 p-6 lg:pl-72">
         <Switch>
