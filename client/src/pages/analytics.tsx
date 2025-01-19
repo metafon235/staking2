@@ -113,7 +113,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics.performance.roi.toFixed(2)}%
+                  {analytics.performance.roi.toFixed(6)}%
                 </p>
               </CardContent>
             </Card>
