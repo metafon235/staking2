@@ -20,9 +20,9 @@ export const store = {
     return user;
   },
   getUser: (id: number) => users.get(id),
-  getUserByUsername: (username: string) => 
-    Array.from(users.values()).find(u => u.username === username),
-  
+  getUserByEmail: (email: string) => 
+    Array.from(users.values()).find(u => u.email === email),
+
   // Stakes
   createStake: (data: InsertStake) => {
     const stake = { ...data, id: stakeId++ };
@@ -32,7 +32,7 @@ export const store = {
   getStake: (id: number) => stakes.get(id),
   getStakesByUser: (userId: number) => 
     Array.from(stakes.values()).filter(s => s.userId === userId),
-  
+
   // Rewards
   createReward: (data: InsertReward) => {
     const reward = { ...data, id: rewardId++ };
@@ -42,7 +42,7 @@ export const store = {
   getReward: (id: number) => rewards.get(id),
   getRewardsByStake: (stakeId: number) =>
     Array.from(rewards.values()).filter(r => r.stakeId === stakeId),
-  
+
   // Transactions
   createTransaction: (data: InsertTransaction) => {
     const transaction = { ...data, id: transactionId++ };
@@ -52,7 +52,7 @@ export const store = {
   getTransaction: (id: number) => transactions.get(id),
   getTransactionsByUser: (userId: number) =>
     Array.from(transactions.values()).filter(t => t.userId === userId),
-  
+
   // Utility methods
   clear: () => {
     users.clear();

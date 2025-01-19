@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
-import { store } from "./store";
 import { setupAuth } from "./auth";
 import { stakes, rewards, transactions } from "@db/schema";
 import { eq, count, avg, sql, sum } from "drizzle-orm";
@@ -105,6 +104,7 @@ const statsCache = new Map<string, {
 }>();
 
 export function registerRoutes(app: Express): Server {
+  // Important: Setup auth first before other routes
   setupAuth(app);
 
   // Get network statistics for a specific coin
