@@ -38,7 +38,7 @@ export default function StakingCard() {
     onSuccess: () => {
       toast({
         title: "Staking Successful",
-        description: `Successfully initiated staking of ${amount} ETH`
+        description: `Successfully staked ${amount} ETH. Your rewards will start accumulating.`
       });
       setAmount("");
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
@@ -53,11 +53,12 @@ export default function StakingCard() {
   });
 
   const handleStake = () => {
-    if (!amount || parseFloat(amount) <= 0) {
+    const amountNum = parseFloat(amount);
+    if (!amount || amountNum < 0.01) {
       toast({
         variant: "destructive",
         title: "Invalid Amount",
-        description: "Please enter a valid amount to stake"
+        description: "Minimum stake amount is 0.01 ETH"
       });
       return;
     }
@@ -84,9 +85,11 @@ export default function StakingCard() {
           <label className="text-sm font-medium">Amount (ETH)</label>
           <Input
             type="number"
-            placeholder="0.0"
+            placeholder="Min. 0.01 ETH"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            min="0.01"
+            step="0.01"
             disabled={stakeMutation.isPending}
           />
         </div>
@@ -115,7 +118,7 @@ export default function StakingCard() {
         <Button 
           className="w-full" 
           onClick={handleStake}
-          disabled={stakeMutation.isPending || !amount || parseFloat(amount) <= 0}
+          disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 0.01}
         >
           {stakeMutation.isPending ? "Staking..." : "Stake"}
         </Button>

@@ -7,8 +7,11 @@ import { store } from "./store";
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
   userId: z.number(),
-  amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-    message: "Amount must be a positive number"
+  amount: z.string().refine((val) => {
+    const amount = parseFloat(val);
+    return !isNaN(amount) && amount >= 0.01; // Minimum 0.01 ETH
+  }, {
+    message: "Minimum stake amount is 0.01 ETH"
   })
 });
 
@@ -24,14 +27,14 @@ function calculateRewards(stakedAmount: number, startTimeMs: number): number {
 }
 
 // Generate minute-by-minute rewards history
-function generateRewardsHistory(totalStaked: number): Array<{ timestamp: number; rewards: number }> {
+function generateRewardsHistory(totalStaked: number, startTime: number): Array<{ timestamp: number; rewards: number }> {
   const history = [];
   const now = Date.now();
   const oneHourAgo = now - (60 * 60 * 1000);
 
   for (let i = 0; i < 60; i++) {
     const timestamp = oneHourAgo + (i * 60 * 1000);
-    const rewards = calculateRewards(totalStaked, MOCK_STAKING_START_TIME);
+    const rewards = calculateRewards(totalStaked, startTime);
     history.push({
       timestamp,
       rewards: Math.round(rewards * 1000000) / 1000000
@@ -44,10 +47,30 @@ export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      const totalStaked = 100; // Mock 100 ETH staked
+      // Get user's total staked amount
+      const userId = 1; // For testing, we'll use a fixed user ID
+      const userStakes = store.getStakesByUser(userId);
+      const totalStaked = userStakes.reduce((sum, stake) => 
+        sum + parseFloat(stake.amount), 0);
 
-      // Calculate current rewards based on fixed start time
-      const currentRewards = calculateRewards(totalStaked, MOCK_STAKING_START_TIME);
+      if (totalStaked < 0.01) {
+        // Return zero rewards if user hasn't staked minimum amount
+        return res.json({
+          totalStaked: 0,
+          rewards: 0,
+          projected: 0,
+          rewardsHistory: [],
+          lastUpdated: Date.now()
+        });
+      }
+
+      // Get earliest stake timestamp or use mock start time
+      const earliestStake = userStakes.reduce((earliest, stake) => 
+        stake.createdAt < earliest ? stake.createdAt : earliest, 
+        new Date(MOCK_STAKING_START_TIME));
+
+      // Calculate current rewards based on total staked amount and earliest stake time
+      const currentRewards = calculateRewards(totalStaked, earliestStake.getTime());
 
       // Project rewards for next month (30 days)
       const projectedRewards = (totalStaked * 0.03) / 12; // Monthly projection based on 3% APY
@@ -56,7 +79,7 @@ export function registerRoutes(app: Express): Server {
         totalStaked,
         rewards: Math.round(currentRewards * 1000000) / 1000000,
         projected: Math.round(projectedRewards * 1000000) / 1000000,
-        rewardsHistory: generateRewardsHistory(totalStaked),
+        rewardsHistory: generateRewardsHistory(totalStaked, earliestStake.getTime()),
         lastUpdated: Date.now()
       };
 
@@ -89,7 +112,7 @@ export function registerRoutes(app: Express): Server {
 
       const { userId, amount } = validationResult.data;
 
-      // Create mock stake
+      // Create stake
       const stake = store.createStake({
         userId,
         amount: amount.toString(),
@@ -105,6 +128,13 @@ export function registerRoutes(app: Express): Server {
         amount: amount.toString(),
         status: 'completed',
         createdAt: new Date()
+      });
+
+      console.log('New stake created:', {
+        userId,
+        amount,
+        stakeId: stake.id,
+        timestamp: new Date().toISOString()
       });
 
       res.json(stake);
