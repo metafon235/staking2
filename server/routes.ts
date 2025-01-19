@@ -2,10 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
-import { store } from "./store";
 import { setupAuth } from "./auth";
 import { stakes, rewards, transactions } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { ethers } from "ethers";
 
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
@@ -16,6 +16,35 @@ const stakeRequestSchema = z.object({
     message: "Minimum stake amount is 0.01 ETH"
   })
 });
+
+if (!process.env.ALCHEMY_API_KEY) {
+  throw new Error("ALCHEMY_API_KEY environment variable is required");
+}
+
+// Ethereum provider setup (using Alchemy)
+const provider = new ethers.JsonRpcProvider(
+  `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`
+);
+
+// Function to verify ETH transaction
+async function verifyTransaction(txHash: string, expectedAmount: string, toAddress: string): Promise<boolean> {
+  try {
+    const tx = await provider.getTransaction(txHash);
+    if (!tx) return false;
+
+    // Wait for confirmation (6 blocks is standard for ETH)
+    const receipt = await tx.wait(6);
+    if (!receipt) return false;
+
+    // Verify amount and recipient
+    const amount = ethers.formatEther(tx.value);
+    return tx.to?.toLowerCase() === toAddress.toLowerCase() && 
+           parseFloat(amount) === parseFloat(expectedAmount);
+  } catch (error) {
+    console.error('Transaction verification failed:', error);
+    return false;
+  }
+}
 
 // Calculate rewards based on 3% APY for a specific time period
 function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
@@ -36,7 +65,7 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
     const rewards = calculateRewardsForTimestamp(totalStaked, startTime, timestamp);
     history.push({
       timestamp,
-      rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
+      rewards: parseFloat(rewards.toFixed(9))
     });
   }
 
@@ -53,9 +82,12 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      // Get user's total staked amount and earliest stake
+      // Get user's total staked amount from confirmed stakes only
       const userStakes = await db.query.stakes.findMany({
-        where: eq(stakes.userId, req.user.id),
+        where: and(
+          eq(stakes.userId, req.user.id),
+          eq(stakes.status, 'active')
+        ),
         orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
       });
 
@@ -72,16 +104,15 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Get earliest stake timestamp
-      const earliestStake = userStakes[0]?.createdAt || new Date();
+      // Get earliest confirmed stake timestamp
+      const earliestStake = userStakes[0]?.confirmedAt || new Date();
 
       // Calculate current rewards based on total staked amount and earliest stake time
       const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
 
       // Calculate monthly rewards based on 3% APY
-      const monthlyRewards = (totalStaked * 0.03) / 12; // Monthly rewards based on 3% APY
+      const monthlyRewards = (totalStaked * 0.03) / 12;
 
-      // Generate response data with 9 decimal precision
       const stakingData = {
         totalStaked,
         rewards: parseFloat(currentRewards.toFixed(9)),
@@ -90,18 +121,70 @@ export function registerRoutes(app: Express): Server {
         lastUpdated: Date.now()
       };
 
-      console.log('Returning staking data:', {
-        userId: req.user.id,
-        totalStaked,
-        rewards: stakingData.rewards,
-        monthlyRewards: stakingData.monthlyRewards,
-        lastUpdated: new Date().toISOString()
-      });
-
       res.json(stakingData);
     } catch (error) {
       console.error('Error fetching staking data:', error);
       res.status(500).json({ error: 'Failed to fetch staking data' });
+    }
+  });
+
+  // Get staking wallet address
+  app.get('/api/staking/wallet', (_req, res) => {
+    // In production, this should be your platform's staking wallet address
+    const stakingWallet = "0xab80c8eb884748dbde81bf194ea77ea87a5c2ae";
+    res.json({ address: stakingWallet });
+  });
+
+  // Update stake with transaction hash
+  app.post('/api/stakes/:stakeId/transaction', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { transactionHash } = req.body;
+      const stakeId = parseInt(req.params.stakeId);
+
+      // Get stake details
+      const [stake] = await db
+        .select()
+        .from(stakes)
+        .where(and(
+          eq(stakes.id, stakeId),
+          eq(stakes.userId, req.user.id)
+        ))
+        .limit(1);
+
+      if (!stake) {
+        return res.status(404).json({ error: 'Stake not found' });
+      }
+
+      // Verify the transaction
+      const isValid = await verifyTransaction(
+        transactionHash,
+        stake.amount.toString(),
+        "0xab80c8eb884748dbde81bf194ea77ea87a5c2ae" // Your staking wallet address
+      );
+
+      if (!isValid) {
+        return res.status(400).json({ error: 'Invalid transaction' });
+      }
+
+      // Update stake status
+      const [updatedStake] = await db
+        .update(stakes)
+        .set({
+          status: 'active',
+          depositTxHash: transactionHash,
+          confirmedAt: new Date()
+        })
+        .where(eq(stakes.id, stakeId))
+        .returning();
+
+      res.json(updatedStake);
+    } catch (error) {
+      console.error('Error updating stake transaction:', error);
+      res.status(500).json({ error: 'Failed to update stake transaction' });
     }
   });
 
@@ -122,12 +205,12 @@ export function registerRoutes(app: Express): Server {
 
       const { amount } = validationResult.data;
 
-      // Create stake in database
+      // Create pending stake in database
       const [newStake] = await db.insert(stakes)
         .values({
           userId: req.user.id,
           amount: amount,
-          status: 'active',
+          status: 'pending',
         })
         .returning();
 
@@ -137,75 +220,13 @@ export function registerRoutes(app: Express): Server {
           userId: req.user.id,
           type: 'stake',
           amount: amount,
-          status: 'completed',
+          status: 'pending',
         });
-
-      console.log('New stake created:', {
-        userId: req.user.id,
-        amount,
-        stakeId: newStake.id,
-        timestamp: new Date().toISOString()
-      });
 
       res.json(newStake);
     } catch (error) {
       console.error('Staking error:', error);
       res.status(500).json({ error: 'Failed to create stake' });
-    }
-  });
-
-  // Get user stakes
-  app.get('/api/users/:userId/stakes', async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const stakes = store.getStakesByUser(userId);
-      res.json(stakes);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch user stakes' });
-    }
-  });
-
-  // Get stake rewards
-  app.get('/api/stakes/:stakeId/rewards', async (req, res) => {
-    try {
-      const stakeId = parseInt(req.params.stakeId);
-      const rewards = store.getRewardsByStake(stakeId);
-      res.json(rewards);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch stake rewards' });
-    }
-  });
-
-  // Create reward for stake
-  app.post('/api/stakes/:stakeId/rewards', async (req, res) => {
-    try {
-      const stakeId = parseInt(req.params.stakeId);
-      const { amount } = req.body;
-      const reward = store.createReward({
-        stakeId,
-        amount: amount.toString(),
-        createdAt: new Date()
-      });
-      res.json(reward);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create reward' });
-    }
-  });
-
-  // Record transaction
-  app.post('/api/transactions', async (req, res) => {
-    try {
-      const { userId, type, amount } = req.body;
-      const transaction = store.createTransaction({
-        userId,
-        type,
-        amount: amount.toString(),
-        status: 'pending',
-        createdAt: new Date()
-      });
-      res.json(transaction);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create transaction' });
     }
   });
 

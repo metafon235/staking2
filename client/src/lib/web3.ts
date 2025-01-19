@@ -3,7 +3,7 @@ import { z } from 'zod';
 export interface StakingData {
   totalStaked: number;
   rewards: number;
-  monthlyRewards: number; // Renamed from projected
+  monthlyRewards: number;
   rewardsHistory: Array<{
     timestamp: number;
     rewards: number;
@@ -13,7 +13,7 @@ export interface StakingData {
 export const getStakingData = async (): Promise<StakingData> => {
   try {
     const response = await fetch('/api/staking/data', {
-      credentials: 'include' // Required for auth
+      credentials: 'include'
     });
 
     if (!response.ok) {
@@ -22,7 +22,6 @@ export const getStakingData = async (): Promise<StakingData> => {
 
     const data = await response.json();
 
-    // Ensure 9 decimal precision for numeric values
     return {
       ...data,
       totalStaked: parseFloat(data.totalStaked.toFixed(9)),
@@ -39,13 +38,29 @@ export const getStakingData = async (): Promise<StakingData> => {
   }
 };
 
-export const stakeETH = async (amount: number): Promise<void> => {
+export const submitStakeTransaction = async (stakeId: number, transactionHash: string): Promise<void> => {
+  const response = await fetch(`/api/stakes/${stakeId}/transaction`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ transactionHash }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to submit transaction');
+  }
+};
+
+export const stakeETH = async (amount: number): Promise<{ id: number }> => {
   const response = await fetch('/api/stakes', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'include', // Required for auth
+    credentials: 'include',
     body: JSON.stringify({
       amount: amount.toString()
     }),
@@ -55,4 +70,18 @@ export const stakeETH = async (amount: number): Promise<void> => {
     const error = await response.json();
     throw new Error(error.error || 'Failed to stake ETH');
   }
+
+  return response.json();
+};
+
+export const getStakingWallet = async (): Promise<{ address: string }> => {
+  const response = await fetch('/api/staking/wallet', {
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to get staking wallet address');
+  }
+
+  return response.json();
 };
