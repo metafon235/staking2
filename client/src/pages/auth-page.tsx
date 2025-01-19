@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ export default function AuthPage() {
   const { login, register } = useUser();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +35,14 @@ export default function AuthPage() {
         return;
       }
 
-      // Wenn wir hier ankommen, wurde der User bereits im Cache aktualisiert
+      // Warte auf die Aktualisierung des User-Status
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const user = queryClient.getQueryData(['user']);
+
+      if (!user) {
+        throw new Error("Failed to update user status");
+      }
+
       toast({
         title: isLogin ? "Login Successful" : "Registration Successful",
         description: "Welcome to the Staking Platform"
