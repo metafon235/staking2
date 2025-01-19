@@ -12,13 +12,15 @@ const stakeRequestSchema = z.object({
   })
 });
 
+// Fixed start time for mock data (24 hours ago)
+const MOCK_STAKING_START_TIME = Date.now() - (24 * 60 * 60 * 1000);
+
 // Calculate rewards based on 3% APY
-function calculateRewards(stakedAmount: number, timestampMs: number): number {
-  const APY = 0.03; // 3% annual yield
+function calculateRewards(stakedAmount: number, startTimeMs: number): number {
   const now = Date.now();
-  const timePassedMs = now - timestampMs;
+  const timePassedMs = now - startTimeMs;
   const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-  return stakedAmount * APY * yearsElapsed;
+  return stakedAmount * 0.03 * yearsElapsed; // 3% APY
 }
 
 // Generate minute-by-minute rewards history
@@ -29,11 +31,10 @@ function generateRewardsHistory(totalStaked: number): Array<{ timestamp: number;
 
   for (let i = 0; i < 60; i++) {
     const timestamp = oneHourAgo + (i * 60 * 1000);
-    const rewards = calculateRewards(totalStaked, oneHourAgo);
-    const progressFactor = (i + 1) / 60; // Linear progress through the hour
+    const rewards = calculateRewards(totalStaked, MOCK_STAKING_START_TIME);
     history.push({
       timestamp,
-      rewards: Math.round(rewards * progressFactor * 1000000) / 1000000
+      rewards: Math.round(rewards * 1000000) / 1000000
     });
   }
   return history;
@@ -44,10 +45,9 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/staking/data', async (req, res) => {
     try {
       const totalStaked = 100; // Mock 100 ETH staked
-      const oneHourAgo = Date.now() - (60 * 60 * 1000);
 
-      // Calculate current rewards based on time elapsed
-      const currentRewards = calculateRewards(totalStaked, oneHourAgo);
+      // Calculate current rewards based on fixed start time
+      const currentRewards = calculateRewards(totalStaked, MOCK_STAKING_START_TIME);
 
       // Project rewards for next month (30 days)
       const projectedRewards = (totalStaked * 0.03) / 12; // Monthly projection based on 3% APY
