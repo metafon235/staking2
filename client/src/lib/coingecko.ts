@@ -9,40 +9,52 @@ export interface CoinGeckoPrice {
 }
 
 export async function getEthPrice(): Promise<number> {
-  const response = await fetch(
-    `${BASE_URL}/simple/price?ids=ethereum&vs_currencies=usd`,
-    {
-      headers: {
-        "x-cg-api-key": env.COINGECKO_API_KEY,
-      },
+  try {
+    const response = await fetch(
+      `${BASE_URL}/simple/price?ids=ethereum&vs_currencies=usd`,
+      {
+        headers: {
+          "x-cg-api-key": env.COINGECKO_API_KEY || '',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error("CoinGecko API error:", response.status, await response.text());
+      return 0;
     }
-  );
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch ETH price from CoinGecko");
+    const data: CoinGeckoPrice = await response.json();
+    return data.ethereum.usd;
+  } catch (error) {
+    console.error("Failed to fetch ETH price:", error);
+    return 0;
   }
-
-  const data: CoinGeckoPrice = await response.json();
-  return data.ethereum.usd;
 }
 
 export async function getEthPriceHistory(days: number = 7): Promise<Array<{ timestamp: number; price: number }>> {
-  const response = await fetch(
-    `${BASE_URL}/coins/ethereum/market_chart?vs_currency=usd&days=${days}&interval=hourly`,
-    {
-      headers: {
-        "x-cg-api-key": env.COINGECKO_API_KEY,
-      },
+  try {
+    const response = await fetch(
+      `${BASE_URL}/coins/ethereum/market_chart?vs_currency=usd&days=${days}&interval=hourly`,
+      {
+        headers: {
+          "x-cg-api-key": env.COINGECKO_API_KEY || '',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error("CoinGecko API error:", response.status, await response.text());
+      return [];
     }
-  );
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch ETH price history from CoinGecko");
+    const data = await response.json();
+    return data.prices.map(([timestamp, price]: [number, number]) => ({
+      timestamp,
+      price,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch ETH price history:", error);
+    return [];
   }
-
-  const data = await response.json();
-  return data.prices.map(([timestamp, price]: [number, number]) => ({
-    timestamp,
-    price,
-  }));
 }
