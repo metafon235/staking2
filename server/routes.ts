@@ -13,19 +13,19 @@ const BASE_STATS = {
     tvl: 2456789.45,
     validators: 845632,
     avgStake: 32.5,
-    totalStakers: 652341
+    rewards: 74563.21
   },
   dot: {
     tvl: 789456.12,
     validators: 297845,
     avgStake: 125.8,
-    totalStakers: 198452
+    rewards: 28945.67
   },
   sol: {
     tvl: 567123.89,
     validators: 156789,
     avgStake: 845.2,
-    totalStakers: 89745
+    rewards: 15678.34
   }
 };
 
@@ -45,6 +45,7 @@ function generateHistoricalData(baseStats: typeof BASE_STATS[keyof typeof BASE_S
       tvl: baseStats.tvl * variation(),
       validators: Math.floor(baseStats.validators * variation()),
       avgStake: baseStats.avgStake * variation(),
+      rewards: baseStats.rewards * variation(),
     });
   }
 
@@ -188,7 +189,7 @@ export function registerRoutes(app: Express): Server {
         const platformTvl = parseFloat(tvlResult[0]?.sum || '0');
 
         // Combine real platform data with network data
-        stats.current.totalStakers = platformStats[0]?.totalStakers || 0;
+        stats.current.rewards = platformStats[0]?.totalStakers || 0; // updated to use rewards instead of totalStakers
         stats.current.avgStake = parseFloat(platformStats[0]?.avgStake?.toString() || '0');
         stats.current.tvl = platformTvl + stats.current.tvl;
 

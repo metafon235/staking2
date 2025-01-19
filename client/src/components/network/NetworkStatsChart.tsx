@@ -7,6 +7,7 @@ interface NetworkStatsHistory {
   tvl: number;
   validators: number;
   avgStake: number;
+  rewards: number;
 }
 
 interface NetworkStatsChartProps {
@@ -60,6 +61,8 @@ export default function NetworkStatsChart({ data, symbol }: NetworkStatsChartPro
                       return [value.toLocaleString(), name];
                     case "Avg Stake":
                       return [`${value.toFixed(2)} ${symbol}`, name];
+                    case "Rewards":
+                      return [`${value.toFixed(2)} ${symbol}`, name];
                     default:
                       return [value, name];
                   }
@@ -90,6 +93,15 @@ export default function NetworkStatsChart({ data, symbol }: NetworkStatsChartPro
                 dataKey="avgStake"
                 name="Avg Stake"
                 stroke="#10b981"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                yAxisId="tvl"
+                type="monotone"
+                dataKey="rewards"
+                name="Rewards"
+                stroke="#f59e0b"
                 strokeWidth={2}
                 dot={false}
               />

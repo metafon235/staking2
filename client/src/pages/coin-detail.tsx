@@ -10,48 +10,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import NetworkStatsChart from "@/components/network/NetworkStatsChart";
 
-const COIN_DATA = {
-  eth: {
-    name: "Ethereum",
-    symbol: "ETH",
-    apy: 3.00,
-    minStake: "0.01",
-    icon: SiEthereum,
-    description: "Ethereum 2.0 staking enables you to earn rewards by participating in network validation.",
-    enabled: true
-  },
-  dot: {
-    name: "Polkadot",
-    symbol: "DOT",
-    apy: 12.00,
-    minStake: "5.00",
-    icon: SiPolkadot,
-    description: "Stake DOT to secure the network and earn rewards through Polkadot's nominated proof-of-stake system.",
-    enabled: false
-  },
-  sol: {
-    name: "Solana",
-    symbol: "SOL",
-    apy: 6.50,
-    minStake: "1.00",
-    icon: SiSolana,
-    description: "Participate in Solana's proof-of-stake consensus mechanism to earn staking rewards.",
-    enabled: false
-  }
-};
-
 interface NetworkStats {
   current: {
     tvl: number;
     validators: number;
     avgStake: number;
-    totalStakers: number;
+    rewards: number;
   };
   history: Array<{
     date: number;
     tvl: number;
     validators: number;
     avgStake: number;
+    rewards: number;
   }>;
   lastUpdated: string;
 }
@@ -217,9 +188,12 @@ export default function CoinDetail() {
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-xs text-zinc-400">Total Stakers</p>
+                      <p className="text-xs text-zinc-400">Network Rewards</p>
                       <p className="text-lg font-semibold text-white">
-                        {networkStats.current.totalStakers.toLocaleString()}
+                        {networkStats.current.rewards.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })} {coinData.symbol}
                       </p>
                     </div>
                     <div className="col-span-2 mt-2">
@@ -246,3 +220,33 @@ export default function CoinDetail() {
     </div>
   );
 }
+
+const COIN_DATA = {
+  eth: {
+    name: "Ethereum",
+    symbol: "ETH",
+    apy: 3.00,
+    minStake: "0.01",
+    icon: SiEthereum,
+    description: "Ethereum 2.0 staking enables you to earn rewards by participating in network validation.",
+    enabled: true
+  },
+  dot: {
+    name: "Polkadot",
+    symbol: "DOT",
+    apy: 12.00,
+    minStake: "5.00",
+    icon: SiPolkadot,
+    description: "Stake DOT to secure the network and earn rewards through Polkadot's nominated proof-of-stake system.",
+    enabled: false
+  },
+  sol: {
+    name: "Solana",
+    symbol: "SOL",
+    apy: 6.50,
+    minStake: "1.00",
+    icon: SiSolana,
+    description: "Participate in Solana's proof-of-stake consensus mechanism to earn staking rewards.",
+    enabled: false
+  }
+};
