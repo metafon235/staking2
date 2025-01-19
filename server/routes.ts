@@ -584,7 +584,6 @@ export function registerRoutes(app: Express): Server {
     const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
 
     if (forTransaction) {
-      // For transaction records, return just one minute's reward
       const reward = stakedAmount * minutelyRate; // Just calculate one minute's reward
       // Record transaction if it's a meaningful reward
       if (reward >= 0.00000001) { // Reduced threshold to 8 decimals
@@ -597,23 +596,31 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
-  // Generate rewards history based on time range
-  function generateRewardsHistory(totalStaked: number, startTime: number): Array<{ timestamp: number; rewards: number }> {
-    const history = [];
-    const now = Date.now();
-    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-    const intervalMinutes = 5; // Data points every 5 minutes
+  async function recordRewardTransaction(userId: number, reward: number) {
+    if (reward > 0) {
+      // Check if we already have a reward transaction in the last minute
+      const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
 
-    // Generate data points with progressive rewards calculation
-    for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += intervalMinutes * 60 * 1000) {
-      const rewards = calculateRewardsForTimestamp(userId, totalStaked, startTime, timestamp);
-      history.push({
-        timestamp,
-        rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
+      const recentReward = await db.query.transactions.findFirst({
+        where: (transactions, { and, eq, gt }) => and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'reward'),
+          gt(transactions.createdAt, lastMinute)
+        )
       });
-    }
 
-    return history;
+      // Only create new reward transaction if none exists in the last minute
+      if (!recentReward) {
+        await db.insert(transactions)
+          .values({
+            userId,
+            type: 'reward',
+            amount: reward.toFixed(9), // This is now the per-minute reward
+            status: 'completed',
+            createdAt: new Date()
+          });
+      }
+    }
   }
 
   app.get('/api/transactions', async (req, res) => {
@@ -814,33 +821,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: 'Failed to fetch analytics data' });
     }
   });
-
-  async function recordRewardTransaction(userId: number, reward: number) {
-    if (reward > 0) {
-      // Check if we already have a reward transaction in the last minute
-      const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
-
-      const recentReward = await db.query.transactions.findFirst({
-        where: (transactions, { and, eq, gt }) => and(
-          eq(transactions.userId, userId),
-          eq(transactions.type, 'reward'),
-          gt(transactions.createdAt, lastMinute)
-        )
-      });
-
-      // Only create new reward transaction if none exists in the last minute
-      if (!recentReward) {
-        await db.insert(transactions)
-          .values({
-            userId,
-            type: 'reward',
-            amount: reward.toFixed(9), // This is now the per-minute reward
-            status: 'completed',
-            createdAt: new Date()
-          });
-      }
-    }
-  }
 
   const httpServer = createServer(app);
   return httpServer;
