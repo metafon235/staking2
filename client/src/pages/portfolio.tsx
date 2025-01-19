@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import TransactionHistory from "@/components/transaction/TransactionHistory";
 
 interface PortfolioData {
   eth: {
@@ -183,7 +184,7 @@ export default function Portfolio() {
                       />
                     </div>
                     <DialogFooter>
-                      <Button 
+                      <Button
                         className="bg-purple-600 hover:bg-purple-700"
                         onClick={() => handleWithdraw('ETH')}
                         disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) > portfolio.eth.rewards}
@@ -232,6 +233,11 @@ export default function Portfolio() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Transaction History */}
+        <div className="col-span-2">
+          <TransactionHistory />
+        </div>
       </div>
     </div>
   );

@@ -391,6 +391,25 @@ export function registerRoutes(app: Express): Server {
     return history;
   }
 
+  app.get('/api/transactions', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's transactions ordered by most recent first
+      const userTransactions = await db.query.transactions.findMany({
+        where: eq(transactions.userId, req.user.id),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+      });
+
+      res.json(userTransactions);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
