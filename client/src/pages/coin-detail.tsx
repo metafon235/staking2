@@ -168,8 +168,7 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Total Value Locked</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.tvl.toLocaleString(undefined, {
-                          minimumFractionDigits: 6,
-                          maximumFractionDigits: 6
+                          maximumFractionDigits: 0
                         })} {coinData.symbol}
                       </p>
                     </div>
