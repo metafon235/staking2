@@ -355,6 +355,69 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add new withdraw-all endpoint
+  app.post('/api/withdraw-all', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { coin } = req.body;
+
+      // For now, we only support ETH withdrawals
+      if (coin.toUpperCase() !== 'ETH') {
+        return res.status(400).json({ error: 'Unsupported coin for withdrawal' });
+      }
+
+      // Get user's stakes
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      if (userStakes.length === 0) {
+        return res.status(400).json({ error: 'No active stakes found' });
+      }
+
+      // Calculate total staked amount and rewards
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      const earliestStake = userStakes[0].createdAt;
+      const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
+      const totalAmount = totalStaked + currentRewards;
+
+      if (totalAmount <= 0) {
+        return res.status(400).json({ error: 'No funds available for withdrawal' });
+      }
+
+      // Mark stakes as withdrawn
+      for (const stake of userStakes) {
+        await db.update(stakes)
+          .set({ status: 'withdrawn', updatedAt: new Date() })
+          .where(eq(stakes.id, stake.id));
+      }
+
+      // Record the withdrawal transaction
+      await db.insert(transactions)
+        .values({
+          userId: req.user.id,
+          type: 'withdraw_all',
+          amount: totalAmount.toString(),
+          status: 'completed',
+        });
+
+      res.json({
+        message: 'Withdrawal successful',
+        amount: totalAmount,
+        coin: coin
+      });
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      res.status(500).json({ error: 'Failed to process withdrawal' });
+    }
+  });
+
   // Add new transfer endpoint
   app.post('/api/transfer', async (req, res) => {
     try {

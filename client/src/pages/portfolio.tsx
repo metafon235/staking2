@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiEthereum, SiSolana } from "react-icons/si";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
 
 interface PortfolioData {
@@ -46,8 +46,8 @@ export default function Portfolio() {
   const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
     queryFn: fetchPortfolioData,
-    refetchInterval: 60000,
-    staleTime: 0
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 0 // Always consider data stale to force refresh
   });
 
   const handleWithdrawAll = async (coin: string) => {
