@@ -46,6 +46,7 @@ export default function CoinDetail() {
     queryFn: () => fetchNetworkStats(symbol || ''),
     enabled: !!symbol,
     refetchInterval: 60000, // Refresh every minute
+    staleTime: 0 // Consider data stale immediately to force refresh
   });
 
   const coinData = COIN_DATA[symbol as keyof typeof COIN_DATA];
@@ -167,8 +168,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Total Value Locked</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.tvl.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
+                          minimumFractionDigits: 6,
+                          maximumFractionDigits: 6
                         })} {coinData.symbol}
                       </p>
                     </div>
@@ -182,8 +183,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Average Stake Size</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.avgStake.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
+                          minimumFractionDigits: 6,
+                          maximumFractionDigits: 6
                         })} {coinData.symbol}
                       </p>
                     </div>
@@ -191,8 +192,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Network Rewards</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.rewards.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
+                          minimumFractionDigits: 6,
+                          maximumFractionDigits: 6
                         })} {coinData.symbol}
                       </p>
                     </div>

@@ -56,13 +56,13 @@ export default function NetworkStatsChart({ data, symbol }: NetworkStatsChartPro
                 formatter={(value: number, name) => {
                   switch (name) {
                     case "TVL":
-                      return [`${value.toLocaleString()} ${symbol}`, name];
+                      return [`${value.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 })} ${symbol}`, name];
                     case "Validators":
                       return [value.toLocaleString(), name];
                     case "Avg Stake":
-                      return [`${value.toFixed(2)} ${symbol}`, name];
+                      return [`${value.toFixed(6)} ${symbol}`, name];
                     case "Rewards":
-                      return [`${value.toFixed(2)} ${symbol}`, name];
+                      return [`${value.toFixed(6)} ${symbol}`, name];
                     default:
                       return [value, name];
                   }
