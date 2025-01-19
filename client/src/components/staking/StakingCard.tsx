@@ -2,18 +2,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { stakeETH } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { requestPayment } from "@/lib/coinbase";
 import type { StakingData } from "@/lib/types";
 
 export default function StakingCard() {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch user's wallet settings
   const { data: settings } = useQuery({
@@ -26,7 +27,33 @@ export default function StakingCard() {
   });
 
   const stakeMutation = useMutation({
-    mutationFn: () => stakeETH(parseFloat(amount)),
+    mutationFn: async (stakeAmount: string) => {
+      setIsProcessing(true);
+      try {
+        // First send the payment request to the user's wallet
+        const txHash = await requestPayment(settings?.walletAddress || '', stakeAmount);
+
+        // If payment is successful, create the stake on our backend
+        const response = await fetch('/api/stakes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            amount: stakeAmount,
+            transactionHash: txHash 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create stake');
+        }
+
+        return response.json();
+      } finally {
+        setIsProcessing(false);
+      }
+    },
     onSuccess: () => {
       toast({
         title: "Staking Successful",
@@ -54,7 +81,7 @@ export default function StakingCard() {
       });
       return;
     }
-    stakeMutation.mutate();
+    stakeMutation.mutate(amount);
   };
 
   const stakingData = queryClient.getQueryData<StakingData>(['/api/staking/data']);
@@ -88,7 +115,7 @@ export default function StakingCard() {
             onChange={(e) => setAmount(e.target.value)}
             min="0.01"
             step="0.01"
-            disabled={stakeMutation.isPending || !hasWallet}
+            disabled={isProcessing || !hasWallet}
             className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
           />
         </div>
@@ -117,12 +144,17 @@ export default function StakingCard() {
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
           onClick={handleStake}
-          disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 0.01 || !hasWallet}
+          disabled={isProcessing || !amount || parseFloat(amount) < 0.01 || !hasWallet}
         >
           {!hasWallet 
             ? "Set Up Wallet First" 
-            : stakeMutation.isPending 
-              ? "Staking..." 
+            : isProcessing 
+              ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Processing...</span>
+                </div>
+              )
               : "Stake"}
         </Button>
       </CardContent>
