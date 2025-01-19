@@ -8,6 +8,7 @@ import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import NetworkStatsChart from "@/components/network/NetworkStatsChart";
 
 const COIN_DATA = {
   eth: {
@@ -40,10 +41,18 @@ const COIN_DATA = {
 };
 
 interface NetworkStats {
-  tvl: number;
-  validators: number;
-  avgStake: number;
-  totalStakers: number;
+  current: {
+    tvl: number;
+    validators: number;
+    avgStake: number;
+    totalStakers: number;
+  };
+  history: Array<{
+    date: number;
+    tvl: number;
+    validators: number;
+    avgStake: number;
+  }>;
   lastUpdated: string;
 }
 
@@ -101,7 +110,6 @@ export default function CoinDetail() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Staking Information */}
           <div className="space-y-6">
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
@@ -170,7 +178,6 @@ export default function CoinDetail() {
             </Card>
           </div>
 
-          {/* Statistics and Charts */}
           <div className="space-y-6">
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
@@ -188,7 +195,7 @@ export default function CoinDetail() {
                     <div className="space-y-1">
                       <p className="text-xs text-zinc-400">Total Value Locked</p>
                       <p className="text-lg font-semibold text-white">
-                        {networkStats.tvl.toLocaleString(undefined, {
+                        {networkStats.current.tvl.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })} {coinData.symbol}
@@ -197,13 +204,13 @@ export default function CoinDetail() {
                     <div className="space-y-1">
                       <p className="text-xs text-zinc-400">Active Validators</p>
                       <p className="text-lg font-semibold text-white">
-                        {networkStats.validators.toLocaleString()}
+                        {networkStats.current.validators.toLocaleString()}
                       </p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-zinc-400">Average Stake Size</p>
                       <p className="text-lg font-semibold text-white">
-                        {networkStats.avgStake.toLocaleString(undefined, {
+                        {networkStats.current.avgStake.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })} {coinData.symbol}
@@ -212,7 +219,7 @@ export default function CoinDetail() {
                     <div className="space-y-1">
                       <p className="text-xs text-zinc-400">Total Stakers</p>
                       <p className="text-lg font-semibold text-white">
-                        {networkStats.totalStakers.toLocaleString()}
+                        {networkStats.current.totalStakers.toLocaleString()}
                       </p>
                     </div>
                     <div className="col-span-2 mt-2">
@@ -227,16 +234,12 @@ export default function CoinDetail() {
               </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Historical Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] flex items-center justify-center text-zinc-400">
-                  Chart coming soon
-                </div>
-              </CardContent>
-            </Card>
+            {networkStats && (
+              <NetworkStatsChart
+                data={networkStats.history}
+                symbol={coinData.symbol}
+              />
+            )}
           </div>
         </div>
       </div>

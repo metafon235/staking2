@@ -7,11 +7,71 @@ import { setupAuth } from "./auth";
 import { stakes, rewards, transactions } from "@db/schema";
 import { eq, count, avg, sql } from "drizzle-orm";
 
+// Network base statistics
+const BASE_STATS = {
+  eth: {
+    tvl: 2456789.45,
+    validators: 845632,
+    avgStake: 32.5,
+    totalStakers: 652341
+  },
+  dot: {
+    tvl: 789456.12,
+    validators: 297845,
+    avgStake: 125.8,
+    totalStakers: 198452
+  },
+  sol: {
+    tvl: 567123.89,
+    validators: 156789,
+    avgStake: 845.2,
+    totalStakers: 89745
+  }
+};
+
+// Generate sample historical data for a coin
+function generateHistoricalData(baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
+  const now = Date.now();
+  const data = [];
+
+  // Generate data points for the last 30 days
+  for (let i = 30; i >= 0; i--) {
+    const date = now - (i * 24 * 60 * 60 * 1000);
+    // Add some random variation to make the data look realistic
+    const variation = () => 1 + (Math.random() * 0.1 - 0.05); // ±5% variation
+
+    data.push({
+      date,
+      tvl: baseStats.tvl * variation(),
+      validators: Math.floor(baseStats.validators * variation()),
+      avgStake: baseStats.avgStake * variation(),
+    });
+  }
+
+  return data;
+}
+
+// Network statistics for each coin
+const NETWORK_STATS = {
+  eth: {
+    current: BASE_STATS.eth,
+    history: generateHistoricalData(BASE_STATS.eth)
+  },
+  dot: {
+    current: BASE_STATS.dot,
+    history: generateHistoricalData(BASE_STATS.dot)
+  },
+  sol: {
+    current: BASE_STATS.sol,
+    history: generateHistoricalData(BASE_STATS.sol)
+  }
+};
+
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
   amount: z.string().refine((val) => {
     const amount = parseFloat(val);
-    return !isNaN(amount) && amount >= 0.01; // Minimum 0.01 ETH
+    return !isNaN(amount) && amount >= 0.01;
   }, {
     message: "Minimum stake amount is 0.01 ETH"
   })
@@ -42,28 +102,6 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
 
   return history;
 }
-
-// Network statistics for each coin
-const NETWORK_STATS = {
-  eth: {
-    tvl: 2456789.45,
-    validators: 845632,
-    avgStake: 32.5,
-    totalStakers: 652341
-  },
-  dot: {
-    tvl: 789456.12,
-    validators: 297845,
-    avgStake: 125.8,
-    totalStakers: 198452
-  },
-  sol: {
-    tvl: 567123.89,
-    validators: 156789,
-    avgStake: 845.2,
-    totalStakers: 89745
-  }
-};
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
@@ -112,19 +150,63 @@ export function registerRoutes(app: Express): Server {
         lastUpdated: Date.now()
       };
 
-      console.log('Returning staking data:', {
-        userId: req.user.id,
-        totalStaked,
-        rewards: stakingData.rewards,
-        monthlyRewards: stakingData.monthlyRewards,
-        lastUpdated: new Date().toISOString()
-      });
-
       res.json(stakingData);
     } catch (error) {
       console.error('Error fetching staking data:', error);
       res.status(500).json({ error: 'Failed to fetch staking data' });
     }
+  });
+
+  // Get network statistics for a specific coin
+  app.get('/api/network-stats/:symbol', async (req, res) => {
+    const symbol = req.params.symbol.toLowerCase();
+
+    if (!NETWORK_STATS[symbol as keyof typeof NETWORK_STATS]) {
+      return res.status(404).json({ error: 'Coin not found' });
+    }
+
+    const stats = NETWORK_STATS[symbol as keyof typeof NETWORK_STATS];
+
+    // For ETH, we'll also include actual platform statistics
+    if (symbol === 'eth') {
+      try {
+        // Get platform statistics from our database
+        const platformStats = await db.select({
+          totalStakers: count(stakes.userId),
+          avgStake: avg(stakes.amount),
+        })
+          .from(stakes)
+          .where(eq(stakes.status, 'active'));
+
+        // Get total value locked
+        const tvlResult = await db.select({
+          sum: sql<string>`sum(amount)::numeric`
+        })
+          .from(stakes)
+          .where(eq(stakes.status, 'active'));
+
+        const platformTvl = parseFloat(tvlResult[0]?.sum || '0');
+
+        // Combine real platform data with network data
+        stats.current.totalStakers = platformStats[0]?.totalStakers || 0;
+        stats.current.avgStake = parseFloat(platformStats[0]?.avgStake?.toString() || '0');
+        stats.current.tvl = platformTvl + stats.current.tvl;
+
+        // Update historical data with platform data
+        stats.history = stats.history.map(point => ({
+          ...point,
+          tvl: point.tvl + platformTvl,
+        }));
+      } catch (error) {
+        console.error('Error fetching platform statistics:', error);
+      }
+    }
+
+    res.json({
+      current: stats.current,
+      history: stats.history,
+      lastUpdated: new Date().toISOString()
+    });
   });
 
   // Initiate staking
@@ -161,13 +243,6 @@ export function registerRoutes(app: Express): Server {
           amount: amount,
           status: 'completed',
         });
-
-      console.log('New stake created:', {
-        userId: req.user.id,
-        amount,
-        stakeId: newStake.id,
-        timestamp: new Date().toISOString()
-      });
 
       res.json(newStake);
     } catch (error) {
@@ -231,50 +306,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get network statistics for a specific coin
-  app.get('/api/network-stats/:symbol', async (req, res) => {
-    const symbol = req.params.symbol.toLowerCase();
-
-    if (!NETWORK_STATS[symbol as keyof typeof NETWORK_STATS]) {
-      return res.status(404).json({ error: 'Coin not found' });
-    }
-
-    const stats = NETWORK_STATS[symbol as keyof typeof NETWORK_STATS];
-
-    // For ETH, we'll also include actual platform statistics
-    if (symbol === 'eth') {
-      try {
-        // Get platform statistics from our database
-        const platformStats = await db.select({
-          totalStakers: count(stakes.userId),
-          avgStake: avg(stakes.amount),
-        })
-          .from(stakes)
-          .where(eq(stakes.status, 'active'));
-
-        // Get total value locked
-        const tvlResult = await db.select({
-          sum: sql<string>`sum(amount)::numeric`
-        })
-          .from(stakes)
-          .where(eq(stakes.status, 'active'));
-
-        const platformTvl = parseFloat(tvlResult[0]?.sum || '0');
-
-        // Combine real platform data with network data
-        stats.totalStakers = platformStats[0]?.totalStakers || 0;
-        stats.avgStake = parseFloat(platformStats[0]?.avgStake?.toString() || '0');
-        stats.tvl = platformTvl + stats.tvl; // Combine platform TVL with network TVL
-      } catch (error) {
-        console.error('Error fetching platform statistics:', error);
-      }
-    }
-
-    res.json({
-      ...stats,
-      lastUpdated: new Date().toISOString()
-    });
-  });
 
   const httpServer = createServer(app);
   return httpServer;
