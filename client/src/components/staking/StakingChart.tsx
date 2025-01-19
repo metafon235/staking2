@@ -1,4 +1,3 @@
-{/* Moving the content from components/StakingChart.tsx to components/staking/StakingChart.tsx */}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
@@ -50,12 +49,12 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
   }));
 
   return (
-    <Card className="col-span-3 bg-zinc-900 border-zinc-800">
+    <Card className="col-span-3 bg-[#756D54]/10 border-[#756D54]">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
             <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardDescription className="text-[#BED558]">
               Real-time rewards accumulation for {totalStaked.toFixed(9)} ETH staked
             </CardDescription>
           </div>
@@ -63,23 +62,23 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
             type="single" 
             value={timeRange}
             onValueChange={(value: TimeRange) => value && setTimeRange(value)}
-            className="bg-zinc-800 border border-zinc-700 rounded-lg"
+            className="bg-[#756D54]/20 border border-[#756D54] rounded-lg"
           >
             <ToggleGroupItem 
               value="hour" 
-              className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+              className="text-sm data-[state=on]:bg-[#8419CB] data-[state=on]:text-white"
             >
               1H
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="day" 
-              className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+              className="text-sm data-[state=on]:bg-[#8419CB] data-[state=on]:text-white"
             >
               24H
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="week" 
-              className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+              className="text-sm data-[state=on]:bg-[#8419CB] data-[state=on]:text-white"
             >
               7D
             </ToggleGroupItem>
@@ -92,19 +91,19 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
             <AreaChart data={formattedData}>
               <defs>
                 <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#8419CB" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#8419CB" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis
                 dataKey="time"
-                stroke="#71717a"
+                stroke="#8B9556"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                stroke="#71717a"
+                stroke="#8B9556"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
@@ -112,19 +111,19 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#18181b",
-                  border: "1px solid #3f3f46",
+                  backgroundColor: "#756D54",
+                  border: "1px solid #8B9556",
                   borderRadius: "6px",
                 }}
-                labelStyle={{ color: "#e4e4e7" }}
-                itemStyle={{ color: "#a78bfa" }}
+                labelStyle={{ color: "#FFFFFF" }}
+                itemStyle={{ color: "#BED558" }}
                 formatter={(value: string) => [`${Number(value).toFixed(9)}`, "ETH"]}
                 labelFormatter={(label) => `Time: ${label}`}
               />
               <Area
                 type="monotone"
                 dataKey="rewards"
-                stroke="#8b5cf6"
+                stroke="#8419CB"
                 fillOpacity={1}
                 fill="url(#rewardsGradient)"
                 strokeWidth={2}
@@ -133,12 +132,12 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
           </ResponsiveContainer>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <p className="text-sm text-zinc-400">Current Rewards</p>
+          <div className="bg-[#756D54]/20 p-4 rounded-lg">
+            <p className="text-sm text-[#BED558]">Current Rewards</p>
             <p className="text-lg font-semibold text-white">{currentRewards.toFixed(9)} ETH</p>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <p className="text-sm text-zinc-400">Total Staked</p>
+          <div className="bg-[#756D54]/20 p-4 rounded-lg">
+            <p className="text-sm text-[#BED558]">Total Staked</p>
             <p className="text-lg font-semibold text-white">{totalStaked.toFixed(9)} ETH</p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 
 interface Transaction {
@@ -51,13 +51,13 @@ export default function RewardsBarChart() {
 
   if (isLoading) {
     return (
-      <Card className="bg-zinc-900/50 border-zinc-800">
+      <Card className="bg-[#756D54]/10 border-[#756D54]">
         <CardHeader>
           <CardTitle className="text-xl font-medium text-white">Daily Rewards</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center h-[300px]">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#8419CB]" />
           </div>
         </CardContent>
       </Card>
@@ -67,7 +67,7 @@ export default function RewardsBarChart() {
   const dailyRewards = groupTransactionsByDay(transactions || []);
 
   return (
-    <Card className="bg-zinc-900/50 border-zinc-800">
+    <Card className="bg-[#756D54]/10 border-[#756D54]">
       <CardHeader>
         <CardTitle className="text-xl font-medium text-white">Daily Rewards</CardTitle>
       </CardHeader>
@@ -77,27 +77,27 @@ export default function RewardsBarChart() {
             <BarChart data={dailyRewards}>
               <XAxis 
                 dataKey="date" 
-                stroke="#9ca3af"
+                stroke="#8B9556"
                 fontSize={12}
               />
               <YAxis 
-                stroke="#9ca3af"
+                stroke="#8B9556"
                 fontSize={12}
                 tickFormatter={(value) => value.toFixed(8)}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #3f3f46',
+                  backgroundColor: '#756D54',
+                  border: '1px solid #8B9556',
                   borderRadius: '6px'
                 }}
-                labelStyle={{ color: '#e4e4e7' }}
-                itemStyle={{ color: '#a855f7' }}
+                labelStyle={{ color: '#FFFFFF' }}
+                itemStyle={{ color: '#BED558' }}
                 formatter={(value: number) => [value.toFixed(9) + ' ETH', 'Rewards']}
               />
               <Bar 
                 dataKey="amount" 
-                fill="#a855f7"
+                fill="#8419CB"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
