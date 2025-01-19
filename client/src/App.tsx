@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
+import Home from "@/pages/home";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 
@@ -19,10 +20,18 @@ function Router() {
     );
   }
 
+  // Show home page for non-authenticated users
   if (!user) {
-    return <AuthPage />;
+    return (
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/auth" component={AuthPage} />
+        <Route component={NotFound} />
+      </Switch>
+    );
   }
 
+  // Show dashboard for authenticated users
   return (
     <div className="flex min-h-screen bg-black">
       <main className="flex-1 p-6">
