@@ -14,9 +14,8 @@ export const stakes = pgTable("stakes", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
-  status: text("status").notNull().default("pending"), // pending, confirming, active
-  depositTxHash: text("deposit_tx_hash").unique(),
-  confirmedAt: timestamp("confirmed_at"),
+  status: text("status").notNull().default("pending"),
+  transactionHash: text("transaction_hash").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

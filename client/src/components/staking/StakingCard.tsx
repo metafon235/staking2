@@ -92,7 +92,7 @@ export default function StakingCard() {
           onClick={handleStake}
           disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 0.01}
         >
-          {stakeMutation.isPending ? "Processing..." : "Stake"}
+          {stakeMutation.isPending ? "Staking..." : "Stake"}
         </Button>
       </CardContent>
     </Card>

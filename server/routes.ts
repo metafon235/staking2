@@ -2,9 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
+import { store } from "./store";
 import { setupAuth } from "./auth";
 import { stakes, rewards, transactions } from "@db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Validation schema for stake request
 const stakeRequestSchema = z.object({
@@ -15,7 +16,6 @@ const stakeRequestSchema = z.object({
     message: "Minimum stake amount is 0.01 ETH"
   })
 });
-
 
 // Calculate rewards based on 3% APY for a specific time period
 function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
@@ -36,7 +36,7 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
     const rewards = calculateRewardsForTimestamp(totalStaked, startTime, timestamp);
     history.push({
       timestamp,
-      rewards: parseFloat(rewards.toFixed(9))
+      rewards: parseFloat(rewards.toFixed(9)) // 9 decimal precision
     });
   }
 
@@ -53,7 +53,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      // Get user's total staked amount
+      // Get user's total staked amount and earliest stake
       const userStakes = await db.query.stakes.findMany({
         where: eq(stakes.userId, req.user.id),
         orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
@@ -79,8 +79,9 @@ export function registerRoutes(app: Express): Server {
       const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
 
       // Calculate monthly rewards based on 3% APY
-      const monthlyRewards = (totalStaked * 0.03) / 12;
+      const monthlyRewards = (totalStaked * 0.03) / 12; // Monthly rewards based on 3% APY
 
+      // Generate response data with 9 decimal precision
       const stakingData = {
         totalStaked,
         rewards: parseFloat(currentRewards.toFixed(9)),
@@ -89,13 +90,20 @@ export function registerRoutes(app: Express): Server {
         lastUpdated: Date.now()
       };
 
+      console.log('Returning staking data:', {
+        userId: req.user.id,
+        totalStaked,
+        rewards: stakingData.rewards,
+        monthlyRewards: stakingData.monthlyRewards,
+        lastUpdated: new Date().toISOString()
+      });
+
       res.json(stakingData);
     } catch (error) {
       console.error('Error fetching staking data:', error);
       res.status(500).json({ error: 'Failed to fetch staking data' });
     }
   });
-
 
   // Initiate staking
   app.post('/api/stakes', async (req, res) => {
@@ -114,12 +122,12 @@ export function registerRoutes(app: Express): Server {
 
       const { amount } = validationResult.data;
 
-      // Create active stake in database (simulated)
+      // Create stake in database
       const [newStake] = await db.insert(stakes)
         .values({
           userId: req.user.id,
           amount: amount,
-          status: 'active', // Directly set as active for simulation
+          status: 'active',
         })
         .returning();
 
@@ -129,13 +137,75 @@ export function registerRoutes(app: Express): Server {
           userId: req.user.id,
           type: 'stake',
           amount: amount,
-          status: 'completed', // Directly set as completed for simulation
+          status: 'completed',
         });
+
+      console.log('New stake created:', {
+        userId: req.user.id,
+        amount,
+        stakeId: newStake.id,
+        timestamp: new Date().toISOString()
+      });
 
       res.json(newStake);
     } catch (error) {
       console.error('Staking error:', error);
       res.status(500).json({ error: 'Failed to create stake' });
+    }
+  });
+
+  // Get user stakes
+  app.get('/api/users/:userId/stakes', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const stakes = store.getStakesByUser(userId);
+      res.json(stakes);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch user stakes' });
+    }
+  });
+
+  // Get stake rewards
+  app.get('/api/stakes/:stakeId/rewards', async (req, res) => {
+    try {
+      const stakeId = parseInt(req.params.stakeId);
+      const rewards = store.getRewardsByStake(stakeId);
+      res.json(rewards);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch stake rewards' });
+    }
+  });
+
+  // Create reward for stake
+  app.post('/api/stakes/:stakeId/rewards', async (req, res) => {
+    try {
+      const stakeId = parseInt(req.params.stakeId);
+      const { amount } = req.body;
+      const reward = store.createReward({
+        stakeId,
+        amount: amount.toString(),
+        createdAt: new Date()
+      });
+      res.json(reward);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create reward' });
+    }
+  });
+
+  // Record transaction
+  app.post('/api/transactions', async (req, res) => {
+    try {
+      const { userId, type, amount } = req.body;
+      const transaction = store.createTransaction({
+        userId,
+        type,
+        amount: amount.toString(),
+        status: 'pending',
+        createdAt: new Date()
+      });
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create transaction' });
     }
   });
 

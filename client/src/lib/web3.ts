@@ -3,7 +3,7 @@ import { z } from 'zod';
 export interface StakingData {
   totalStaked: number;
   rewards: number;
-  monthlyRewards: number;
+  monthlyRewards: number; // Renamed from projected
   rewardsHistory: Array<{
     timestamp: number;
     rewards: number;
@@ -13,7 +13,7 @@ export interface StakingData {
 export const getStakingData = async (): Promise<StakingData> => {
   try {
     const response = await fetch('/api/staking/data', {
-      credentials: 'include'
+      credentials: 'include' // Required for auth
     });
 
     if (!response.ok) {
@@ -22,6 +22,7 @@ export const getStakingData = async (): Promise<StakingData> => {
 
     const data = await response.json();
 
+    // Ensure 9 decimal precision for numeric values
     return {
       ...data,
       totalStaked: parseFloat(data.totalStaked.toFixed(9)),
@@ -44,7 +45,7 @@ export const stakeETH = async (amount: number): Promise<void> => {
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'include',
+    credentials: 'include', // Required for auth
     body: JSON.stringify({
       amount: amount.toString()
     }),
