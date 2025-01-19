@@ -10,21 +10,30 @@ export interface CoinGeckoPrice {
 
 export async function getEthPrice(): Promise<number> {
   try {
+    if (!env.COINGECKO_API_KEY) {
+      console.error("CoinGecko API key is not set");
+      return 0;
+    }
+
     const response = await fetch(
       `${BASE_URL}/simple/price?ids=ethereum&vs_currencies=usd`,
       {
+        method: 'GET',
         headers: {
-          "x-cg-api-key": env.COINGECKO_API_KEY || '',
-        },
+          'Content-Type': 'application/json',
+          'X-CG-Api-Key': env.COINGECKO_API_KEY
+        }
       }
     );
 
     if (!response.ok) {
-      console.error("CoinGecko API error:", response.status, await response.text());
+      const errorText = await response.text();
+      console.error("CoinGecko API error:", response.status, errorText);
       return 0;
     }
 
     const data: CoinGeckoPrice = await response.json();
+    console.log("CoinGecko API response:", data); // Debug log
     return data.ethereum.usd;
   } catch (error) {
     console.error("Failed to fetch ETH price:", error);
@@ -34,21 +43,30 @@ export async function getEthPrice(): Promise<number> {
 
 export async function getEthPriceHistory(days: number = 7): Promise<Array<{ timestamp: number; price: number }>> {
   try {
+    if (!env.COINGECKO_API_KEY) {
+      console.error("CoinGecko API key is not set");
+      return [];
+    }
+
     const response = await fetch(
       `${BASE_URL}/coins/ethereum/market_chart?vs_currency=usd&days=${days}&interval=hourly`,
       {
+        method: 'GET',
         headers: {
-          "x-cg-api-key": env.COINGECKO_API_KEY || '',
-        },
+          'Content-Type': 'application/json',
+          'X-CG-Api-Key': env.COINGECKO_API_KEY
+        }
       }
     );
 
     if (!response.ok) {
-      console.error("CoinGecko API error:", response.status, await response.text());
+      const errorText = await response.text();
+      console.error("CoinGecko API error:", response.status, errorText);
       return [];
     }
 
     const data = await response.json();
+    console.log("CoinGecko price history response:", data); // Debug log
     return data.prices.map(([timestamp, price]: [number, number]) => ({
       timestamp,
       price,
