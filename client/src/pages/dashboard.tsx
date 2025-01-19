@@ -1,6 +1,6 @@
 import StakingCard from "@/components/staking/StakingCard";
 import StakingStats from "@/components/staking/StakingStats";
-import StakingChart from "@/components/StakingChart";
+import StakingChart from "@/components/staking/StakingChart";
 import { useQuery } from "@tanstack/react-query";
 import { getStakingData } from "@/lib/web3";
 import { Skeleton } from "@/components/ui/skeleton";
