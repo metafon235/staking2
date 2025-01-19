@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 
 interface Transaction {
   id: number;
-  type: 'stake' | 'withdraw' | 'claim';
+  type: 'stake' | 'withdraw' | 'claim' | 'reward';
   amount: string;
   status: 'pending' | 'completed' | 'failed';
   createdAt: string;
@@ -48,6 +48,8 @@ export default function TransactionHistory() {
         return 'Withdraw';
       case 'claim':
         return 'Claim Rewards';
+      case 'reward':
+        return 'Reward'; // Corrected to capitalize 'Reward' for consistency
       default:
         return type;
     }

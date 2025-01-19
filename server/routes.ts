@@ -180,6 +180,9 @@ export function registerRoutes(app: Express): Server {
       // Calculate current rewards based on total staked amount and earliest stake time
       const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
 
+      // Record the reward transaction
+      await recordRewardTransaction(req.user.id, currentRewards);
+
       // Calculate monthly rewards based on 3% APY
       const monthlyRewards = (totalStaked * 0.03) / 12; // Monthly rewards based on 3% APY
 
@@ -545,7 +548,9 @@ export function registerRoutes(app: Express): Server {
 
     const timePassedMs = endTimeMs - startTimeMs;
     const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-    return stakedAmount * 0.03 * yearsElapsed; // 3% APY
+    const reward = stakedAmount * 0.03 * yearsElapsed; // 3% APY
+    recordRewardTransaction(userId, reward); //Added this line
+    return reward;
   }
 
   // Generate rewards history based on time range
@@ -768,4 +773,17 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+async function recordRewardTransaction(userId: number, reward: number) {
+  if (reward > 0) {
+    await db.insert(transactions)
+      .values({
+        userId,
+        type: 'reward',
+        amount: reward.toFixed(9),
+        status: 'completed',
+        createdAt: new Date()
+      });
+  }
 }
