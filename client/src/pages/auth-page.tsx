@@ -8,17 +8,17 @@ import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, register } = useUser();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
-      const result = await (isLogin ? login : register)({ username, password });
-      
+      const result = await (isLogin ? login : register)({ email, password });
+
       if (!result.ok) {
         toast({
           variant: "destructive",
@@ -27,7 +27,7 @@ export default function AuthPage() {
         });
         return;
       }
-      
+
       toast({
         title: isLogin ? "Login Successful" : "Registration Successful",
         description: "Welcome to the Staking Platform"
@@ -58,10 +58,10 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
@@ -74,15 +74,15 @@ export default function AuthPage() {
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
-            
+
             <Button 
               type="submit" 
               className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-              disabled={!username || !password}
+              disabled={!email || !password}
             >
               {isLogin ? "Sign In" : "Create Account"}
             </Button>
-            
+
             <p className="text-center text-sm text-zinc-400">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button

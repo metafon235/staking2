@@ -59,26 +59,29 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.username, username))
-          .limit(1);
+    new LocalStrategy(
+      { usernameField: 'email' },
+      async (email, password, done) => {
+        try {
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
 
-        if (!user) {
-          return done(null, false, { message: "Incorrect username." });
+          if (!user) {
+            return done(null, false, { message: "Incorrect email." });
+          }
+          const isMatch = await crypto.compare(password, user.password);
+          if (!isMatch) {
+            return done(null, false, { message: "Incorrect password." });
+          }
+          return done(null, user);
+        } catch (err) {
+          return done(err);
         }
-        const isMatch = await crypto.compare(password, user.password);
-        if (!isMatch) {
-          return done(null, false, { message: "Incorrect password." });
-        }
-        return done(null, user);
-      } catch (err) {
-        return done(err);
       }
-    })
+    )
   );
 
   passport.serializeUser((user, done) => {
@@ -107,17 +110,17 @@ export function setupAuth(app: Express) {
           .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
       }
 
-      const { username, password } = result.data;
+      const { email, password } = result.data;
 
       // Check if user already exists
       const [existingUser] = await db
         .select()
         .from(users)
-        .where(eq(users.username, username))
+        .where(eq(users.email, email))
         .limit(1);
 
       if (existingUser) {
-        return res.status(400).send("Username already exists");
+        return res.status(400).send("Email already exists");
       }
 
       // Hash the password
@@ -139,7 +142,7 @@ export function setupAuth(app: Express) {
         }
         return res.json({
           message: "Registration successful",
-          user: { id: newUser.id, username: newUser.username },
+          user: { id: newUser.id, email: newUser.email },
         });
       });
     } catch (error) {
@@ -171,7 +174,7 @@ export function setupAuth(app: Express) {
 
         return res.json({
           message: "Login successful",
-          user: { id: user.id, username: user.username },
+          user: { id: user.id, email: user.email },
         });
       });
     };
