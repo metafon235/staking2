@@ -91,8 +91,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {typeof analytics.performance.roi === 'number' ? 
-                    `${analytics.performance.roi.toFixed(2)}%` : '0.00%'}
+                  {analytics.performance.roi.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -103,8 +102,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  {typeof analytics.performance.apy === 'number' ? 
-                    `${analytics.performance.apy.toFixed(2)}%` : '0.00%'}
+                  {analytics.performance.apy.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -115,8 +113,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-blue-500">
-                  {typeof analytics.performance.totalRewards === 'number' ? 
-                    `${analytics.performance.totalRewards.toFixed(6)} ETH` : '0.000000 ETH'}
+                  {analytics.performance.totalRewards.toFixed(6)} ETH
                 </p>
               </CardContent>
             </Card>
@@ -154,8 +151,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {typeof analytics.network.validatorEffectiveness === 'number' ? 
-                    `${analytics.network.validatorEffectiveness.toFixed(2)}%` : '0.00%'}
+                  {analytics.network.validatorEffectiveness.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -166,8 +162,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  {typeof analytics.network.networkHealth === 'number' ? 
-                    `${analytics.network.networkHealth.toFixed(2)}%` : '0.00%'}
+                  {analytics.network.networkHealth.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -178,8 +173,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-blue-500">
-                  {typeof analytics.network.participationRate === 'number' ? 
-                    `${analytics.network.participationRate.toFixed(2)}%` : '0.00%'}
+                  {analytics.network.participationRate.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -217,8 +211,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {typeof analytics.portfolio.totalValue === 'number' ? 
-                    `${analytics.portfolio.totalValue.toFixed(2)} ETH` : '0.00 ETH'}
+                  {analytics.portfolio.totalValue.toFixed(2)} ETH
                 </p>
               </CardContent>
             </Card>
@@ -231,9 +224,8 @@ export default function Analytics() {
                 <p className={`text-3xl font-bold ${
                   analytics.portfolio.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
-                  {typeof analytics.portfolio.profitLoss === 'number' ? 
-                    `${analytics.portfolio.profitLoss >= 0 ? '+' : ''}${analytics.portfolio.profitLoss.toFixed(2)} ETH` : 
-                    '0.00 ETH'}
+                  {analytics.portfolio.profitLoss >= 0 ? '+' : ''}
+                  {analytics.portfolio.profitLoss.toFixed(2)} ETH
                 </p>
               </CardContent>
             </Card>
