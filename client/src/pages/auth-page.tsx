@@ -4,17 +4,21 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
+import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { login, register } = useUser();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
       const result = await (isLogin ? login : register)({ email, password });
@@ -32,12 +36,17 @@ export default function AuthPage() {
         title: isLogin ? "Login Successful" : "Registration Successful",
         description: "Welcome to the Staking Platform"
       });
+
+      // Redirect to dashboard after successful login/register
+      navigate("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
         description: error.message
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,6 +72,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -72,14 +82,18 @@ export default function AuthPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                disabled={isLoading}
               />
             </div>
 
             <Button 
               type="submit" 
               className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-              disabled={!email || !password}
+              disabled={!email || !password || isLoading}
             >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
               {isLogin ? "Sign In" : "Create Account"}
             </Button>
 
@@ -89,6 +103,7 @@ export default function AuthPage() {
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
                 className="ml-1 text-purple-400 hover:text-purple-300"
+                disabled={isLoading}
               >
                 {isLogin ? "Sign up" : "Sign in"}
               </button>
