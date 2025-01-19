@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { useMemo } from "react";
 
 interface MarketStatsProps {
   priceChange24h: number;
@@ -20,28 +21,30 @@ export default function MarketStatsChart({
   lowPrice24h,
   weightedAvgPrice,
 }: MarketStatsProps) {
-  // Mock data points for 24h chart
-  const generatePriceData = () => {
-    const data = [];
-    const now = Date.now();
-    const hourInMs = 3600000;
-    
-    for (let i = 24; i >= 0; i--) {
-      const timestamp = now - (i * hourInMs);
-      const basePrice = weightedAvgPrice;
-      const variance = (Math.random() - 0.5) * Math.abs(priceChange24h) * 0.5;
-      const price = basePrice + variance;
-      
-      data.push({
-        timestamp,
-        price,
-        volume: (volume24h / 24) * (0.8 + Math.random() * 0.4), // Distribute volume over 24h with some randomness
-      });
-    }
-    return data;
-  };
+  // Generiere die Daten nur einmal beim ersten Rendern und wenn sich die Props ändern
+  const marketData = useMemo(() => {
+    const generatePriceData = () => {
+      const data = [];
+      const now = Date.now();
+      const hourInMs = 3600000;
 
-  const marketData = generatePriceData();
+      for (let i = 24; i >= 0; i--) {
+        const timestamp = now - (i * hourInMs);
+        const basePrice = weightedAvgPrice;
+        const variance = (Math.random() - 0.5) * Math.abs(priceChange24h) * 0.5;
+        const price = basePrice + variance;
+
+        data.push({
+          timestamp,
+          price,
+          volume: (volume24h / 24) * (0.8 + Math.random() * 0.4),
+        });
+      }
+      return data;
+    };
+
+    return generatePriceData();
+  }, [weightedAvgPrice, priceChange24h, volume24h]); // Nur neu generieren, wenn sich diese Werte ändern
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
