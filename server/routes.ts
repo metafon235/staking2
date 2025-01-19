@@ -2,12 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
+import { store } from "./store";
 
 export function registerRoutes(app: Express): Server {
+  // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      // Here we would fetch data from the blockchain
-      // This is a mock implementation
       const mockData = {
         totalStaked: 32.5,
         rewards: 0.85,
@@ -19,10 +19,82 @@ export function registerRoutes(app: Express): Server {
           { timestamp: Date.now(), rewards: 0.85 }
         ]
       };
-      
+
       res.json(mockData);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch staking data' });
+    }
+  });
+
+  // Create new stake
+  app.post('/api/stakes', async (req, res) => {
+    try {
+      const { userId, amount } = req.body;
+      const stake = store.createStake({
+        userId,
+        amount: amount.toString(),
+        status: 'pending',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      res.json(stake);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create stake' });
+    }
+  });
+
+  // Get user stakes
+  app.get('/api/users/:userId/stakes', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const stakes = store.getStakesByUser(userId);
+      res.json(stakes);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch user stakes' });
+    }
+  });
+
+  // Get stake rewards
+  app.get('/api/stakes/:stakeId/rewards', async (req, res) => {
+    try {
+      const stakeId = parseInt(req.params.stakeId);
+      const rewards = store.getRewardsByStake(stakeId);
+      res.json(rewards);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch stake rewards' });
+    }
+  });
+
+  // Create reward for stake
+  app.post('/api/stakes/:stakeId/rewards', async (req, res) => {
+    try {
+      const stakeId = parseInt(req.params.stakeId);
+      const { amount } = req.body;
+      const reward = store.createReward({
+        stakeId,
+        amount: amount.toString(),
+        createdAt: new Date()
+      });
+      res.json(reward);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create reward' });
+    }
+  });
+
+  // Record transaction
+  app.post('/api/transactions', async (req, res) => {
+    try {
+      const { userId, type, amount } = req.body;
+      const transaction = store.createTransaction({
+        userId,
+        type,
+        amount: amount.toString(),
+        status: 'pending',
+        createdAt: new Date()
+      });
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create transaction' });
     }
   });
 
