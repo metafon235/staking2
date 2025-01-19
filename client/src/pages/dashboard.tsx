@@ -1,7 +1,6 @@
 import StakingCard from "@/components/staking/StakingCard";
 import StakingStats from "@/components/staking/StakingStats";
 import StakingChart from "@/components/staking/StakingChart";
-import RewardsBarChart from "@/components/staking/RewardsBarChart";
 import { useQuery } from "@tanstack/react-query";
 import { getStakingData } from "@/lib/web3";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,10 +51,6 @@ export default function Dashboard() {
           rewards={stakingData?.rewards || 0}
           monthlyRewards={stakingData?.monthlyRewards || 0}
         />
-      </div>
-
-      <div className="grid gap-6">
-        <RewardsBarChart />
       </div>
 
       <div className="grid gap-6">

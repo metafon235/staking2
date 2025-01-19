@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RewardsBarChart from "@/components/staking/RewardsBarChart";
 
 interface AnalyticsData {
   performance: {
@@ -118,6 +119,8 @@ export default function Analytics() {
               </CardContent>
             </Card>
           </div>
+
+          <RewardsBarChart />
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader>
