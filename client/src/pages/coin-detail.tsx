@@ -191,8 +191,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Network Rewards</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.rewards.toLocaleString(undefined, {
-                          minimumFractionDigits: 6,
-                          maximumFractionDigits: 6
+                          minimumFractionDigits: 8,
+                          maximumFractionDigits: 8
                         })} {coinData.symbol}
                       </p>
                     </div>

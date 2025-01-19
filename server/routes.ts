@@ -52,7 +52,7 @@ async function calculateNetworkRewards(symbol: string): Promise<number> {
     const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
     const networkRewards = totalStaked * 0.03 * timeInYears;
 
-    return parseFloat(networkRewards.toFixed(6));
+    return parseFloat(networkRewards.toFixed(8)); // Increased precision to 8 decimals
   } catch (error) {
     console.error('Error calculating network rewards:', error);
     return BASE_STATS.eth.rewards;
@@ -80,7 +80,7 @@ async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STA
       tvl: baseStats.tvl * variation(),
       validators: Math.floor(baseStats.validators * variation()),
       avgStake: baseStats.avgStake * variation(),
-      rewards: parseFloat(rewards.toFixed(6))
+      rewards: parseFloat(rewards.toFixed(8)) // Increased precision to 8 decimals
     });
   }
 
