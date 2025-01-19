@@ -24,6 +24,7 @@ interface PortfolioData {
     staked: number;
     rewards: number;
     apy: number;
+    status: 'active' | 'ended';
   };
 }
 
@@ -50,6 +51,21 @@ async function withdrawRewards(amount: number, coin: string) {
   return response.json();
 }
 
+async function endStaking(coin: string) {
+  const response = await fetch('/api/staking/end', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ coin }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to end staking');
+  }
+  return response.json();
+}
+
 async function transferToWallet(amount: number, coin: string) {
   const response = await fetch('/api/transfer', {
     method: 'POST',
@@ -66,39 +82,35 @@ async function transferToWallet(amount: number, coin: string) {
 }
 
 export default function Portfolio() {
-  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
+  const [isEndingStake, setIsEndingStake] = useState(false);
   const { toast } = useToast();
 
   const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
     queryFn: fetchPortfolioData,
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 0 // Always consider data stale to force refresh
+    refetchInterval: 60000,
+    staleTime: 0
   });
 
-  const handleWithdraw = async (coin: string) => {
-    if (!withdrawAmount) return;
-
-    setIsWithdrawing(true);
+  const handleEndStaking = async () => {
+    setIsEndingStake(true);
     try {
-      await withdrawRewards(parseFloat(withdrawAmount), coin);
+      await endStaking('ETH');
       toast({
-        title: "Withdrawal Successful",
-        description: `${withdrawAmount} ${coin} has been withdrawn.`
+        title: "Staking Ended",
+        description: "Your staking position has been ended. You can now withdraw your full amount."
       });
-      setWithdrawAmount("");
       refetch();
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Withdrawal Failed",
+        title: "Failed to End Staking",
         description: error.message
       });
     } finally {
-      setIsWithdrawing(false);
+      setIsEndingStake(false);
     }
   };
 
@@ -169,8 +181,8 @@ export default function Portfolio() {
                 Ethereum Staking
               </div>
             </CardTitle>
-            <Badge variant="secondary" className="bg-green-500/10 text-green-500">
-              Active
+            <Badge variant="secondary" className={portfolio?.eth.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}>
+              {portfolio?.eth.status === 'active' ? 'Active' : 'Ended'}
             </Badge>
           </CardHeader>
           <CardContent>
@@ -182,19 +194,19 @@ export default function Portfolio() {
             ) : portfolio ? (
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-zinc-400">Total Staked</p>
+                  <p className="text-sm text-zinc-400">Initial Stake</p>
                   <p className="text-2xl font-bold text-white">
                     {portfolio.eth.staked.toFixed(9)} ETH
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-zinc-400">Current Rewards</p>
+                  <p className="text-sm text-zinc-400">Generated Rewards</p>
                   <p className="text-2xl font-bold text-green-500">
                     +{portfolio.eth.rewards.toFixed(9)} ETH
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-zinc-400">Total Value</p>
+                  <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
                   <p className="text-2xl font-bold text-purple-500">
                     {totalValue.toFixed(9)} ETH
                   </p>
@@ -206,57 +218,32 @@ export default function Portfolio() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
-                        Withdraw Rewards
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Withdraw ETH Rewards</DialogTitle>
-                        <DialogDescription className="text-zinc-400">
-                          Enter the amount of ETH rewards you want to withdraw.
-                          Available: {portfolio.eth.rewards.toFixed(9)} ETH
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={withdrawAmount}
-                          onChange={(e) => setWithdrawAmount(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white"
-                          min={0}
-                          max={portfolio.eth.rewards}
-                          step="0.000000001"
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          className="bg-purple-600 hover:bg-purple-700"
-                          onClick={() => handleWithdraw('ETH')}
-                          disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) > portfolio.eth.rewards}
-                        >
-                          {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  {portfolio.eth.status === 'active' ? (
+                    <Button 
+                      className="flex-1 bg-yellow-600 hover:bg-yellow-700"
+                      onClick={handleEndStaking}
+                      disabled={isEndingStake}
+                    >
+                      {isEndingStake ? 'Ending Stake...' : 'End Staking'}
+                    </Button>
+                  ) : null}
 
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button className="flex-1 bg-green-600 hover:bg-green-700">
+                      <Button 
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        disabled={portfolio.eth.status === 'active'}
+                      >
                         <Wallet className="w-4 h-4 mr-2" />
-                        Transfer to Wallet
+                        Transfer Total to Wallet
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-zinc-900 border-zinc-800">
                       <DialogHeader>
-                        <DialogTitle className="text-white">Transfer ETH to Wallet</DialogTitle>
+                        <DialogTitle className="text-white">Transfer Total ETH to Wallet</DialogTitle>
                         <DialogDescription className="text-zinc-400">
                           Enter the amount of ETH you want to transfer to your wallet.
-                          Available: {totalValue.toFixed(9)} ETH
+                          Maximum Available: {totalValue.toFixed(9)} ETH (Stake + Rewards)
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
