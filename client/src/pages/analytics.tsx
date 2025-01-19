@@ -74,9 +74,14 @@ export default function Analytics() {
     );
   }
 
-  // Calculate USD values
-  const totalValueUSD = analytics.portfolio.totalValue * analytics.portfolio.ethPrice;
-  const profitLossUSD = analytics.portfolio.profitLoss * analytics.portfolio.ethPrice;
+  // Calculate USD values with null checks
+  const totalValueUSD = analytics?.portfolio?.totalValue && analytics?.portfolio?.ethPrice
+    ? analytics.portfolio.totalValue * analytics.portfolio.ethPrice
+    : 0;
+
+  const profitLossUSD = analytics?.portfolio?.profitLoss && analytics?.portfolio?.ethPrice
+    ? analytics.portfolio.profitLoss * analytics.portfolio.ethPrice
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -219,7 +224,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics.portfolio.totalValue.toFixed(6)} ETH
+                  {analytics?.portfolio?.totalValue?.toFixed(6) || '0.000000'} ETH
                 </p>
                 <p className="text-lg text-zinc-400">
                   ${totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -233,10 +238,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className={`text-3xl font-bold ${
-                  analytics.portfolio.profitLoss >= 0 ? 'text-green-500' : 'text-red-500'
+                  (analytics?.portfolio?.profitLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
-                  {analytics.portfolio.profitLoss >= 0 ? '+' : ''}
-                  {analytics.portfolio.profitLoss.toFixed(6)} ETH
+                  {(analytics?.portfolio?.profitLoss || 0) >= 0 ? '+' : ''}
+                  {analytics?.portfolio?.profitLoss?.toFixed(6) || '0.000000'} ETH
                 </p>
                 <p className={`text-lg ${
                   profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
@@ -253,7 +258,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  ${analytics.portfolio.ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${(analytics?.portfolio?.ethPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
@@ -266,7 +271,7 @@ export default function Analytics() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.portfolio.priceHistory.map(point => ({
+                  <LineChart data={(analytics?.portfolio?.priceHistory || []).map(point => ({
                     ...point,
                     date: format(point.timestamp, 'MMM dd HH:mm')
                   }))}>
