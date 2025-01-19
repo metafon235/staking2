@@ -2,7 +2,7 @@ import { Home, LineChart, Coins, Settings, Menu, LogOut, User } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useLocation as useLocationHook } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ const menuItems = [
 
 export default function Navigation() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocationHook();
   const { user, logout } = useUser();
 
   if (!user) return null;
@@ -28,6 +28,7 @@ export default function Navigation() {
   const handleLogout = async () => {
     try {
       await logout();
+      setLocation("/"); // Redirect to home page after successful logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
