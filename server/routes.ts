@@ -391,10 +391,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: 'No funds available for withdrawal' });
       }
 
-      // Mark stakes as withdrawn
+      // Set all stakes to withdrawn and amount to 0
       for (const stake of userStakes) {
         await db.update(stakes)
-          .set({ status: 'withdrawn', updatedAt: new Date() })
+          .set({ 
+            status: 'withdrawn', 
+            amount: '0',
+            updatedAt: new Date() 
+          })
           .where(eq(stakes.id, stake.id));
       }
 
@@ -532,6 +536,11 @@ export function registerRoutes(app: Express): Server {
 
   // Calculate rewards based on 3% APY for a specific time period
   function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
+    // Only generate rewards if stake amount is at least 0.01 ETH
+    if (stakedAmount < 0.01) {
+      return 0;
+    }
+
     const timePassedMs = endTimeMs - startTimeMs;
     const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
     return stakedAmount * 0.03 * yearsElapsed; // 3% APY
