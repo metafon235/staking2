@@ -47,16 +47,18 @@ export default function Navigation() {
               const isActive = location === item.href;
 
               return (
-                <Link key={item.href} href={item.href}>
-                  <a className={cn(
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  className={cn(
                     "flex items-center space-x-2 rounded-lg px-3 py-2 text-sm transition-colors",
                     isActive 
                       ? "bg-purple-600 text-white" 
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                  )}>
-                    <Icon className="h-5 w-5" />
-                    {!isCollapsed && <span>{item.label}</span>}
-                  </a>
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {!isCollapsed && <span>{item.label}</span>}
                 </Link>
               );
             })}
@@ -72,16 +74,18 @@ export default function Navigation() {
             const isActive = location === item.href;
 
             return (
-              <Link key={item.href} href={item.href}>
-                <a className={cn(
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={cn(
                   "flex flex-col items-center justify-center space-y-1",
                   isActive
                     ? "text-purple-600"
                     : "text-zinc-400 hover:text-white"
-                )}>
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs">{item.label}</span>
-                </a>
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs">{item.label}</span>
               </Link>
             );
           })}
