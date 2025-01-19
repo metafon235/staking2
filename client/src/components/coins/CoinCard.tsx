@@ -26,7 +26,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true, 
         </div>
 
         <h3 className="text-2xl font-bold text-white mb-2">{name}</h3>
-        
+
         <div className="space-y-4">
           <div className="space-y-2">
             <p className="text-3xl font-bold text-purple-400">{apy}% APY</p>
@@ -38,12 +38,12 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true, 
               {minStake} {symbol}
             </p>
           </div>
-          
+
           {enabled ? (
             <Link href={`/coins/${symbol.toLowerCase()}`}>
-              <a className="block w-full text-center py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+              <button className="block w-full text-center py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
                 Start Staking
-              </a>
+              </button>
             </Link>
           ) : (
             <button disabled className="w-full py-2 px-4 bg-zinc-800 text-zinc-500 rounded-lg cursor-not-allowed">
