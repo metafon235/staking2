@@ -1,6 +1,5 @@
 import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
 import { createHmac } from 'crypto';
-import type { Account } from '@coinbase/wallet-sdk';
 
 interface StakingResponse {
   id: string;
@@ -20,7 +19,7 @@ interface RewardsResponse {
 }
 
 class CoinbaseService {
-  private readonly baseUrl = 'https://api.cdp.coinbase.com';
+  private readonly baseUrl = 'https://api.coinbase.com';
   private readonly apiKey: string;
   private readonly apiSecret: string;
 
@@ -31,12 +30,17 @@ class CoinbaseService {
     if (!this.apiKey || !this.apiSecret) {
       throw new Error('Coinbase API credentials are not configured');
     }
+
+    console.log('CoinbaseService initialized with API key:', this.apiKey.substring(0, 4) + '...');
   }
 
   async getEthereumBalance(): Promise<string> {
     try {
-      const response = await fetch(`${this.baseUrl}/v2/accounts/ETH`, {
-        headers: this.getHeaders('GET', '/v2/accounts/ETH'),
+      const path = '/v2/accounts/ETH2';
+      console.log('Fetching ETH balance from:', `${this.baseUrl}${path}`);
+
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        headers: this.getHeaders('GET', path),
       });
 
       if (!response.ok) {
@@ -44,25 +48,28 @@ class CoinbaseService {
         console.error('Coinbase API Error:', {
           status: response.status,
           statusText: response.statusText,
-          error: errorText
+          error: errorText,
+          headers: response.headers,
         });
         throw new Error(`Failed to fetch Ethereum balance: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('Balance response:', data);
       return data.data.balance.amount;
     } catch (error) {
       console.error('Error fetching Ethereum balance:', error);
-      throw new Error('Failed to fetch Ethereum balance');
+      throw error;
     }
   }
 
   async initiateStaking(amount: string): Promise<StakingResponse> {
     try {
-      const path = '/v2/eth2/staking';
+      const path = '/v2/eth2/staking/stake';
       const body = JSON.stringify({
         amount,
-        currency: 'ETH'
+        currency: 'ETH',
+        staking_period: 'flexible'
       });
 
       console.log('Initiating staking request:', {
@@ -82,7 +89,8 @@ class CoinbaseService {
         console.error('Staking API Error:', {
           status: response.status,
           statusText: response.statusText,
-          error: errorResponse
+          error: errorResponse,
+          headers: response.headers,
         });
         throw new Error(errorResponse.message || 'Staking failed');
       }
@@ -99,22 +107,33 @@ class CoinbaseService {
       };
     } catch (error) {
       console.error('Error initiating staking:', error);
-      throw new Error('Failed to initiate staking');
+      throw error;
     }
   }
 
   async getStakingRewards(): Promise<RewardsResponse> {
     try {
-      const path = '/v2/eth2/rewards';
+      const path = '/v2/eth2/staking/rewards';
+      console.log('Fetching staking rewards from:', `${this.baseUrl}${path}`);
+
       const response = await fetch(`${this.baseUrl}${path}`, {
         headers: this.getHeaders('GET', path),
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Rewards API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          headers: response.headers,
+        });
         throw new Error('Failed to fetch rewards');
       }
 
       const data = await response.json();
+      console.log('Rewards response:', data);
+
       return {
         items: data.data.items.map((item: any) => ({
           id: item.id,
@@ -125,7 +144,7 @@ class CoinbaseService {
       };
     } catch (error) {
       console.error('Error fetching staking rewards:', error);
-      throw new Error('Failed to fetch staking rewards');
+      throw error;
     }
   }
 
@@ -141,6 +160,7 @@ class CoinbaseService {
       'CB-ACCESS-KEY': this.apiKey,
       'CB-ACCESS-SIGN': signature,
       'CB-ACCESS-TIMESTAMP': timestamp,
+      'CB-VERSION': '2021-11-01'
     };
   }
 }
