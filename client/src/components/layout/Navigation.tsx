@@ -1,4 +1,4 @@
-import { Home, LineChart, Coins, Settings, Menu } from "lucide-react";
+import { Home, LineChart, Coins, Settings, Menu, LogOut, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -14,10 +14,19 @@ const menuItems = [
 
 export default function Navigation() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [location] = useLocation();
-  const { user } = useUser();
+  const [location, setLocation] = useLocation();
+  const { user, logout } = useUser();
 
   if (!user) return null;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setLocation("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <>
@@ -62,13 +71,26 @@ export default function Navigation() {
                 </Link>
               );
             })}
+
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className={cn(
+                "w-full flex items-center space-x-2 text-left rounded-lg px-3 py-2 text-sm transition-colors",
+                "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              )}
+            >
+              <LogOut className="h-5 w-5" />
+              {!isCollapsed && <span>Logout</span>}
+            </Button>
           </nav>
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 z-40 h-16 w-full border-t border-zinc-800 bg-zinc-900 lg:hidden">
-        <div className="grid h-full grid-cols-4">
+        <div className="grid h-full grid-cols-5">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
@@ -89,6 +111,15 @@ export default function Navigation() {
               </Link>
             );
           })}
+
+          {/* Logout Button - Mobile */}
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center justify-center space-y-1 text-zinc-400 hover:text-white"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="text-xs">Logout</span>
+          </button>
         </div>
       </nav>
     </>
