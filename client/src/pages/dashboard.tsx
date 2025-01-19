@@ -1,6 +1,6 @@
 import StakingCard from "@/components/staking/StakingCard";
 import StakingStats from "@/components/staking/StakingStats";
-import RewardsChart from "@/components/staking/RewardsChart";
+import StakingChart from "@/components/StakingChart";
 import { useQuery } from "@tanstack/react-query";
 import { getStakingData } from "@/lib/web3";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,7 +49,11 @@ export default function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <StakingCard />
-        <RewardsChart data={stakingData?.rewardsHistory || []} />
+        <StakingChart 
+          data={stakingData?.rewardsHistory || []}
+          totalStaked={stakingData?.totalStaked || 0}
+          currentRewards={stakingData?.rewards || 0}
+        />
       </div>
     </div>
   );

@@ -38,7 +38,7 @@ function generateRewardsHistory(totalStaked: number, startTime: number): Array<{
     const rewards = calculateRewards(totalStaked, startTime);
     history.push({
       timestamp,
-      rewards: Math.round(rewards * 1000000) / 1000000
+      rewards: Math.round(rewards * 100000000) / 100000000 // 8 decimal places
     });
   }
   return history;
@@ -81,8 +81,8 @@ export function registerRoutes(app: Express): Server {
 
       const mockData = {
         totalStaked,
-        rewards: Math.round(currentRewards * 1000000) / 1000000,
-        projected: Math.round(projectedRewards * 1000000) / 1000000,
+        rewards: Math.round(currentRewards * 100000000) / 100000000, // 8 decimal places
+        projected: Math.round(projectedRewards * 100000000) / 100000000, // 8 decimal places
         rewardsHistory: generateRewardsHistory(totalStaked, earliestStake.getTime()),
         lastUpdated: Date.now()
       };
