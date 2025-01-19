@@ -1,9 +1,15 @@
-import { Home, LineChart, Coins, Settings, Menu } from "lucide-react";
+import { Home, LineChart, Coins, Settings, Menu, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/" },
@@ -15,9 +21,17 @@ const menuItems = [
 export default function Navigation() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [location] = useLocation();
-  const { user } = useUser();
+  const { user, logout } = useUser();
 
   if (!user) return null;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <>
@@ -63,12 +77,33 @@ export default function Navigation() {
               );
             })}
           </nav>
+
+          {/* User Menu - Desktop */}
+          <div className="p-4 border-t border-zinc-800">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-zinc-400 hover:text-white"
+                >
+                  <User className="h-5 w-5 mr-2" />
+                  {!isCollapsed && <span>{user.username}</span>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 z-40 h-16 w-full border-t border-zinc-800 bg-zinc-900 lg:hidden">
-        <div className="grid h-full grid-cols-4">
+        <div className="grid h-full grid-cols-5">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
@@ -89,6 +124,22 @@ export default function Navigation() {
               </Link>
             );
           })}
+
+          {/* User Menu - Mobile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex flex-col items-center justify-center space-y-1 text-zinc-400 hover:text-white">
+                <User className="h-5 w-5" />
+                <span className="text-xs">Account</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top">
+              <DropdownMenuItem className="text-sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </nav>
     </>
