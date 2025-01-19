@@ -25,14 +25,15 @@ function calculateRewards(stakedAmount: number, startTimeMs: number): number {
   return stakedAmount * 0.03 * yearsElapsed; // 3% APY
 }
 
-// Generate minute-by-minute rewards history
+// Generate rewards history based on time range
 function generateRewardsHistory(totalStaked: number, startTime: number): Array<{ timestamp: number; rewards: number }> {
   const history = [];
   const now = Date.now();
-  const oneHourAgo = now - (60 * 60 * 1000);
+  const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+  const intervalMinutes = 5; // Data points every 5 minutes
 
-  for (let i = 0; i < 60; i++) {
-    const timestamp = oneHourAgo + (i * 60 * 1000);
+  // Generate data points for the last week
+  for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += intervalMinutes * 60 * 1000) {
     const rewards = calculateRewards(totalStaked, startTime);
     history.push({
       timestamp,

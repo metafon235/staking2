@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useState } from "react";
 
 interface StakingChartProps {
   data: Array<{
@@ -11,20 +13,77 @@ interface StakingChartProps {
   currentRewards: number;
 }
 
+type TimeRange = 'hour' | 'day' | 'week';
+
 export default function StakingChart({ data, totalStaked, currentRewards }: StakingChartProps) {
-  const formattedData = data.map(point => ({
+  const [timeRange, setTimeRange] = useState<TimeRange>('hour');
+
+  const getTimeFormat = (range: TimeRange) => {
+    switch (range) {
+      case 'hour':
+        return 'HH:mm';
+      case 'day':
+        return 'MMM dd HH:mm';
+      case 'week':
+        return 'MMM dd';
+      default:
+        return 'HH:mm';
+    }
+  };
+
+  const filterDataByTimeRange = (range: TimeRange) => {
+    const now = Date.now();
+    const ranges = {
+      hour: 60 * 60 * 1000,
+      day: 24 * 60 * 60 * 1000,
+      week: 7 * 24 * 60 * 60 * 1000
+    };
+
+    return data.filter(point => point.timestamp >= now - ranges[range]);
+  };
+
+  const formattedData = filterDataByTimeRange(timeRange).map(point => ({
     ...point,
-    time: format(new Date(point.timestamp), 'HH:mm'),
+    time: format(new Date(point.timestamp), getTimeFormat(timeRange)),
     rewards: point.rewards.toFixed(9)
   }));
 
   return (
     <Card className="col-span-3 bg-zinc-900 border-zinc-800">
       <CardHeader>
-        <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
-        <CardDescription className="text-zinc-400">
-          Real-time rewards accumulation for {totalStaked.toFixed(9)} ETH staked
-        </CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Real-time rewards accumulation for {totalStaked.toFixed(9)} ETH staked
+            </CardDescription>
+          </div>
+          <ToggleGroup 
+            type="single" 
+            value={timeRange}
+            onValueChange={(value: TimeRange) => value && setTimeRange(value)}
+            className="bg-zinc-800 border border-zinc-700 rounded-lg"
+          >
+            <ToggleGroupItem 
+              value="hour" 
+              className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+            >
+              1H
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="day" 
+              className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+            >
+              24H
+            </ToggleGroupItem>
+            <ToggleGroupItem 
+              value="week" 
+              className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+            >
+              7D
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] mt-4">
