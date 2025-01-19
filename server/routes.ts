@@ -42,15 +42,8 @@ export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      // Check if user is authenticated
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
-      // Get user's stakes from the store
-      const userStakes = store.getStakesByUser(req.session.userId);
-      const totalStaked = userStakes.reduce((sum, stake) => sum + parseFloat(stake.amount), 0);
-
+      // Mock data for testing
+      const totalStaked = 100; // Mock 100 ETH staked
       const startTime = Date.now() - (60 * 60 * 1000); // Started staking 1 hour ago
       const currentRewards = calculateRewards(totalStaked, startTime);
 
