@@ -51,13 +51,13 @@ export default function RewardsBarChart() {
 
   if (isLoading) {
     return (
-      <Card className="bg-[#756D54]/10 border-[#756D54]">
+      <Card className="bg-[#474056]/10 border-[#757083]">
         <CardHeader>
           <CardTitle className="text-xl font-medium text-white">Daily Rewards</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center h-[300px]">
-            <Loader2 className="h-8 w-8 animate-spin text-[#8419CB]" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#77F311]" />
           </div>
         </CardContent>
       </Card>
@@ -67,7 +67,7 @@ export default function RewardsBarChart() {
   const dailyRewards = groupTransactionsByDay(transactions || []);
 
   return (
-    <Card className="bg-[#756D54]/10 border-[#756D54]">
+    <Card className="bg-[#474056]/10 border-[#757083]">
       <CardHeader>
         <CardTitle className="text-xl font-medium text-white">Daily Rewards</CardTitle>
       </CardHeader>
@@ -77,27 +77,27 @@ export default function RewardsBarChart() {
             <BarChart data={dailyRewards}>
               <XAxis 
                 dataKey="date" 
-                stroke="#8B9556"
+                stroke="#8A95A5"
                 fontSize={12}
               />
               <YAxis 
-                stroke="#8B9556"
+                stroke="#8A95A5"
                 fontSize={12}
                 tickFormatter={(value) => value.toFixed(8)}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#756D54',
-                  border: '1px solid #8B9556',
+                  backgroundColor: '#474056',
+                  border: '1px solid #757083',
                   borderRadius: '6px'
                 }}
                 labelStyle={{ color: '#FFFFFF' }}
-                itemStyle={{ color: '#BED558' }}
+                itemStyle={{ color: '#77F311' }}
                 formatter={(value: number) => [value.toFixed(9) + ' ETH', 'Rewards']}
               />
               <Bar 
                 dataKey="amount" 
-                fill="#8419CB"
+                fill="#77F311"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

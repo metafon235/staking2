@@ -45,21 +45,21 @@ export default {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         chart: {
-          "1": "#8419CB", // Purple/Lila
-          "2": "#756D54", // Taupe
-          "3": "#8B9556", // Sage
-          "4": "#ABB557", // Olive
-          "5": "#BED558", // Yellow-Green
+          "1": "#090C08", // Fast Schwarz
+          "2": "#474056", // Dunkles Violett-Grau
+          "3": "#757083", // Mittleres Grau-Violett
+          "4": "#8A95A5", // Helles Blau-Grau
+          "5": "#77F311", // Neon Grün
         },
         sidebar: {
-          DEFAULT: "#756D54", // Taupe for sidebar background
+          DEFAULT: "#474056", // Dunkles Violett-Grau für Hintergrund
           foreground: "#FFFFFF",
-          primary: "#8419CB", // Purple for primary actions
-          "primary-foreground": "#FFFFFF",
-          accent: "#8B9556", // Sage for accents
-          "accent-foreground": "#FFFFFF",
-          border: "#756D54", // Taupe for borders
-          ring: "#8419CB", // Purple for focus rings
+          primary: "#77F311", // Neon Grün für primäre Aktionen
+          "primary-foreground": "#090C08",
+          accent: "#8A95A5", // Helles Blau-Grau für Akzente
+          "accent-foreground": "#090C08",
+          border: "#757083", // Mittleres Grau-Violett für Borders
+          ring: "#77F311", // Neon Grün für Focus Rings
         },
       },
       keyframes: {

@@ -58,13 +58,13 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#756D54]/5 p-4">
-      <Card className="w-full max-w-md bg-[#756D54]/10 border-[#756D54]">
+    <div className="min-h-screen flex items-center justify-center bg-[#090C08] p-4">
+      <Card className="w-full max-w-md bg-[#474056] border-[#757083]">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-white">
             {isLogin ? "Login" : "Create Account"}
           </CardTitle>
-          <CardDescription className="text-[#BED558]">
+          <CardDescription className="text-[#77F311]">
             {isLogin
               ? "Enter your credentials to access your account"
               : "Create an account to start staking"}
@@ -78,7 +78,7 @@ export default function AuthPage() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#756D54]/20 border-[#8B9556] text-white placeholder:text-[#8B9556]"
+                className="bg-[#090C08]/20 border-[#757083] text-white placeholder:text-[#8A95A5]"
                 disabled={isLoading}
                 required
               />
@@ -89,7 +89,7 @@ export default function AuthPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#756D54]/20 border-[#8B9556] text-white placeholder:text-[#8B9556]"
+                className="bg-[#090C08]/20 border-[#757083] text-white placeholder:text-[#8A95A5]"
                 disabled={isLoading}
                 required
               />
@@ -97,19 +97,19 @@ export default function AuthPage() {
 
             <Button 
               type="submit" 
-              className="w-full bg-[#8419CB] hover:bg-[#8419CB]/80 text-white"
+              className="w-full bg-[#77F311] hover:bg-[#77F311]/80 text-[#090C08]"
               disabled={!email || !password || isLoading}
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {isLogin ? "Sign In" : "Create Account"}
             </Button>
 
-            <p className="text-center text-sm text-[#8B9556]">
+            <p className="text-center text-sm text-[#8A95A5]">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="ml-1 text-[#BED558] hover:text-[#BED558]/80"
+                className="ml-1 text-[#77F311] hover:text-[#77F311]/80"
                 disabled={isLoading}
               >
                 {isLogin ? "Sign up" : "Sign in"}
