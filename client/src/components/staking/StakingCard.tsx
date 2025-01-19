@@ -17,7 +17,7 @@ export default function StakingCard() {
     queryKey: ['/api/staking/data'],
     refetchInterval: 60000, // Refetch every minute
     refetchIntervalInBackground: true,
-    staleTime: 55000, // Consider data stale after 55 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 
   // Force refresh when component mounts and set up interval

@@ -18,21 +18,22 @@ function calculateRewards(stakedAmount: number, timestampMs: number): number {
   const now = Date.now();
   const timePassedMs = now - timestampMs;
   const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-  // Round to 6 decimal places to avoid floating point imprecision
-  return Math.round(stakedAmount * APY * yearsElapsed * 1000000) / 1000000;
+  return Math.round((stakedAmount * APY * yearsElapsed) * 1000000) / 1000000;
 }
 
 // Generate minute-by-minute rewards history
 function generateRewardsHistory(totalStaked: number): Array<{ timestamp: number; rewards: number }> {
   const history = [];
   const now = Date.now();
+  const startTime = now - (60 * 60 * 1000); // Start from 1 hour ago
+
   // Generate data points for the last 60 minutes
-  for (let i = 59; i >= 0; i--) {
-    const timestamp = now - (i * 60 * 1000); // Every minute
-    const rewards = calculateRewards(totalStaked, now - (60 * 60 * 1000)) * ((60 - i) / 60);
+  for (let i = 0; i < 60; i++) {
+    const timestamp = startTime + (i * 60 * 1000); // Every minute
+    const rewards = calculateRewards(totalStaked, startTime);
     history.push({
       timestamp,
-      rewards: Math.round(rewards * 1000000) / 1000000 // Round to 6 decimal places
+      rewards: Math.round(rewards * (i + 1) / 60 * 1000000) / 1000000 // Linear interpolation
     });
   }
   return history;
@@ -42,23 +43,25 @@ export function registerRoutes(app: Express): Server {
   // Get staking overview data
   app.get('/api/staking/data', async (req, res) => {
     try {
-      // Mock data for testing - using current timestamp for accurate rewards
       const totalStaked = 100; // Mock 100 ETH staked
-      const startTime = Date.now() - (24 * 60 * 60 * 1000); // Mock: Started staking 24 hours ago
+      const startTime = Date.now() - (60 * 60 * 1000); // Started staking 1 hour ago
+
+      // Calculate current rewards based on time elapsed
       const currentRewards = calculateRewards(totalStaked, startTime);
 
       // Project rewards for the next month (30 days)
-      const projectedRewards = Math.round(calculateRewards(totalStaked, startTime) * (30 * 24) * 1000000) / 1000000;
+      const projectedRewards = (totalStaked * 0.03) / 12; // Monthly projection based on APY
 
       const mockData = {
         totalStaked,
         rewards: currentRewards,
-        projected: projectedRewards,
+        projected: Math.round(projectedRewards * 1000000) / 1000000,
         rewardsHistory: generateRewardsHistory(totalStaked),
-        lastUpdated: Date.now() // Add timestamp for client-side refresh logic
+        lastUpdated: Date.now()
       };
 
       console.log('Returning staking data:', { 
+        totalStaked,
         rewards: currentRewards,
         projected: projectedRewards,
         lastUpdated: new Date().toISOString()
