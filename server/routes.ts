@@ -178,7 +178,12 @@ export function registerRoutes(app: Express): Server {
       const earliestStake = userStakes[0]?.createdAt || new Date();
 
       // Calculate current rewards based on total staked amount and earliest stake time
-      const currentRewards = calculateRewardsForTimestamp(totalStaked, earliestStake.getTime(), Date.now());
+      const currentRewards = await calculateRewardsForTimestamp(
+        totalStaked,
+        earliestStake.getTime(),
+        Date.now(),
+        req.user.id // Pass userId to record rewards
+      );
 
       // Calculate monthly rewards based on 3% APY
       const monthlyRewards = (totalStaked * 0.03) / 12; // Monthly rewards based on 3% APY
@@ -536,8 +541,8 @@ export function registerRoutes(app: Express): Server {
     })
   });
 
-  // Calculate rewards based on 3% APY for a specific time period
-  function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number): number {
+  // Update the calculateRewardsForTimestamp function to also record rewards as transactions
+  async function calculateRewardsForTimestamp(stakedAmount: number, startTimeMs: number, endTimeMs: number, userId?: number): Promise<number> {
     // Only generate rewards if stake amount is at least 0.01 ETH
     if (stakedAmount < 0.01) {
       return 0;
@@ -545,7 +550,24 @@ export function registerRoutes(app: Express): Server {
 
     const timePassedMs = endTimeMs - startTimeMs;
     const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-    return stakedAmount * 0.03 * yearsElapsed; // 3% APY
+    const rewards = stakedAmount * 0.03 * yearsElapsed; // 3% APY
+
+    // If userId is provided, record the rewards as a transaction
+    if (userId && rewards > 0) {
+      try {
+        await db.insert(transactions)
+          .values({
+            userId,
+            type: 'reward',
+            amount: rewards.toString(),
+            status: 'completed',
+          });
+      } catch (error) {
+        console.error('Error recording rewards transaction:', error);
+      }
+    }
+
+    return rewards;
   }
 
   // Generate rewards history based on time range
