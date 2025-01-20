@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Home() {
   const { user } = useUser();
+  const [, navigate] = useLocation();
 
   return (
     <div className="min-h-screen bg-black">
@@ -40,36 +41,33 @@ export default function Home() {
 
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/coins/eth">
-            <CoinCard
-              name="Ethereum"
-              symbol="ETH"
-              apy={3.00}
-              minStake="0.01"
-              icon={SiEthereum}
-              enabled={true}
-            />
-          </Link>
-          <Link href="/coins/dot">
-            <CoinCard
-              name="Polkadot"
-              symbol="DOT"
-              apy={12.00}
-              minStake="5.00"
-              icon={SiPolkadot}
-              enabled={false}
-            />
-          </Link>
-          <Link href="/coins/sol">
-            <CoinCard
-              name="Solana"
-              symbol="SOL"
-              apy={6.50}
-              minStake="1.00"
-              icon={SiSolana}
-              enabled={false}
-            />
-          </Link>
+          <CoinCard
+            name="Ethereum"
+            symbol="ETH"
+            apy={3.00}
+            minStake="0.01"
+            icon={SiEthereum}
+            enabled={true}
+            onClick={() => navigate("/coins/eth")}
+          />
+          <CoinCard
+            name="Polkadot"
+            symbol="DOT"
+            apy={12.00}
+            minStake="5.00"
+            icon={SiPolkadot}
+            enabled={false}
+            onClick={() => navigate("/coins/dot")}
+          />
+          <CoinCard
+            name="Solana"
+            symbol="SOL"
+            apy={6.50}
+            minStake="1.00"
+            icon={SiSolana}
+            enabled={false}
+            onClick={() => navigate("/coins/sol")}
+          />
         </div>
 
         {/* Features Section */}
