@@ -30,7 +30,7 @@ export default function AdminAuth() {
 
       return response.json();
     },
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       // Invalidate and refetch admin session
       await queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
 

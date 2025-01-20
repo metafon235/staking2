@@ -24,18 +24,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: adminSession, isLoading } = useQuery<AdminSession>({
+  const { data: session, isLoading } = useQuery<AdminSession>({
     queryKey: ['/api/admin/session'],
-    retry: false,
-    refetchOnWindowFocus: false,
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Nicht autorisiert",
-        description: "Bitte melden Sie sich als Administrator an."
+    queryFn: async () => {
+      const response = await fetch('/api/admin/session', {
+        credentials: 'include'
       });
-      setLocation('/admin/login');
-    }
+      if (!response.ok) {
+        throw new Error('Session check failed');
+      }
+      return response.json();
+    },
+    retry: false,
+    refetchOnWindowFocus: false
   });
 
   if (isLoading) {
@@ -46,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!adminSession?.user.isAdmin) {
+  if (!session?.user?.isAdmin) {
     setLocation('/admin/login');
     return null;
   }
@@ -86,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="h-full px-3 py-4">
             <div className="mb-8 px-3">
               <h2 className="text-lg font-semibold">Admin Panel</h2>
-              <p className="text-sm text-muted-foreground">{adminSession.user.email}</p>
+              <p className="text-sm text-muted-foreground">{session.user.email}</p>
             </div>
 
             <nav className="space-y-1">
