@@ -327,8 +327,10 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/users/:userId/stakes', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const stakes = store.getStakesByUser(userId);
-      res.json(stakes);
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, userId)
+      });
+      res.json(userStakes);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch user stakes' });
     }
@@ -338,8 +340,10 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/stakes/:stakeId/rewards', async (req, res) => {
     try {
       const stakeId = parseInt(req.params.stakeId);
-      const rewards = store.getRewardsByStake(stakeId);
-      res.json(rewards);
+      const stakeRewards = await db.query.rewards.findMany({
+        where: eq(rewards.stakeId, stakeId)
+      });
+      res.json(stakeRewards);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch stake rewards' });
     }
@@ -350,12 +354,16 @@ export function registerRoutes(app: Express): Server {
     try {
       const stakeId = parseInt(req.params.stakeId);
       const { amount } = req.body;
-      const reward = store.createReward({
-        stakeId,
-        amount: amount.toString(),
-        createdAt: new Date()
-      });
-      res.json(reward);
+
+      const [newReward] = await db.insert(rewards)
+        .values({
+          stakeId,
+          amount: amount.toString(),
+          createdAt: new Date()
+        })
+        .returning();
+
+      res.json(newReward);
     } catch (error) {
       res.status(500).json({ error: 'Failed to create reward' });
     }
@@ -365,13 +373,16 @@ export function registerRoutes(app: Express): Server {
   app.post('/api/transactions', async (req, res) => {
     try {
       const { userId, type, amount } = req.body;
-      const transaction = store.createTransaction({
-        userId,
-        type,
-        amount: amount.toString(),
-        status: 'pending',
-        createdAt: new Date()
-      });
+      const [transaction] = await db.insert(transactions)
+        .values({
+          userId,
+          type,
+          amount: amount.toString(),
+          status: 'pending',
+          createdAt: new Date()
+        })
+        .returning();
+
       res.json(transaction);
     } catch (error) {
       res.status(500).json({ error: 'Failed to create transaction' });
@@ -714,10 +725,12 @@ export function registerRoutes(app: Express): Server {
 
           await db.insert(referralRewards)
             .values({
+              id: undefined, // Let the database auto-generate this
               referrerId: user.referrerId,
               referredId: userId,
               rewardId: transaction.id,
-              amount: referralReward,
+              amount: referralReward.toString(),
+              createdAt: new Date()
             });
         }
       }
@@ -919,7 +932,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Calculate network health metrics
-      const networkHealth = 98.5 + (MathMath.random() * 1); // 98.5-99.5%
+      const networkHealth = 98.5 + (Math.random() * 1); // 98.5-99.5%
       const participationRate = 95 + (Math.random() * 3); // 95-98%
       const validatorEffectiveness = 96 + (Math.random() * 2); // 96-98%
 
