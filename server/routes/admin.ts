@@ -7,7 +7,7 @@ import { eq, sum, count, and, gt } from 'drizzle-orm';
 
 const router = Router();
 
-// Mock admin credentials
+// Mock admin data
 const MOCK_ADMIN = {
   id: 1,
   email: 'monerominercom@gmail.com',
@@ -75,6 +75,71 @@ router.get('/session', async (req, res) => {
   } catch (error) {
     console.error('Admin session check error:', error);
     res.status(500).json({ message: "Session check failed" });
+  }
+});
+
+// Get all users
+router.get('/users', async (_req, res) => {
+  try {
+    const users = await db.query.users.findMany({
+      columns: {
+        id: true,
+        email: true,
+        walletAddress: true,
+        referralCode: true,
+        isAdmin: true,
+        createdAt: true
+      },
+      with: {
+        stakes: {
+          columns: {
+            amount: true,
+            status: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
+// Delete user
+router.delete('/users/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    // Don't allow deleting the admin user
+    if (userId === MOCK_ADMIN.id) {
+      return res.status(403).json({ message: "Cannot delete admin user" });
+    }
+
+    // First check if user exists
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete the user's stakes first
+    await db.delete(stakes).where(eq(stakes.userId, userId));
+
+    // Then delete the user's transactions
+    await db.delete(transactions).where(eq(transactions.userId, userId));
+
+    // Finally delete the user
+    await db.delete(users).where(eq(users.id, userId));
+
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: "Failed to delete user" });
   }
 });
 
