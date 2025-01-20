@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
+import AdminAuth from "@/pages/admin/auth";
 import Home from "@/pages/home";
 import CoinDetail from "@/pages/coin-detail";
 import Portfolio from "@/pages/portfolio";
@@ -67,18 +68,17 @@ function Router() {
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Settings /></AppLayout>}
       </Route>
 
-      {/* Admin routes - require both authentication and admin privileges */}
+      {/* Admin routes */}
+      <Route path="/admin/login" component={AdminAuth} />
       <Route path="/admin">
         {() => {
-          if (!user) return <Redirect to="/auth" />;
-          if (!user.isAdmin) return <Redirect to="/app" />;
+          if (!user?.isAdmin) return <Redirect to="/admin/login" />;
           return <AdminLayout><AdminDashboard /></AdminLayout>;
         }}
       </Route>
       <Route path="/admin/users">
         {() => {
-          if (!user) return <Redirect to="/auth" />;
-          if (!user.isAdmin) return <Redirect to="/app" />;
+          if (!user?.isAdmin) return <Redirect to="/admin/login" />;
           return <AdminLayout><AdminUsers /></AdminLayout>;
         }}
       </Route>

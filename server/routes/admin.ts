@@ -2,12 +2,112 @@ import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
 import { db } from '@db';
 import { users, stakes, transactions, stakingSettings } from '@db/schema';
-import { desc, sql } from 'drizzle-orm';
+import { desc, sql, eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 
 const router = Router();
+const scryptAsync = promisify(scrypt);
 
-// Protect all admin routes
+// Admin login endpoint - no middleware here
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const admin = await db.query.users.findFirst({
+      where: eq(users.email, email)
+    });
+
+    if (!admin || !admin.isAdmin) {
+      return res.status(401).json({ message: "Invalid admin credentials" });
+    }
+
+    // Verify password
+    const [hashedPassword, salt] = admin.password.split(".");
+    const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+    const suppliedPasswordBuf = (await scryptAsync(
+      password,
+      salt,
+      64
+    )) as Buffer;
+
+    const isMatch = timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid admin credentials" });
+    }
+
+    // Set admin user in session with specific flag
+    if (req.session) {
+      req.session.adminId = admin.id;
+      req.session.isAdminSession = true;
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+    }
+
+    res.json({
+      message: "Admin login successful",
+      user: {
+        id: admin.id,
+        email: admin.email,
+        isAdmin: admin.isAdmin
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Check admin session status
+router.get('/session', async (req, res) => {
+  try {
+    if (!req.session?.adminId || !req.session?.isAdminSession) {
+      return res.status(401).json({ message: "No active admin session" });
+    }
+
+    const admin = await db.query.users.findFirst({
+      where: eq(users.id, req.session.adminId)
+    });
+
+    if (!admin || !admin.isAdmin) {
+      return res.status(401).json({ message: "Invalid admin session" });
+    }
+
+    res.json({
+      user: {
+        id: admin.id,
+        email: admin.email,
+        isAdmin: admin.isAdmin
+      }
+    });
+  } catch (error) {
+    console.error('Admin session check error:', error);
+    res.status(500).json({ message: "Session check failed" });
+  }
+});
+
+// Admin logout
+router.post('/logout', (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Admin logout error:', err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Admin logout successful" });
+    });
+  } else {
+    res.json({ message: "Admin logout successful" });
+  }
+});
+
+// Protect all other admin routes
 router.use(requireAdmin);
 
 // Get system overview
