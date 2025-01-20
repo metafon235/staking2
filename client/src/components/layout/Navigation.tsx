@@ -6,11 +6,11 @@ import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 
 const menuItems = [
-  { icon: Home, label: "Dashboard", href: "/app" },
-  { icon: Wallet, label: "Portfolio", href: "/app/portfolio" },
-  { icon: Coins, label: "Coins", href: "/app/coins/eth" },
-  { icon: LineChart, label: "Analytics", href: "/app/analytics" },
-  { icon: Settings, label: "Settings", href: "/app/settings" },
+  { icon: Home, label: "Dashboard", href: "/dashboard" },
+  { icon: Wallet, label: "Portfolio", href: "/portfolio" },
+  { icon: Coins, label: "Coins", href: "/coins/eth" },
+  { icon: LineChart, label: "Analytics", href: "/analytics" },
+  { icon: Settings, label: "Settings", href: "/settings" }
 ];
 
 export default function Navigation() {
@@ -31,8 +31,8 @@ export default function Navigation() {
 
   // Helper function to check if a menu item is active
   const isMenuItemActive = (href: string) => {
-    if (href === "/app") {
-      return location === "/app";
+    if (href === "/dashboard") {
+      return location === "/dashboard";
     }
     return location.startsWith(href + "/") || location === href;
   };
