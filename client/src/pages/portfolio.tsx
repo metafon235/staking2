@@ -11,8 +11,8 @@ import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 
 interface PortfolioData {
   eth: {
-    staked: number;
-    rewards: number;
+    staked: string;
+    rewards: string;
     apy: number;
   };
 }
@@ -49,8 +49,8 @@ export default function Portfolio() {
   const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
     queryFn: fetchPortfolioData,
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 0 // Always consider data stale to force refresh
+    refetchInterval: 60000,
+    staleTime: 0
   });
 
   const handleWithdrawAll = async (coin: string) => {
@@ -73,10 +73,9 @@ export default function Portfolio() {
     }
   };
 
-  // Calculate totals - Fixed the calculation logic
-  const totalStaked = portfolio ? Number(portfolio.eth.staked) : 0;
-  const totalRewards = portfolio ? Number(portfolio.eth.rewards) : 0;
-  // Keep precision during calculation, only format for display
+  // Parse values from string to number for precise calculations
+  const totalStaked = portfolio ? parseFloat(portfolio.eth.staked) : 0;
+  const totalRewards = portfolio ? parseFloat(portfolio.eth.rewards) : 0;
   const totalValue = totalStaked + totalRewards;
 
   return (
@@ -86,9 +85,7 @@ export default function Portfolio() {
         <SharePortfolioDialog portfolioRef={portfolioRef} />
       </div>
 
-      {/* Content to be included in the snapshot */}
       <div ref={portfolioRef} className="space-y-6 bg-zinc-900 p-6 rounded-lg">
-        {/* Total Overview Card */}
         <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
           <CardHeader>
             <CardTitle className="text-xl font-medium text-white">
@@ -114,7 +111,6 @@ export default function Portfolio() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* ETH Staking Card */}
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium text-white">
@@ -166,7 +162,6 @@ export default function Portfolio() {
             </CardContent>
           </Card>
 
-          {/* SOL Staking Card (Coming Soon) */}
           <Card className="bg-zinc-900/50 border-zinc-800 relative overflow-hidden">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
               <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-lg py-2">
@@ -201,10 +196,8 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* Content excluded from snapshot */}
       <div className="mt-6">
         <div className="grid gap-6">
-          {/* ETH Staking Actions */}
           {portfolio && (
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="pt-6">
@@ -219,7 +212,6 @@ export default function Portfolio() {
             </Card>
           )}
 
-          {/* Transaction History */}
           <TransactionHistory />
         </div>
       </div>
