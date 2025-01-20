@@ -29,12 +29,11 @@ export default function Navigation() {
     }
   };
 
-  // Helper function to check if a menu item is active
   const isMenuItemActive = (href: string) => {
     if (href === "/dashboard") {
       return location === "/dashboard";
     }
-    return location.startsWith(href + "/") || location === href;
+    return location.startsWith(href) || location === href;
   };
 
   return (
@@ -75,12 +74,14 @@ export default function Navigation() {
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5 flex-shrink-0" />
                   {!isCollapsed && <span>{item.label}</span>}
                 </Link>
               );
             })}
+          </nav>
 
+          <div className="p-4">
             <button
               onClick={handleLogout}
               className={cn(
@@ -88,10 +89,10 @@ export default function Navigation() {
                 "text-zinc-400 hover:bg-zinc-800 hover:text-white"
               )}
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-5 w-5 flex-shrink-0" />
               {!isCollapsed && <span>Logout</span>}
             </button>
-          </nav>
+          </div>
         </div>
       </aside>
 

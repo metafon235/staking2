@@ -15,14 +15,19 @@ import { Loader2 } from "lucide-react";
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Navigation from "@/components/layout/Navigation";
+import Portfolio from "@/pages/portfolio";
+import Analytics from "@/pages/analytics";
+import Settings from "@/pages/settings";
 
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-zinc-900">
       <Navigation />
-      <main className="flex-1 p-6 lg:pl-64">
-        {children}
+      <main className="flex-1 p-8 lg:pl-72">
+        <div className="mx-auto max-w-7xl">
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -92,7 +97,7 @@ function Router() {
       <Route path="/portfolio">
         {() => !user ? <Redirect to="/auth" /> : (
           <AppLayout>
-            <div>Portfolio Page</div>
+            <Portfolio />
           </AppLayout>
         )}
       </Route>
@@ -100,7 +105,7 @@ function Router() {
       <Route path="/analytics">
         {() => !user ? <Redirect to="/auth" /> : (
           <AppLayout>
-            <div>Analytics Page</div>
+            <Analytics />
           </AppLayout>
         )}
       </Route>
@@ -108,7 +113,7 @@ function Router() {
       <Route path="/settings">
         {() => !user ? <Redirect to="/auth" /> : (
           <AppLayout>
-            <div>Settings Page</div>
+            <Settings />
           </AppLayout>
         )}
       </Route>
