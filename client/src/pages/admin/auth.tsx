@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ export default function AdminAuth() {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const queryClient = useQueryClient();
 
   const adminLoginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
@@ -29,13 +30,22 @@ export default function AdminAuth() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      // Invalidate and refetch admin session
+      await queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
+
+      toast({
+        title: "Login erfolgreich",
+        description: "Sie werden zum Admin-Dashboard weitergeleitet."
+      });
+
+      // Redirect to admin dashboard
       setLocation("/admin");
     },
     onError: (error) => {
       toast({
         variant: "destructive",
-        title: "Login Failed",
+        title: "Login fehlgeschlagen",
         description: error.message,
       });
     },
