@@ -118,7 +118,7 @@ export function setupAuth(app: Express) {
           .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
       }
 
-      const { email, password, referralCode } = result.data;
+      const { email, password } = result.data;
 
       // Check if user already exists
       const [existingUser] = await db
@@ -131,35 +131,15 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Email already exists");
       }
 
-      // If referral code exists, find referrer
-      let referrerId: number | null = null;
-      if (referralCode) {
-        const referrer = await db.query.users.findFirst({
-          where: eq(users.referralCode, referralCode),
-          columns: {
-            id: true
-          }
-        });
-
-        if (referrer) {
-          referrerId = referrer.id;
-        }
-      }
-
       // Hash the password
       const hashedPassword = await crypto.hash(password);
 
-      // Generate new referral code for the user
-      const newReferralCode = await generateReferralCode();
-
-      // Create the new user with referral info
+      // Create the new user
       const [newUser] = await db
         .insert(users)
         .values({
           email,
           password: hashedPassword,
-          referrerId,
-          referralCode: newReferralCode
         })
         .returning();
 
@@ -207,7 +187,7 @@ export function setupAuth(app: Express) {
           return next(err);
         }
 
-        // Save the session explicitly before sending response
+        // Save the session explicitly
         req.session.save((err) => {
           if (err) {
             return next(err);
@@ -244,29 +224,4 @@ export function setupAuth(app: Express) {
 
     res.json(req.user);
   });
-}
-
-// Helper function to generate unique referral codes
-async function generateReferralCode(): Promise<string> {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code: string;
-  let isUnique = false;
-
-  while (!isUnique) {
-    code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    const existing = await db.query.users.findFirst({
-      where: eq(users.referralCode, code)
-    });
-
-    if (!existing) {
-      isUnique = true;
-      return code;
-    }
-  }
-
-  throw new Error('Failed to generate unique referral code');
 }

@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
-import { setupAuth } from "./auth";
 import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
 
@@ -153,11 +153,6 @@ async function generateRewardsForAllActiveStakes() {
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
-
-  // Start rewards generation interval
-  if (!rewardsGenerationInterval) {
-    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
-  }
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
@@ -924,7 +919,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Calculate network health metrics
-      const networkHealth = 98.5 + (Math.random() * 1); // 98.5-99.5%
+      const networkHealth = 98.5 + (MathMath.random() * 1); // 98.5-99.5%
       const participationRate = 95 + (Math.random() * 3); // 95-98%
       const validatorEffectiveness = 96 + (Math.random() * 2); // 96-98%
 
@@ -1001,6 +996,10 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: 'Failed to register user' });
     }
   });
+
+  if (!rewardsGenerationInterval) {
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
+  }
 
   const httpServer = createServer(app);
   return httpServer;
