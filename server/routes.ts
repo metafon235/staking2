@@ -6,6 +6,8 @@ import { z } from "zod";
 import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
+import * as crypto from 'crypto';
+
 
 // Network base statistics
 const BASE_STATS = {
@@ -150,6 +152,12 @@ async function generateRewardsForAllActiveStakes() {
   }
 }
 
+
+const insertUserSchema = z.object({
+  username: z.string().min(3).max(20),
+  password: z.string().min(8),
+  referralCode: z.string().optional()
+});
 
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
@@ -740,7 +748,8 @@ export function registerRoutes(app: Express): Server {
         const user = await db.query.users.findFirst({
           where: eq(users.id, userId),
           columns: {
-            referrerId: true
+            referrerId: true,
+            username: true
           }
         });
 
@@ -764,10 +773,96 @@ export function registerRoutes(app: Express): Server {
               amount: referralReward.toString(),
               createdAt: new Date()
             });
+
+          // Create notification for referral reward
+          await NotificationService.createReferralNotification(
+            user.referrerId,
+            user.username,
+            'referral_reward',
+            referralReward
+          );
         }
       }
     }
   }
+
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res
+          .status(400)
+          .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
+      }
+
+      const { username, password, referralCode } = result.data;
+
+      // Check if user already exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (existingUser) {
+        return res.status(400).send("Username already exists");
+      }
+
+      // If referral code provided, find referrer
+      let referrerId: number | undefined;
+      if (referralCode) {
+        const [referrer] = await db
+          .select()
+          .from(users)
+          .where(eq(users.referralCode, referralCode))
+          .limit(1);
+
+        if (referrer) {
+          referrerId = referrer.id;
+          // Create notification for referrer
+          await NotificationService.createReferralNotification(
+            referrer.id,
+            username,
+            'new_referral'
+          );
+        }
+      }
+
+      // Hash the password
+      const hashedPassword = await crypto.randomBytes(64).toString('hex');
+
+      // Create the new user
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          username,
+          password: hashedPassword,
+          referrerId,
+          referralCode: await generateReferralCode(),
+        })
+        .returning();
+
+      // Log the user in after registration
+      req.login(newUser, (err) => {
+        if (err) {
+          return next(err);
+        }
+
+        // Save the session explicitly
+        req.session.save((err) => {
+          if (err) {
+            return next(err);
+          }
+          return res.json({
+            message: "Registration successful",
+            user: { id: newUser.id, username: newUser.username }
+          });
+        });
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.get('/api/transactions', async (req, res) => {
     try {
@@ -865,7 +960,7 @@ export function registerRoutes(app: Express): Server {
       // Generate referral code if not exists
       let referralCode = user?.referralCode;
       if (!referralCode) {
-        referralCode = await generateReferralCode();
+                referralCode = await generateReferralCode();
         await db.update(users)
           .set({ referralCode })
           .where(eq(users.id, req.user.id));

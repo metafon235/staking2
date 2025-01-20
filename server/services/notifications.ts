@@ -38,7 +38,7 @@ export class NotificationService {
       .from(notificationSettings)
       .where(eq(notificationSettings.userId, userId))
       .limit(1);
-    
+
     return settings;
   }
 
@@ -69,14 +69,40 @@ export class NotificationService {
       .returning();
   }
 
+  static async createReferralNotification(
+    referrerId: number,
+    referredUsername: string,
+    type: 'new_referral' | 'referral_reward',
+    amount?: number
+  ) {
+    let title: string;
+    let message: string;
+
+    if (type === 'new_referral') {
+      title = 'Neuer Referral! 🎉';
+      message = `${referredUsername} hat sich über Ihren Referral-Link registriert.`;
+    } else {
+      title = 'Referral Reward erhalten! 💰';
+      message = `Sie haben ${amount?.toFixed(9)} ETH Reward durch die Aktivität von ${referredUsername} erhalten.`;
+    }
+
+    return this.createNotification({
+      userId: referrerId,
+      type: type,
+      title,
+      message,
+      data: JSON.stringify({ referredUsername, amount }),
+      read: false
+    });
+  }
+
   static async createRewardNotification(
     userId: number,
     amount: number,
     symbol: string
   ) {
     const settings = await this.getUserSettings(userId);
-    
-    // Check if notification should be created based on threshold
+
     if (settings?.rewardThreshold && amount < Number(settings.rewardThreshold)) {
       return null;
     }
@@ -87,6 +113,7 @@ export class NotificationService {
       title: "New Staking Reward",
       message: `You earned ${amount} ${symbol} from staking`,
       data: JSON.stringify({ amount, symbol }),
+      read: false
     });
   }
 
@@ -96,8 +123,7 @@ export class NotificationService {
     percentageChange: number
   ) {
     const settings = await this.getUserSettings(userId);
-    
-    // Check if notification should be created based on threshold
+
     if (
       settings?.priceChangeThreshold && 
       Math.abs(percentageChange) < Number(settings.priceChangeThreshold)
@@ -106,13 +132,14 @@ export class NotificationService {
     }
 
     const direction = percentageChange > 0 ? "increased" : "decreased";
-    
+
     return this.createNotification({
       userId,
       type: "price_change",
       title: `${symbol} Price Alert`,
       message: `${symbol} price has ${direction} by ${Math.abs(percentageChange)}%`,
       data: JSON.stringify({ symbol, percentageChange }),
+      read: false
     });
   }
 }
