@@ -18,6 +18,7 @@ import Navigation from "@/components/layout/Navigation";
 import Portfolio from "@/pages/portfolio";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
+import CoinDetail from "@/pages/coin-detail";
 
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -98,6 +99,14 @@ function Router() {
         {() => !user ? <Redirect to="/auth" /> : (
           <AppLayout>
             <Portfolio />
+          </AppLayout>
+        )}
+      </Route>
+
+      <Route path="/coins/:symbol">
+        {(params) => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <CoinDetail symbol={params.symbol} />
           </AppLayout>
         )}
       </Route>
