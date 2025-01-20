@@ -558,31 +558,7 @@ export function registerRoutes(app: Express): Server {
     return reward;
   }
 
-  // Generate a unique referral code
-  async function generateReferralCode(): Promise<string> {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code: string;
-    let isUnique = false;
-
-    while (!isUnique) {
-      code = '';
-      for (let i = 0; i < 8; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-
-      const existing = await db.query.users.findFirst({
-        where: eq(users.referralCode, code)
-      });
-
-      if (!existing) {
-        isUnique = true;
-        return code;
-      }
-    }
-
-    throw new Error('Failed to generate unique referral code');
-  }
-
+  // Add this helper function to record per-minute rewards
   async function recordRewardTransaction(userId: number, reward: number) {
     if (reward <= 0) return;
 
@@ -630,6 +606,32 @@ export function registerRoutes(app: Express): Server {
       }
     }
   }
+
+  // Generate a unique referral code
+  async function generateReferralCode(): Promise<string> {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code: string;
+    let isUnique = false;
+
+    while (!isUnique) {
+      code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const existing = await db.query.users.findFirst({
+        where: eq(users.referralCode, code)
+      });
+
+      if (!existing) {
+        isUnique = true;
+        return code;
+      }
+    }
+
+    throw new Error('Failed to generate unique referral code');
+  }
+
 
   app.get('/api/transactions', async (req, res) => {
     try {
@@ -938,7 +940,7 @@ export function registerRoutes(app: Express): Server {
 
       switch (event_type) {
         case 'STAKE_CREATED':
-          console.log('Updating stake status for created stake:', data);
+          console.log('Updatingstake status for created stake:', data);
           // Update stake status in database
           await db.update(stakes)
             .set({

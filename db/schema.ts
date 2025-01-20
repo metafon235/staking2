@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 export const users = pgTable("users", {
@@ -13,6 +14,11 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const userRelations = relations(users, ({ many }) => ({
+  stakes: many(stakes),
+  transactions: many(transactions),
+}));
+
 export const stakes = pgTable("stakes", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -25,6 +31,14 @@ export const stakes = pgTable("stakes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const stakesRelations = relations(stakes, ({ one, many }) => ({
+  user: one(users, {
+    fields: [stakes.userId],
+    references: [users.id],
+  }),
+  rewards: many(rewards),
+}));
+
 export const rewards = pgTable("rewards", {
   id: serial("id").primaryKey(),
   stakeId: integer("stake_id").references(() => stakes.id).notNull(),
@@ -35,14 +49,13 @@ export const rewards = pgTable("rewards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const referralRewards = pgTable("referral_rewards", {
-  id: serial("id").primaryKey(),
-  referrerId: integer("referrer_id").references(() => users.id).notNull(),
-  referredId: integer("referred_id").references(() => users.id).notNull(),
-  rewardId: integer("reward_id").references(() => rewards.id).notNull(),
-  amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const rewardsRelations = relations(rewards, ({ one }) => ({
+  stake: one(stakes, {
+    fields: [rewards.stakeId],
+    references: [stakes.id],
+  }),
+}));
+
 
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
@@ -55,6 +68,13 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  user: one(users, {
+    fields: [transactions.userId],
+    references: [users.id],
+  }),
+}));
+
 export const stakingSettings = pgTable("staking_settings", {
   id: serial("id").primaryKey(),
   coinSymbol: text("coin_symbol").notNull(),
@@ -64,6 +84,13 @@ export const stakingSettings = pgTable("staking_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: integer("updated_by").references(() => users.id),
 });
+
+export const stakingSettingsRelations = relations(stakingSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [stakingSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
 
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
@@ -84,6 +111,7 @@ export const activityMetrics = pgTable("activity_metrics", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Schema validations
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -102,11 +130,6 @@ export const selectRewardSchema = createSelectSchema(rewards);
 export type InsertReward = typeof rewards.$inferInsert;
 export type SelectReward = typeof rewards.$inferSelect;
 
-export const insertReferralRewardSchema = createInsertSchema(referralRewards);
-export const selectReferralRewardSchema = createSelectSchema(referralRewards);
-export type InsertReferralReward = typeof referralRewards.$inferInsert;
-export type SelectReferralReward = typeof referralRewards.$inferSelect;
-
 export const insertTransactionSchema = createInsertSchema(transactions);
 export const selectTransactionSchema = createSelectSchema(transactions);
 export type InsertTransaction = typeof transactions.$inferInsert;
@@ -116,13 +139,3 @@ export const insertStakingSettingsSchema = createInsertSchema(stakingSettings);
 export const selectStakingSettingsSchema = createSelectSchema(stakingSettings);
 export type InsertStakingSettings = typeof stakingSettings.$inferInsert;
 export type SelectStakingSettings = typeof stakingSettings.$inferSelect;
-
-export const insertActivityLogSchema = createInsertSchema(activityLogs);
-export const selectActivityLogSchema = createSelectSchema(activityLogs);
-export type InsertActivityLog = typeof activityLogs.$inferInsert;
-export type SelectActivityLog = typeof activityLogs.$inferSelect;
-
-export const insertActivityMetricSchema = createInsertSchema(activityMetrics);
-export const selectActivityMetricSchema = createSelectSchema(activityMetrics);
-export type InsertActivityMetric = typeof activityMetrics.$inferInsert;
-export type SelectActivityMetric = typeof activityMetrics.$inferSelect;
