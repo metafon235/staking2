@@ -9,22 +9,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-
-interface AdminUser {
-  id: number;
-  email: string;
-  isAdmin: boolean;
-}
+import type { SelectUser } from "@db/schema";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: user, isLoading } = useQuery<AdminUser>({
+  const { data: user, isLoading } = useQuery<SelectUser>({
     queryKey: ['/api/user'],
     retry: false,
-    onError: () => {
-      setLocation('/auth');
+    onSettled: (data, error) => {
+      if (error || !data?.isAdmin) {
+        setLocation('/auth');
+      }
     }
   });
 
@@ -104,8 +101,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 variant="ghost" 
                 className="w-full justify-start" 
                 onClick={() => {
-                  fetch('/api/logout', { method: 'POST' })
-                    .then(() => setLocation('/login'));
+                  fetch('/api/logout', { 
+                    method: 'POST',
+                    credentials: 'include'
+                  }).then(() => setLocation('/login'));
                 }}
               >
                 <LogOut className="mr-3 h-5 w-5" />

@@ -32,9 +32,9 @@ router.get('/overview', async (_req, res) => {
     ]);
 
     res.json({
-      users: userCount[0].count,
+      users: parseInt(userCount[0].count.toString()),
       totalStaked: parseFloat(totalStaked[0]?.total || '0'),
-      transactions: totalTransactions[0].count,
+      transactions: parseInt(totalTransactions[0].count.toString()),
       stakingConfig,
       systemHealth: {
         cdpApiStatus: 'operational',
@@ -52,13 +52,23 @@ router.get('/overview', async (_req, res) => {
 router.get('/users', async (_req, res) => {
   try {
     const userList = await db.query.users.findMany({
-      with: {
-        stakes: true
-      },
       orderBy: desc(users.createdAt)
     });
 
-    res.json(userList);
+    // Get stakes for each user
+    const usersWithStakes = await Promise.all(
+      userList.map(async (user) => {
+        const userStakes = await db.query.stakes.findMany({
+          where: sql`user_id = ${user.id}`
+        });
+        return {
+          ...user,
+          stakes: userStakes
+        };
+      })
+    );
+
+    res.json(usersWithStakes);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
@@ -97,7 +107,6 @@ router.put('/settings/staking/:coinSymbol', async (req, res) => {
 
     const { coinSymbol, displayedApy, actualApy, minStakeAmount } = validation.data;
 
-    // Convert numbers to strings for database storage
     const [updated] = await db
       .update(stakingSettings)
       .set({
