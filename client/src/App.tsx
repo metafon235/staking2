@@ -70,9 +70,9 @@ function Router() {
 
       {/* Admin routes */}
       <Route path="/admin/login">
-        {() => user?.isAdmin ? <Redirect to="/admin" /> : <AdminAuth />}
+        {() => user?.isAdmin ? <Redirect to="/admin/dashboard" /> : <AdminAuth />}
       </Route>
-      <Route path="/admin">
+      <Route path="/admin/dashboard">
         {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
       </Route>
       <Route path="/admin/users">

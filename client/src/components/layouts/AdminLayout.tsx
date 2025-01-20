@@ -46,9 +46,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navigation = [
     {
       name: 'Dashboard',
-      href: '/admin',
+      href: '/admin/dashboard',
       icon: LayoutDashboard,
-      current: location === '/admin'
+      current: location === '/admin/dashboard'
     },
     {
       name: 'Users',

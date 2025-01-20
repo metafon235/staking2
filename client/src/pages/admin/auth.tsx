@@ -56,7 +56,7 @@ export default function AdminAuth() {
 
         // Force a small delay to ensure the session is properly set
         setTimeout(() => {
-          setLocation("/admin");
+          setLocation("/admin/dashboard");
         }, 100);
       } catch (error) {
         toast({
