@@ -69,18 +69,14 @@ function Router() {
       </Route>
 
       {/* Admin routes */}
-      <Route path="/admin/login" component={AdminAuth} />
+      <Route path="/admin/login">
+        {() => user?.isAdmin ? <Redirect to="/admin" /> : <AdminAuth />}
+      </Route>
       <Route path="/admin">
-        {() => {
-          if (!user?.isAdmin) return <Redirect to="/admin/login" />;
-          return <AdminLayout><AdminDashboard /></AdminLayout>;
-        }}
+        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
       </Route>
       <Route path="/admin/users">
-        {() => {
-          if (!user?.isAdmin) return <Redirect to="/admin/login" />;
-          return <AdminLayout><AdminUsers /></AdminLayout>;
-        }}
+        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminLayout><AdminUsers /></AdminLayout>}
       </Route>
 
       {/* Fallback */}
