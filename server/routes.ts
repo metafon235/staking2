@@ -185,7 +185,7 @@ async function fetchCryptoNews() {
 
   try {
     const response = await fetch(
-      'https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=1&interval=daily',
+      'https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=ETH,BTC,Cryptocurrency&excludeCategories=Sponsored',
       {
         headers: {
           'Accept': 'application/json'
@@ -194,24 +194,20 @@ async function fetchCryptoNews() {
     );
 
     if (!response.ok) {
-      console.warn('Failed to fetch from CoinGecko, using fallback data');
+      console.warn('Failed to fetch from CryptoCompare, using fallback data');
       return FALLBACK_NEWS;
     }
 
-    // Transform market data into news-like format
-    const marketData = await response.json();
-    const priceChange = ((marketData.prices[1][1] - marketData.prices[0][1]) / marketData.prices[0][1]) * 100;
+    const data = await response.json();
 
-    const news = [
-      {
-        title: `Ethereum ${priceChange >= 0 ? 'Rises' : 'Drops'} ${Math.abs(priceChange).toFixed(2)}% in 24h`,
-        description: `Current ETH price movements and market analysis show ${priceChange >= 0 ? 'positive' : 'negative'} momentum.`,
-        url: "https://www.coingecko.com/en/coins/ethereum",
-        thumb_2x: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
-        published_at: new Date().toISOString()
-      },
-      ...FALLBACK_NEWS
-    ];
+    // Transform the response into our news format
+    const news = data.Data.slice(0, 10).map(item => ({
+      title: item.title,
+      description: item.body.slice(0, 200) + '...',
+      url: item.url,
+      thumb_2x: item.imageurl,
+      published_at: new Date(item.published_on * 1000).toISOString()
+    }));
 
     // Cache the results
     newsCache.data = news;
@@ -940,7 +936,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-app.post('/api/settings/wallet', async (req, res) => {
+  app.post('/api/settings/wallet', async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
