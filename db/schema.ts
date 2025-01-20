@@ -58,11 +58,30 @@ export const transactions = pgTable("transactions", {
 export const stakingSettings = pgTable("staking_settings", {
   id: serial("id").primaryKey(),
   coinSymbol: text("coin_symbol").notNull(),
-  displayedApy: decimal("displayed_apy", { precision: 4, scale: 2 }).notNull(), 
-  actualApy: decimal("actual_apy", { precision: 4, scale: 2 }).notNull(), 
+  displayedApy: decimal("displayed_apy", { precision: 4, scale: 2 }).notNull(),
+  actualApy: decimal("actual_apy", { precision: 4, scale: 2 }).notNull(),
   minStakeAmount: decimal("min_stake_amount", { precision: 36, scale: 18 }).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: integer("updated_by").references(() => users.id),
+});
+
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), 
+  subtype: text("subtype").notNull(), 
+  userId: integer("user_id").references(() => users.id),
+  data: text("data"), 
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const activityMetrics = pgTable("activity_metrics", {
+  id: serial("id").primaryKey(),
+  date: timestamp("date").notNull(),
+  totalValueLocked: decimal("total_value_locked", { precision: 36, scale: 18 }).notNull(),
+  userCount: integer("user_count").notNull(),
+  activeStakes: integer("active_stakes").notNull(),
+  adminRewards: decimal("admin_rewards", { precision: 36, scale: 18 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users, {
@@ -97,3 +116,13 @@ export const insertStakingSettingsSchema = createInsertSchema(stakingSettings);
 export const selectStakingSettingsSchema = createSelectSchema(stakingSettings);
 export type InsertStakingSettings = typeof stakingSettings.$inferInsert;
 export type SelectStakingSettings = typeof stakingSettings.$inferSelect;
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs);
+export const selectActivityLogSchema = createSelectSchema(activityLogs);
+export type InsertActivityLog = typeof activityLogs.$inferInsert;
+export type SelectActivityLog = typeof activityLogs.$inferSelect;
+
+export const insertActivityMetricSchema = createInsertSchema(activityMetrics);
+export const selectActivityMetricSchema = createSelectSchema(activityMetrics);
+export type InsertActivityMetric = typeof activityMetrics.$inferInsert;
+export type SelectActivityMetric = typeof activityMetrics.$inferSelect;

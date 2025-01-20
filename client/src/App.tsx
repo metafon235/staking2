@@ -7,6 +7,7 @@ import AuthPage from "@/pages/auth-page";
 import AdminAuth from "@/pages/admin/auth";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
+import AdminActivity from "@/pages/admin/activity";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
@@ -50,6 +51,13 @@ function Router() {
         {() => (
           <AdminLayout>
             <AdminUsers />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path="/admin/activity">
+        {() => (
+          <AdminLayout>
+            <AdminActivity />
           </AdminLayout>
         )}
       </Route>

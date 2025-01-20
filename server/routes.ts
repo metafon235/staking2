@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import adminRoutes from './routes/admin';
+import activityRoutes from './routes/admin/activity';
 import { z } from 'zod';
 import { db } from '@db';
 import { stakes, rewards, transactions, users } from '@db/schema';
@@ -14,6 +15,7 @@ export function registerRoutes(app: Express): Server {
   // Register admin routes - make sure this comes before other routes
   // Important: Do NOT apply any middleware here
   app.use('/api/admin', adminRoutes);
+  app.use('/api/admin/activity', activityRoutes);
 
   // Add new route for news
   app.get('/api/news', async (_req, res) => {

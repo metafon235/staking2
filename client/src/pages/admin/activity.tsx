@@ -1,0 +1,274 @@
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from "recharts";
+import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
+
+interface ActivityLog {
+  id: number;
+  type: string;
+  subtype: string;
+  userId: number;
+  data: string;
+  createdAt: string;
+  user?: {
+    email: string;
+  };
+}
+
+interface ActivityMetrics {
+  historical: Array<{
+    date: string;
+    totalValueLocked: string;
+    userCount: number;
+    activeStakes: number;
+    adminRewards: string;
+  }>;
+  current: {
+    totalValueLocked: string;
+    userCount: number;
+    activeStakes: number;
+    transactionCount: number;
+  };
+}
+
+export default function AdminActivity() {
+  const [period, setPeriod] = useState("7d");
+  
+  const { data: logs, isLoading: logsLoading } = useQuery<ActivityLog[]>({
+    queryKey: ['/api/admin/activity/logs'],
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const { data: metrics, isLoading: metricsLoading } = useQuery<ActivityMetrics>({
+    queryKey: ['/api/admin/activity/metrics', period],
+    refetchInterval: 60000, // Refetch every minute
+  });
+
+  if (logsLoading || metricsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
+
+  const formatActivityType = (type: string, subtype: string) => {
+    switch (type) {
+      case 'USER_ACTION':
+        return 'User Action';
+      case 'SYSTEM_EVENT':
+        return 'System Event';
+      case 'TRANSACTION':
+        return 'Transaction';
+      default:
+        return subtype;
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">Activity & Analytics</h1>
+
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Performance Metrics</h2>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+            <SelectItem value="90d">Last 90 days</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 mb-8">
+        {/* TVL Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Value Locked (TVL)</CardTitle>
+            <CardDescription>Historical TVL in ETH</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={metrics?.historical}>
+                <defs>
+                  <linearGradient id="tvlGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: string) => parseFloat(value).toFixed(4) + ' ETH'}
+                  labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="totalValueLocked" 
+                  stroke="#8884d8" 
+                  fill="url(#tvlGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* User Growth Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>User Growth</CardTitle>
+            <CardDescription>Total registered users over time</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={metrics?.historical}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="userCount" 
+                  stroke="#82ca9d" 
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Admin Rewards Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Rewards</CardTitle>
+            <CardDescription>Accumulated admin rewards in ETH</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={metrics?.historical}>
+                <defs>
+                  <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: string) => parseFloat(value).toFixed(6) + ' ETH'}
+                  labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="adminRewards" 
+                  stroke="#82ca9d" 
+                  fill="url(#rewardsGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Active Stakes Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Stakes</CardTitle>
+            <CardDescription>Number of active stakes over time</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={metrics?.historical}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="activeStakes" 
+                  stroke="#8884d8" 
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <h2 className="text-2xl font-bold mb-6">Recent Activity</h2>
+      <div className="space-y-4">
+        {logs?.map((log) => (
+          <Card key={log.id}>
+            <CardHeader className="py-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-sm font-medium">
+                    {formatActivityType(log.type, log.subtype)}
+                  </CardTitle>
+                  <CardDescription>
+                    {log.user && `By ${log.user.email}`}
+                  </CardDescription>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(log.createdAt), 'MMM d, yyyy HH:mm')}
+                </span>
+              </div>
+            </CardHeader>
+            {log.data && (
+              <CardContent className="py-2">
+                <pre className="text-sm bg-muted p-2 rounded">
+                  {JSON.stringify(JSON.parse(log.data), null, 2)}
+                </pre>
+              </CardContent>
+            )}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
