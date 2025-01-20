@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Loader2, AlertCircle, Copy, Link as LinkIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -67,12 +67,12 @@ export default function Settings() {
     }
   });
 
-  // Set initial wallet address when settings are loaded
-  useState(() => {
+  // Update wallet address when settings are loaded
+  useEffect(() => {
     if (settings?.walletAddress) {
       setWalletAddress(settings.walletAddress);
     }
-  }, [settings]);
+  }, [settings?.walletAddress]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

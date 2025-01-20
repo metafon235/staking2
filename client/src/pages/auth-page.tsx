@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
@@ -26,7 +26,7 @@ export default function AuthPage() {
   // Get referral code from URL if present
   const referralCode = getQueryParam('ref');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
 
@@ -47,16 +47,16 @@ export default function AuthPage() {
         return;
       }
 
+      // Invalidate user query to force a refresh
+      await queryClient.invalidateQueries({ queryKey: ['user'] });
+
       toast({
         title: isLogin ? "Login Successful" : "Registration Successful",
         description: "Welcome to the Staking Platform"
       });
 
-      // Wait for next tick
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // Check user status
-      const user = queryClient.getQueryData(['user']);
+      // Check user status and navigate
+      const user = await queryClient.fetchQuery({ queryKey: ['user'] });
       if (user) {
         navigate("/");
       }
@@ -69,7 +69,7 @@ export default function AuthPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLogin, email, password, referralCode, login, register, toast, navigate, queryClient, isLoading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black/95 p-4">
