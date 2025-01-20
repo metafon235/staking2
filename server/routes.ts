@@ -933,8 +933,7 @@ export function registerRoutes(app: Express): Server {
           // Update stake status
           await db.update(stakes)
             .set({
-              status: data.status.toLowerCase(),
-              updatedAt: new Date()
+              status: data.status.toLowerCase(),              updatedAt: new Date()
             })
             .where(eq(stakes.cdpStakeId, data.stake_id));
           break;

@@ -11,23 +11,124 @@ import {
   Users,
   Wallet,
   Activity,
-  Server
+  Server,
+  Settings
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 interface SystemOverview {
   users: number;
   totalStaked: number;
   transactions: number;
+  stakingConfig: Array<{
+    coinSymbol: string;
+    displayedApy: number;
+    actualApy: number;
+    minStakeAmount: string;
+  }>;
   systemHealth: {
     cdpApiStatus: string;
     databaseStatus: string;
     lastSync: string;
-  }
+  };
+}
+
+function StakingSettingsDialog({ config, onClose }: { 
+  config: SystemOverview['stakingConfig'][0];
+  onClose: () => void;
+}) {
+  const [displayedApy, setDisplayedApy] = useState(config.displayedApy.toString());
+  const [actualApy, setActualApy] = useState(config.actualApy.toString());
+  const [minStake, setMinStake] = useState(config.minStakeAmount);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`/api/admin/settings/staking/${config.coinSymbol}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          coinSymbol: config.coinSymbol,
+          displayedApy: parseFloat(displayedApy),
+          actualApy: parseFloat(actualApy),
+          minStakeAmount: minStake
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update settings');
+      }
+
+      toast({
+        title: "Settings Updated",
+        description: "The staking settings have been updated successfully."
+      });
+
+      onClose();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update staking settings."
+      });
+    }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Edit {config.coinSymbol} Staking Settings</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label>Displayed APY (%)</Label>
+          <Input 
+            type="number" 
+            step="0.01" 
+            value={displayedApy}
+            onChange={(e) => setDisplayedApy(e.target.value)}
+          />
+          <p className="text-sm text-muted-foreground">
+            The APY shown to users
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label>Actual APY (%)</Label>
+          <Input 
+            type="number" 
+            step="0.01" 
+            value={actualApy}
+            onChange={(e) => setActualApy(e.target.value)}
+          />
+          <p className="text-sm text-muted-foreground">
+            The actual APY earned through CDP staking
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label>Minimum Stake Amount</Label>
+          <Input 
+            type="number" 
+            step="0.01" 
+            value={minStake}
+            onChange={(e) => setMinStake(e.target.value)}
+          />
+        </div>
+        <Button onClick={handleSave} className="w-full">
+          Save Changes
+        </Button>
+      </div>
+    </DialogContent>
+  );
 }
 
 export default function AdminDashboard() {
   const { data: overview, isLoading } = useQuery<SystemOverview>({
-    queryKey: ['/api/admin/overview'],
+    queryKey: ['/api/admin/overview']
   });
 
   if (isLoading) {
@@ -41,8 +142,8 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">System Overview</h1>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -114,6 +215,47 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <h2 className="text-2xl font-bold mb-4">Staking Settings</h2>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {overview?.stakingConfig.map((config) => (
+          <Card key={config.coinSymbol}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{config.coinSymbol} Staking</CardTitle>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <StakingSettingsDialog config={config} onClose={() => window.location.reload()} />
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm">Displayed APY</span>
+                  <span className="text-sm font-medium">{config.displayedApy}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Actual APY</span>
+                  <span className="text-sm font-medium">{config.actualApy}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Min Stake</span>
+                  <span className="text-sm font-medium">{config.minStakeAmount} {config.coinSymbol}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Profit Margin</span>
+                  <span className="text-sm font-medium">
+                    {(config.actualApy - config.displayedApy).toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

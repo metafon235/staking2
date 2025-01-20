@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-interface User {
+interface AdminUser {
   id: number;
   email: string;
   isAdmin: boolean;
@@ -20,13 +20,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: user, isLoading } = useQuery<User>({
+  const { data: user, isLoading } = useQuery<AdminUser>({
     queryKey: ['/api/user'],
     retry: false,
-    onSettled: (_data, error) => {
-      if (error) {
-        setLocation('/login');
-      }
+    onError: () => {
+      setLocation('/auth');
     }
   });
 

@@ -30,7 +30,7 @@ export const rewards = pgTable("rewards", {
   stakeId: integer("stake_id").references(() => stakes.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   transactionHash: text("transaction_hash"),
-  cdpRewardId: text("cdp_reward_id"), 
+  cdpRewardId: text("cdp_reward_id"),
   claimedAt: timestamp("claimed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -51,8 +51,18 @@ export const transactions = pgTable("transactions", {
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
   transactionHash: text("transaction_hash"),
-  cdpTransactionId: text("cdp_transaction_id"), 
+  cdpTransactionId: text("cdp_transaction_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const stakingSettings = pgTable("staking_settings", {
+  id: serial("id").primaryKey(),
+  coinSymbol: text("coin_symbol").notNull(),
+  displayedApy: decimal("displayed_apy", { precision: 4, scale: 2 }).notNull(), 
+  actualApy: decimal("actual_apy", { precision: 4, scale: 2 }).notNull(), 
+  minStakeAmount: decimal("min_stake_amount", { precision: 36, scale: 18 }).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
 });
 
 export const insertUserSchema = createInsertSchema(users, {
@@ -82,3 +92,8 @@ export const insertTransactionSchema = createInsertSchema(transactions);
 export const selectTransactionSchema = createSelectSchema(transactions);
 export type InsertTransaction = typeof transactions.$inferInsert;
 export type SelectTransaction = typeof transactions.$inferSelect;
+
+export const insertStakingSettingsSchema = createInsertSchema(stakingSettings);
+export const selectStakingSettingsSchema = createSelectSchema(stakingSettings);
+export type InsertStakingSettings = typeof stakingSettings.$inferInsert;
+export type SelectStakingSettings = typeof stakingSettings.$inferSelect;

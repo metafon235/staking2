@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
 import { db } from '@db';
-import { users, stakes, transactions } from '@db/schema';
+import { users, stakes, transactions, stakingSettings } from '@db/schema';
 import { desc, sql } from 'drizzle-orm';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -15,7 +16,8 @@ router.get('/overview', async (_req, res) => {
     const [
       userCount,
       totalStaked,
-      totalTransactions
+      totalTransactions,
+      stakingConfig
     ] = await Promise.all([
       // Get total users
       db.select({ count: sql<number>`count(*)` }).from(users),
@@ -24,13 +26,16 @@ router.get('/overview', async (_req, res) => {
         total: sql<string>`sum(amount)::numeric` 
       }).from(stakes),
       // Get total transactions
-      db.select({ count: sql<number>`count(*)` }).from(transactions)
+      db.select({ count: sql<number>`count(*)` }).from(transactions),
+      // Get staking settings
+      db.query.stakingSettings.findMany()
     ]);
 
     res.json({
       users: userCount[0].count,
       totalStaked: parseFloat(totalStaked[0]?.total || '0'),
       transactions: totalTransactions[0].count,
+      stakingConfig,
       systemHealth: {
         cdpApiStatus: 'operational',
         databaseStatus: 'healthy',
@@ -60,24 +65,59 @@ router.get('/users', async (_req, res) => {
   }
 });
 
-// Update APY settings
-router.post('/settings/apy', async (req, res) => {
+// Get staking settings
+router.get('/settings/staking', async (_req, res) => {
   try {
-    const { coin, apy } = req.body;
-    
-    if (!coin || typeof apy !== 'number' || apy < 0) {
-      return res.status(400).json({ error: 'Invalid APY settings' });
+    const settings = await db.query.stakingSettings.findMany();
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching staking settings:', error);
+    res.status(500).json({ error: 'Failed to fetch staking settings' });
+  }
+});
+
+// Update staking settings schema
+const updateStakingSettingsSchema = z.object({
+  coinSymbol: z.string(),
+  displayedApy: z.number().min(0).max(100),
+  actualApy: z.number().min(0).max(100),
+  minStakeAmount: z.string()
+});
+
+// Update staking settings
+router.put('/settings/staking/:coinSymbol', async (req, res) => {
+  try {
+    const validation = updateStakingSettingsSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ 
+        error: 'Invalid settings data',
+        details: validation.error.issues
+      });
     }
 
-    // For now, we'll just acknowledge the request
-    // In a real implementation, this would update a settings table
-    res.json({ 
-      message: 'APY settings updated',
-      settings: { coin, apy }
-    });
+    const { coinSymbol, displayedApy, actualApy, minStakeAmount } = validation.data;
+
+    // Update settings
+    const [updated] = await db
+      .update(stakingSettings)
+      .set({
+        displayedApy,
+        actualApy,
+        minStakeAmount,
+        updatedAt: new Date(),
+        updatedBy: req.user?.id
+      })
+      .where(sql`coin_symbol = ${coinSymbol}`)
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Staking settings not found' });
+    }
+
+    res.json(updated);
   } catch (error) {
-    console.error('Error updating APY settings:', error);
-    res.status(500).json({ error: 'Failed to update APY settings' });
+    console.error('Error updating staking settings:', error);
+    res.status(500).json({ error: 'Failed to update staking settings' });
   }
 });
 
