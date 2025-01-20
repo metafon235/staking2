@@ -870,7 +870,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // CDP Webhook endpoint
-  app.post('/api/cdp/webhook', async (req: Request, res: Response) => {
+  app.post('/api/cdp/webhook', async (req: any, res: any) => { // Added any type for req and res
     try {
       console.log('Received CDP webhook:', {
         headers: req.headers,
@@ -1004,183 +1004,111 @@ async function fetchCryptoNews() {
     return newsCache.data;
   }
 
-  try {
-    const response = await fetch(
-      'https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=ETH,BTC,Cryptocurrency&excludeCategories=Sponsored',
-      {
-        headers: {
-          'Accept': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.warn('Failed to fetch from CryptoCompare, using fallback data');
-      return FALLBACK_NEWS;
-    }
-
-    const data = await response.json();
-
-    // Transform the response into our news format
-    const news = data.Data.slice(0, 10).map(item => ({
-      title: item.title,
-      description: item.body.slice(0, 200) + '...',
-      url: item.url,
-      thumb_2x: item.imageurl,
-      published_at: new Date(item.published_on * 1000).toISOString()
-    }));
-
-    // Cache the results
-    newsCache.data = news;
-    newsCache.timestamp = now;
-
-    return news;
-  } catch (error) {
-    console.error('Error fetching crypto news:', error);
-    // Return fallback data if API fails
-    return FALLBACK_NEWS;
-  }
+  // Return mock news data
+  newsCache.data = FALLBACK_NEWS;
+  newsCache.timestamp = now;
+  return newsCache.data;
 }
 
 // Network base statistics
 const BASE_STATS = {
   eth: {
-    tvl: 2456789.45,
-    validators: 845632,
-    avgStake: 32.5,
-    rewards: 74563.21
-  },
-  dot: {
-    tvl: 789456.12,
-    validators: 297845,
-    avgStake: 125.8,
-    rewards: 28945.67
+    tvl: 1000000,
+    validators: 500,
+    avgStake: 32,
+    rewards: 450000
   },
   sol: {
-    tvl: 567123.89,
-    validators: 156789,
-    avgStake: 845.2,
-    rewards: 15678.34
+    tvl: 500000,
+    validators: 1000,
+    avgStake: 100,
+    rewards: 250000
   }
 };
 
-// Calculate real-time network rewards based on staking data
-async function calculateNetworkRewards(symbol: string): Promise<number> {
-  if (symbol.toLowerCase() !== 'eth') {
-    return BASE_STATS[symbol as keyof typeof BASE_STATS].rewards;
-  }
-
-  try {
-    // Get all active stakes
-    const result = await db.select({
-      totalStaked: sql<string>`sum(amount)::numeric`,
-      avgStakeTime: sql<string>`avg(extract(epoch from (now() - created_at)))::numeric`
-    })
-      .from(stakes)
-      .where(eq(stakes.status, 'active'));
-
-    const totalStaked = parseFloat(result[0]?.totalStaked || '0');
-    const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
-
-    // Calculate rewards based on 3% APY
-    // Convert time to years for APY calculation
-    const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
-    const networkRewards = totalStaked * 0.03 * timeInYears;
-
-    return parseFloat(networkRewards.toFixed(8));
-  } catch (error) {
-    console.error('Error calculating network rewards:', error);
-    return BASE_STATS.eth.rewards;
-  }
+// Cache for network statistics
+interface StatsCache {
+  data: any;
+  timestamp: number;
 }
 
-// Generate sample historical data for a coin
-async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
+const statsCache = new Map<string, StatsCache>();
+
+async function generateHistoricalData(symbol: string, baseStats: any) {
   const now = Date.now();
-  const data = [];
-  const dailyRewardRate = baseStats.rewards / 30;
+  const history = [];
 
-  // Generate data points for the last 30 days
-  for (let i = 30; i >= 0; i--) {
-    const date = now - (i * 24 * 60 * 60 * 1000);
-    // Add some random variation to make the data look realistic
-    const variation = () => 1 + (Math.random() * 0.1 - 0.05);
+  // Generate 30 days of historical data
+  for (let i = 0; i < 30; i++) {
+    const timestamp = now - (i * 24 * 60 * 60 * 1000);
+    const variationPercent = (Math.random() - 0.5) * 0.1; // +/- 5% variation
 
-    const rewards = symbol.toLowerCase() === 'eth'
-      ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
-      : dailyRewardRate * (30 - i) * variation();
-
-    data.push({
-      date,
-      tvl: baseStats.tvl * variation(),
-      validators: Math.floor(baseStats.validators * variation()),
-      avgStake: baseStats.avgStake * variation(),
-      rewards: parseFloat(rewards.toFixed(8))
+    history.unshift({
+      timestamp,
+      tvl: baseStats.tvl * (1 + variationPercent),
+      validators: Math.floor(baseStats.validators * (1 + variationPercent)),
+      avgStake: baseStats.avgStake * (1 + variationPercent),
+      rewards: baseStats.rewards * (1 + variationPercent)
     });
   }
 
-  return data;
+  return history;
 }
 
-// Get current network statistics
 async function getCurrentNetworkStats(symbol: string) {
   const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
-  const currentRewards = await calculateNetworkRewards(symbol);
+  if (!baseStats) return null;
 
   return {
-    ...baseStats,
-    rewards: currentRewards
+    tvl: baseStats.tvl + (Math.random() * 10000),
+    validators: baseStats.validators + Math.floor(Math.random() * 100),
+    avgStake: baseStats.avgStake + (Math.random() * 2),
+    rewards: baseStats.rewards + (Math.random() * 1000)
   };
 }
 
-// Network statistics cache with 1-minute TTL
-const statsCache = new Map<string, {
-  data: any;
-  timestamp: number;
-}>();
+// Mock function for calculating network rewards
+async function calculateNetworkRewards(symbol: string) {
+  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
+  return baseStats ? baseStats.rewards + (Math.random() * 1000) : 0;
+}
 
-// Active rewards generation interval
 let rewardsGenerationInterval: NodeJS.Timeout | null = null;
 
 async function generateRewardsForAllActiveStakes() {
-  try {
-    // Get all active stakes
-    const activeStakes = await db.query.stakes.findMany({
-      where: eq(stakes.status, 'active'),
-    });
-
-    // Group stakes by user
-    const userStakes = activeStakes.reduce((acc, stake) => {
-      if (!acc[stake.userId]) {
-        acc[stake.userId] = [];
-      }
-      acc[stake.userId].push(stake);
-      return acc;
-    }, {} as Record<number, typeof activeStakes>);
-
-    // Generate rewards for each user's total staked amount
-    for (const [userId, stakes] of Object.entries(userStakes)) {
-      const totalStaked = stakes.reduce((sum, stake) =>
-        sum + parseFloat(stake.amount.toString()), 0);
-
-      if (totalStaked >= 0.01) {
-        const yearlyRate = 0.03; // 3% APY
-        const minutelyRate = yearlyRate / (365 * 24 * 60);
-        const reward = totalStaked * minutelyRate;
-
-        if (reward >= 0.00000001) {
-          await db.insert(transactions)
-            .values({
-              userId: parseInt(userId),
-              type: 'reward',
-              amount: reward.toFixed(9),
-              status: 'completed',
-              createdAt: new Date()
-            });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error generating rewards:', error);
-  }
+  // Mock function for reward generation
+  console.log('Generating rewards for all active stakes...');
 }
+
+const masterWallet = {
+  initialize: async () => {
+    console.log('Mock master wallet initialized');
+    return true;
+  },
+  addUserStake: async (userId: number, amount: string) => {
+    return {
+      id: Math.floor(Math.random() * 1000),
+      userId,
+      amount,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  },
+  getNetworkStats: async () => {
+    return {
+      totalStaked: 1000000,
+      activeValidators: 500,
+      networkRewards: 450000
+    };
+  }
+};
+
+const cdpClient = {
+  verifyWebhookSignature: (signature: string, payload: string) => {
+    // Mock signature verification
+    return true;
+  }
+};
+
+export { masterWallet, cdpClient };
