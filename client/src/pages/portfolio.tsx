@@ -85,7 +85,8 @@ export default function Portfolio() {
         <SharePortfolioDialog portfolioRef={portfolioRef} />
       </div>
 
-      <div ref={portfolioRef} className="space-y-6">
+      {/* Content to be included in the snapshot */}
+      <div ref={portfolioRef} className="space-y-6 bg-zinc-900 p-6 rounded-lg">
         {/* Total Overview Card */}
         <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
           <CardHeader>
@@ -157,13 +158,6 @@ export default function Portfolio() {
                       {portfolio.eth.apy.toFixed(2)}%
                     </p>
                   </div>
-                  <Button
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={() => handleWithdrawAll('ETH')}
-                    disabled={isWithdrawing || totalValue <= 0}
-                  >
-                    {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
-                  </Button>
                 </div>
               ) : (
                 <p className="text-zinc-400">Failed to load data</p>
@@ -203,11 +197,29 @@ export default function Portfolio() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      {/* Content excluded from snapshot */}
+      <div className="mt-6">
+        <div className="grid gap-6">
+          {/* ETH Staking Actions */}
+          {portfolio && (
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="pt-6">
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => handleWithdrawAll('ETH')}
+                  disabled={isWithdrawing || totalValue <= 0}
+                >
+                  {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Transaction History */}
-          <div className="col-span-2">
-            <TransactionHistory />
-          </div>
+          <TransactionHistory />
         </div>
       </div>
     </div>
