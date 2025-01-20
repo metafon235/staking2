@@ -74,10 +74,10 @@ export default function Portfolio() {
   };
 
   // Calculate totals - Fixed the calculation logic
-  const totalStaked = portfolio ? parseFloat(portfolio.eth.staked.toString()) : 0;
-  const totalRewards = portfolio ? parseFloat(portfolio.eth.rewards.toString()) : 0;
-  // Ensure we're adding the numbers after parsing them as floats
-  const totalValue = totalStaked + totalRewards;
+  const totalStaked = portfolio ? Number(portfolio.eth.staked) : 0;
+  const totalRewards = portfolio ? Number(portfolio.eth.rewards) : 0;
+  // Ensure we're adding the numbers with proper precision
+  const totalValue = Number((totalStaked + totalRewards).toFixed(6));
 
   return (
     <div className="space-y-6">
@@ -208,7 +208,7 @@ export default function Portfolio() {
           {portfolio && (
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="pt-6">
-                <Button 
+                <Button
                   className="w-full bg-green-600 hover:bg-green-700"
                   onClick={() => handleWithdrawAll('ETH')}
                   disabled={isWithdrawing || totalValue <= 0}
