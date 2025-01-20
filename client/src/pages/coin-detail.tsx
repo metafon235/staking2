@@ -76,6 +76,8 @@ export default function CoinDetail() {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
       queryClient.invalidateQueries({ queryKey: ['/api/network-stats/eth'] });
+      // Redirect to dashboard
+      navigate("/app");
     },
     onError: (error: Error) => {
       toast({
