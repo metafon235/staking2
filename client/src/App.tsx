@@ -8,7 +8,7 @@ import AdminAuth from "@/pages/admin/auth";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminActivity from "@/pages/admin/activity";
-import AdminSettings from "@/pages/admin/settings"; // Added import
+import AdminSettings from "@/pages/admin/settings";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
@@ -62,7 +62,7 @@ function Router() {
           </AdminLayout>
         )}
       </Route>
-      <Route path="/admin/settings"> {/* Added route */}
+      <Route path="/admin/settings">
         {() => (
           <AdminLayout>
             <AdminSettings />
@@ -87,10 +87,12 @@ function Router() {
         )}
       </Route>
 
-      {/* Home route should be last of the defined routes */}
-      <Route path="/" component={Home} />
+      {/* Home route should be at the root */}
+      <Route path="/">
+        {() => user ? <Redirect to="/dashboard" /> : <Home />}
+      </Route>
 
-      {/* Fallback 404 */}
+      {/* Fallback 404 - should be last */}
       <Route component={NotFound} />
     </Switch>
   );
