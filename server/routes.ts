@@ -9,6 +9,7 @@ import { cdpConfig } from "../config/cdp.config";
 import crypto from 'crypto';
 import { cdpClient } from './services/cdp/client';
 import { masterWallet } from './services/cdp/master-wallet';
+import adminRoutes from './routes/admin';
 
 // Webhook event validation
 // This function is now replaced by cdpClient.verifyWebhookSignature
@@ -31,6 +32,9 @@ import { masterWallet } from './services/cdp/master-wallet';
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
+
+  // Register admin routes
+  app.use('/api/admin', adminRoutes);
 
   // Add new route for news
   app.get('/api/news', async (_req, res) => {

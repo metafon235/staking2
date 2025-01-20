@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   walletAddress: text("wallet_address"),
   referrerId: integer("referrer_id").references(() => users.id),
   referralCode: text("referral_code").unique(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -17,8 +18,7 @@ export const stakes = pgTable("stakes", {
   userId: integer("user_id").references(() => users.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
-  // Make CDP fields optional
-  cdpStakeId: text("cdp_stake_id"), 
+  cdpStakeId: text("cdp_stake_id"),
   cdpValidatorId: text("cdp_validator_id"),
   transactionHash: text("transaction_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -30,7 +30,7 @@ export const rewards = pgTable("rewards", {
   stakeId: integer("stake_id").references(() => stakes.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   transactionHash: text("transaction_hash"),
-  cdpRewardId: text("cdp_reward_id"), // Optional CDP reward identifier
+  cdpRewardId: text("cdp_reward_id"), 
   claimedAt: timestamp("claimed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -51,11 +51,10 @@ export const transactions = pgTable("transactions", {
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
   transactionHash: text("transaction_hash"),
-  cdpTransactionId: text("cdp_transaction_id"), // Optional CDP transaction identifier
+  cdpTransactionId: text("cdp_transaction_id"), 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Schema types with validation
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
