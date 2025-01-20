@@ -973,7 +973,7 @@ export function registerRoutes(app: Express): Server {
           referred_id: users.id,
           username: users.username,
           joined_at: users.createdAt,
-          total_rewards: sql<string>`COALESCE(SUM(t.amount::numeric), 0)`
+          total_rewards: sql<string>`COALESCE(SUM(${transactions.amount}::numeric), 0)`
         })
         .from(users)
         .leftJoin(
