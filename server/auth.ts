@@ -39,8 +39,8 @@ export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "porygon-supremacy",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed to true to ensure session is saved
+    saveUninitialized: true, // Changed to true to ensure new sessions are saved
     store: new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     }),
@@ -49,15 +49,12 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
+      secure: app.get("env") === "production"
     },
   };
 
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
-    sessionSettings.cookie = {
-      ...sessionSettings.cookie,
-      secure: true,
-    };
   }
 
   app.use(session(sessionSettings));
@@ -101,9 +98,14 @@ export function setupAuth(app: Express) {
         .from(users)
         .where(eq(users.id, id))
         .limit(1);
-      done(null, user);
+
+      if (!user) {
+        return done(null, false);
+      }
+
+      return done(null, user);
     } catch (err) {
-      done(err);
+      return done(err);
     }
   });
 
@@ -116,7 +118,7 @@ export function setupAuth(app: Express) {
           .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
       }
 
-      const { email, password } = result.data;
+      const { email, password, referralCode } = result.data;
 
       // Check if user already exists
       const [existingUser] = await db
@@ -129,15 +131,35 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Email already exists");
       }
 
+      // If referral code exists, find referrer
+      let referrerId: number | null = null;
+      if (referralCode) {
+        const referrer = await db.query.users.findFirst({
+          where: eq(users.referralCode, referralCode),
+          columns: {
+            id: true
+          }
+        });
+
+        if (referrer) {
+          referrerId = referrer.id;
+        }
+      }
+
       // Hash the password
       const hashedPassword = await crypto.hash(password);
 
-      // Create the new user
+      // Generate new referral code for the user
+      const newReferralCode = await generateReferralCode();
+
+      // Create the new user with referral info
       const [newUser] = await db
         .insert(users)
         .values({
           email,
           password: hashedPassword,
+          referrerId,
+          referralCode: newReferralCode
         })
         .returning();
 
@@ -146,9 +168,16 @@ export function setupAuth(app: Express) {
         if (err) {
           return next(err);
         }
-        return res.json({
-          message: "Registration successful",
-          user: { id: newUser.id, email: newUser.email },
+
+        // Save the session explicitly
+        req.session.save((err) => {
+          if (err) {
+            return next(err);
+          }
+          return res.json({
+            message: "Registration successful",
+            user: { id: newUser.id, email: newUser.email }
+          });
         });
       });
     } catch (error) {
@@ -164,7 +193,7 @@ export function setupAuth(app: Express) {
         .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
     }
 
-    const cb = (err: any, user: Express.User, info: IVerifyOptions) => {
+    passport.authenticate("local", (err: any, user: Express.User | false, info: IVerifyOptions) => {
       if (err) {
         return next(err);
       }
@@ -173,18 +202,23 @@ export function setupAuth(app: Express) {
         return res.status(400).send(info.message ?? "Login failed");
       }
 
-      req.logIn(user, (err) => {
+      req.login(user, (err) => {
         if (err) {
           return next(err);
         }
 
-        return res.json({
-          message: "Login successful",
-          user: { id: user.id, email: user.email },
+        // Save the session explicitly before sending response
+        req.session.save((err) => {
+          if (err) {
+            return next(err);
+          }
+          return res.json({
+            message: "Login successful",
+            user: { id: user.id, email: user.email }
+          });
         });
       });
-    };
-    passport.authenticate("local", cb)(req, res, next);
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res) => {
@@ -193,15 +227,46 @@ export function setupAuth(app: Express) {
         return res.status(500).send("Logout failed");
       }
 
-      res.json({ message: "Logout successful" });
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).send("Session destruction failed");
+        }
+        res.clearCookie('connect.sid');
+        res.json({ message: "Logout successful" });
+      });
     });
   });
 
   app.get("/api/user", (req, res) => {
-    if (req.isAuthenticated()) {
-      return res.json(req.user);
+    if (!req.session || !req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
     }
 
-    res.status(401).send("Not logged in");
+    res.json(req.user);
   });
+}
+
+// Helper function to generate unique referral codes
+async function generateReferralCode(): Promise<string> {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code: string;
+  let isUnique = false;
+
+  while (!isUnique) {
+    code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const existing = await db.query.users.findFirst({
+      where: eq(users.referralCode, code)
+    });
+
+    if (!existing) {
+      isUnique = true;
+      return code;
+    }
+  }
+
+  throw new Error('Failed to generate unique referral code');
 }
