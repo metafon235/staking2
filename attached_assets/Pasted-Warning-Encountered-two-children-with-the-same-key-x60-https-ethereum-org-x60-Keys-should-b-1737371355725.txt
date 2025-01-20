@@ -1,0 +1,25 @@
+Warning: Encountered two children with the same key, &#x60;https://ethereum.org&#x60;. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZTKYMAPO.js?v=4287f66d:41:13
+    at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=4287f66d:116:13
+    at div
+    at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZTKYMAPO.js?v=4287f66d:41:13
+    at Provider (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-IM3PNCQJ.js?v=4287f66d:171:15)
+    at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=4287f66d:54:7
+    at _c (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/components/ui/scroll-area.tsx:21:11)
+    at div
+    at _c9 (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/components/ui/card.tsx:106:12)
+    at div
+    at _c (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/components/ui/card.tsx:20:11)
+    at NewsWidget (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/components/news/NewsWidget.tsx:32:44)
+    at div
+    at div
+    at div
+    at Home (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/pages/home.tsx:27:20)
+    at Route (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4287f66d:323:16)
+    at Switch (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4287f66d:379:17)
+    at Router (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/App.tsx?v=gwco1QJ97tCRyThCqmDXr:59:31)
+    at QueryClientProvider (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=4287f66d:2805:3)
+    at App

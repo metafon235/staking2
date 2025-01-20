@@ -162,14 +162,14 @@ const FALLBACK_NEWS = [
   {
     title: "Ethereum Staking Continues to Grow",
     description: "The total amount of ETH staked continues to rise as more validators join the network.",
-    url: "https://ethereum.org",
+    url: "https://ethereum.org/staking",
     thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
     published_at: new Date().toISOString()
   },
   {
     title: "ETH 2.0 Development Update",
     description: "Latest progress on Ethereum network upgrades and improvements.",
-    url: "https://ethereum.org",
+    url: "https://ethereum.org/upgrades",
     thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
     published_at: new Date().toISOString()
   }
@@ -940,7 +940,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post('/api/settings/wallet', async (req, res) => {
+app.post('/api/settings/wallet', async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });

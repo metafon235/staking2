@@ -63,9 +63,9 @@ export default function NewsWidget() {
           ) : (
             // News items
             <div className="space-y-4">
-              {news?.map((item) => (
+              {news?.map((item, index) => (
                 <a
-                  key={item.url}
+                  key={`${item.url}-${item.published_at}-${index}`}
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
