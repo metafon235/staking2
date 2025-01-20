@@ -17,7 +17,10 @@ export const stakes = pgTable("stakes", {
   userId: integer("user_id").references(() => users.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
-  transactionHash: text("transaction_hash").unique(),
+  // Make CDP fields optional
+  cdpStakeId: text("cdp_stake_id"), 
+  cdpValidatorId: text("cdp_validator_id"),
+  transactionHash: text("transaction_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -26,7 +29,8 @@ export const rewards = pgTable("rewards", {
   id: serial("id").primaryKey(),
   stakeId: integer("stake_id").references(() => stakes.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
-  transactionHash: text("transaction_hash").unique(),
+  transactionHash: text("transaction_hash"),
+  cdpRewardId: text("cdp_reward_id"), // Optional CDP reward identifier
   claimedAt: timestamp("claimed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -43,14 +47,15 @@ export const referralRewards = pgTable("referral_rewards", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  type: text("type").notNull(), // stake, unstake, claim_reward, referral_reward
+  type: text("type").notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
-  transactionHash: text("transaction_hash").unique(),
+  transactionHash: text("transaction_hash"),
+  cdpTransactionId: text("cdp_transaction_id"), // Optional CDP transaction identifier
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Schema types with email validation
+// Schema types with validation
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),

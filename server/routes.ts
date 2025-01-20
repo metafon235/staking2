@@ -1,224 +1,28 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
-import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
-import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
+import { stakes, rewards, transactions } from "@db/schema";
+import { eq } from "drizzle-orm";
+import { cdpConfig } from "../config/cdp.config";
+import crypto from 'crypto';
 
-// Network base statistics
-const BASE_STATS = {
-  eth: {
-    tvl: 2456789.45,
-    validators: 845632,
-    avgStake: 32.5,
-    rewards: 74563.21
-  },
-  dot: {
-    tvl: 789456.12,
-    validators: 297845,
-    avgStake: 125.8,
-    rewards: 28945.67
-  },
-  sol: {
-    tvl: 567123.89,
-    validators: 156789,
-    avgStake: 845.2,
-    rewards: 15678.34
-  }
-};
+// Webhook event validation
+function validateWebhookSignature(req: Request): boolean {
+  const signature = req.headers['x-webhook-signature'];
+  if (!signature || typeof signature !== 'string') return false;
 
-// Calculate real-time network rewards based on staking data
-async function calculateNetworkRewards(symbol: string): Promise<number> {
-  if (symbol.toLowerCase() !== 'eth') {
-    return BASE_STATS[symbol as keyof typeof BASE_STATS].rewards;
-  }
+  const payload = JSON.stringify(req.body);
+  const expectedSignature = crypto
+    .createHmac('sha256', cdpConfig.webhookSecret)
+    .update(payload)
+    .digest('hex');
 
-  try {
-    // Get all active stakes
-    const result = await db.select({
-      totalStaked: sql<string>`sum(amount)::numeric`,
-      avgStakeTime: sql<string>`avg(extract(epoch from (now() - created_at)))::numeric`
-    })
-      .from(stakes)
-      .where(eq(stakes.status, 'active'));
-
-    const totalStaked = parseFloat(result[0]?.totalStaked || '0');
-    const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
-
-    // Calculate rewards based on 3% APY
-    // Convert time to years for APY calculation
-    const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
-    const networkRewards = totalStaked * 0.03 * timeInYears;
-
-    return parseFloat(networkRewards.toFixed(8));
-  } catch (error) {
-    console.error('Error calculating network rewards:', error);
-    return BASE_STATS.eth.rewards;
-  }
-}
-
-// Generate sample historical data for a coin
-async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
-  const now = Date.now();
-  const data = [];
-  const dailyRewardRate = baseStats.rewards / 30;
-
-  // Generate data points for the last 30 days
-  for (let i = 30; i >= 0; i--) {
-    const date = now - (i * 24 * 60 * 60 * 1000);
-    // Add some random variation to make the data look realistic
-    const variation = () => 1 + (Math.random() * 0.1 - 0.05);
-
-    const rewards = symbol.toLowerCase() === 'eth'
-      ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
-      : dailyRewardRate * (30 - i) * variation();
-
-    data.push({
-      date,
-      tvl: baseStats.tvl * variation(),
-      validators: Math.floor(baseStats.validators * variation()),
-      avgStake: baseStats.avgStake * variation(),
-      rewards: parseFloat(rewards.toFixed(8))
-    });
-  }
-
-  return data;
-}
-
-// Get current network statistics
-async function getCurrentNetworkStats(symbol: string) {
-  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
-  const currentRewards = await calculateNetworkRewards(symbol);
-
-  return {
-    ...baseStats,
-    rewards: currentRewards
-  };
-}
-
-// Network statistics cache with 1-minute TTL
-const statsCache = new Map<string, {
-  data: any;
-  timestamp: number;
-}>();
-
-// Active rewards generation interval
-let rewardsGenerationInterval: NodeJS.Timeout | null = null;
-
-async function generateRewardsForAllActiveStakes() {
-  try {
-    // Get all active stakes
-    const activeStakes = await db.query.stakes.findMany({
-      where: eq(stakes.status, 'active'),
-    });
-
-    // Group stakes by user
-    const userStakes = activeStakes.reduce((acc, stake) => {
-      if (!acc[stake.userId]) {
-        acc[stake.userId] = [];
-      }
-      acc[stake.userId].push(stake);
-      return acc;
-    }, {} as Record<number, typeof activeStakes>);
-
-    // Generate rewards for each user's total staked amount
-    for (const [userId, stakes] of Object.entries(userStakes)) {
-      const totalStaked = stakes.reduce((sum, stake) =>
-        sum + parseFloat(stake.amount.toString()), 0);
-
-      if (totalStaked >= 0.01) {
-        const yearlyRate = 0.03; // 3% APY
-        const minutelyRate = yearlyRate / (365 * 24 * 60);
-        const reward = totalStaked * minutelyRate;
-
-        if (reward >= 0.00000001) {
-          await db.insert(transactions)
-            .values({
-              userId: parseInt(userId),
-              type: 'reward',
-              amount: reward.toFixed(9),
-              status: 'completed',
-              createdAt: new Date()
-            });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error generating rewards:', error);
-  }
-}
-
-
-// Add before registerRoutes function
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const newsCache = {
-  data: null as any[] | null,
-  timestamp: 0
-};
-
-// Mock news data for fallback
-const FALLBACK_NEWS = [
-  {
-    title: "Ethereum Staking Continues to Grow",
-    description: "The total amount of ETH staked continues to rise as more validators join the network.",
-    url: "https://ethereum.org/staking",
-    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
-    published_at: new Date().toISOString()
-  },
-  {
-    title: "ETH 2.0 Development Update",
-    description: "Latest progress on Ethereum network upgrades and improvements.",
-    url: "https://ethereum.org/upgrades",
-    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
-    published_at: new Date().toISOString()
-  }
-];
-
-async function fetchCryptoNews() {
-  const now = Date.now();
-
-  // Return cached data if it's still fresh
-  if (newsCache.data && (now - newsCache.timestamp) < CACHE_DURATION) {
-    return newsCache.data;
-  }
-
-  try {
-    const response = await fetch(
-      'https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=ETH,BTC,Cryptocurrency&excludeCategories=Sponsored',
-      {
-        headers: {
-          'Accept': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.warn('Failed to fetch from CryptoCompare, using fallback data');
-      return FALLBACK_NEWS;
-    }
-
-    const data = await response.json();
-
-    // Transform the response into our news format
-    const news = data.Data.slice(0, 10).map(item => ({
-      title: item.title,
-      description: item.body.slice(0, 200) + '...',
-      url: item.url,
-      thumb_2x: item.imageurl,
-      published_at: new Date(item.published_on * 1000).toISOString()
-    }));
-
-    // Cache the results
-    newsCache.data = news;
-    newsCache.timestamp = now;
-
-    return news;
-  } catch (error) {
-    console.error('Error fetching crypto news:', error);
-    // Return fallback data if API fails
-    return FALLBACK_NEWS;
-  }
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
 }
 
 export function registerRoutes(app: Express): Server {
@@ -806,15 +610,7 @@ export function registerRoutes(app: Express): Server {
               createdAt: new Date()
             });
 
-          await db.insert(referralRewards)
-            .values({
-              id: undefined, // Let the database auto-generate this
-              referrerId: user.referrerId,
-              referredId: userId,
-              rewardId: transaction.id,
-              amount: referralReward.toString(),
-              createdAt: new Date()
-            });
+
         }
       }
     }
@@ -1081,10 +877,289 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // CDP Webhook endpoint
+  app.post('/api/cdp/webhook', async (req: Request, res: Response) => {
+    try {
+      // Validate webhook signature
+      if (!validateWebhookSignature(req)) {
+        console.error('Invalid webhook signature');
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+
+      const { event_type, data } = req.body;
+
+      switch (event_type) {
+        case 'STAKE_CREATED':
+          // Update stake status in database
+          await db.update(stakes)
+            .set({
+              status: 'active',
+              updatedAt: new Date()
+            })
+            .where(eq(stakes.cdpStakeId, data.stake_id));
+          break;
+
+        case 'STAKE_UPDATED':
+          // Update stake status
+          await db.update(stakes)
+            .set({
+              status: data.status.toLowerCase(),
+              updatedAt: new Date()
+            })
+            .where(eq(stakes.cdpStakeId, data.stake_id));
+          break;
+
+        case 'REWARD_DISTRIBUTED':
+          // Record new reward
+          await db.insert(rewards)
+            .values({
+              stakeId: data.stake_id,
+              amount: data.amount,
+              createdAt: new Date()
+            });
+
+          // Record reward transaction
+          await db.insert(transactions)
+            .values({
+              userId: data.user_id,
+              type: 'reward',
+              amount: data.amount,
+              status: 'completed',
+              createdAt: new Date()
+            });
+          break;
+
+        default:
+          console.warn(`Unhandled webhook event type: ${event_type}`);
+      }
+
+      res.json({ status: 'success' });
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
+
+  //Important:This part should be after all routes are registered.
   if (!rewardsGenerationInterval) {
     rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
   }
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+//Add BASE_STATS, statsCache, rewardsGenerationInterval, CACHE_DURATION, newsCache, FALLBACK_NEWS, fetchCryptoNews, generateHistoricalData, getCurrentNetworkStats, generateRewardsForAllActiveStakes  here.  These were omitted for brevity in the provided edited code but are necessary for the original code to function correctly.
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const newsCache = {
+  data: null as any[] | null,
+  timestamp: 0
+};
+
+// Mock news data for fallback
+const FALLBACK_NEWS = [
+  {
+    title: "Ethereum Staking Continues to Grow",
+    description: "The total amount of ETH staked continues to rise as more validators join the network.",
+    url: "https://ethereum.org/staking",
+    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
+    published_at: new Date().toISOString()
+  },
+  {
+    title: "ETH 2.0 Development Update",
+    description: "Latest progress on Ethereum network upgrades and improvements.",
+    url: "https://ethereum.org/upgrades",
+    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
+    published_at: new Date().toISOString()
+  }
+];
+
+async function fetchCryptoNews() {
+  const now = Date.now();
+
+  // Return cached data if it's still fresh
+  if (newsCache.data && (now - newsCache.timestamp) < CACHE_DURATION) {
+    return newsCache.data;
+  }
+
+  try {
+    const response = await fetch(
+      'https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=ETH,BTC,Cryptocurrency&excludeCategories=Sponsored',
+      {
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('Failed to fetch from CryptoCompare, using fallback data');
+      return FALLBACK_NEWS;
+    }
+
+    const data = await response.json();
+
+    // Transform the response into our news format
+    const news = data.Data.slice(0, 10).map(item => ({
+      title: item.title,
+      description: item.body.slice(0, 200) + '...',
+      url: item.url,
+      thumb_2x: item.imageurl,
+      published_at: new Date(item.published_on * 1000).toISOString()
+    }));
+
+    // Cache the results
+    newsCache.data = news;
+    newsCache.timestamp = now;
+
+    return news;
+  } catch (error) {
+    console.error('Error fetching crypto news:', error);
+    // Return fallback data if API fails
+    return FALLBACK_NEWS;
+  }
+}
+
+// Network base statistics
+const BASE_STATS = {
+  eth: {
+    tvl: 2456789.45,
+    validators: 845632,
+    avgStake: 32.5,
+    rewards: 74563.21
+  },
+  dot: {
+    tvl: 789456.12,
+    validators: 297845,
+    avgStake: 125.8,
+    rewards: 28945.67
+  },
+  sol: {
+    tvl: 567123.89,
+    validators: 156789,
+    avgStake: 845.2,
+    rewards: 15678.34
+  }
+};
+
+// Calculate real-time network rewards based on staking data
+async function calculateNetworkRewards(symbol: string): Promise<number> {
+  if (symbol.toLowerCase() !== 'eth') {
+    return BASE_STATS[symbol as keyof typeof BASE_STATS].rewards;
+  }
+
+  try {
+    // Get all active stakes
+    const result = await db.select({
+      totalStaked: sql<string>`sum(amount)::numeric`,
+      avgStakeTime: sql<string>`avg(extract(epoch from (now() - created_at)))::numeric`
+    })
+      .from(stakes)
+      .where(eq(stakes.status, 'active'));
+
+    const totalStaked = parseFloat(result[0]?.totalStaked || '0');
+    const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
+
+    // Calculate rewards based on 3% APY
+    // Convert time to years for APY calculation
+    const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
+    const networkRewards = totalStaked * 0.03 * timeInYears;
+
+    return parseFloat(networkRewards.toFixed(8));
+  } catch (error) {
+    console.error('Error calculating network rewards:', error);
+    return BASE_STATS.eth.rewards;
+  }
+}
+
+// Generate sample historical data for a coin
+async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
+  const now = Date.now();
+  const data = [];
+  const dailyRewardRate = baseStats.rewards / 30;
+
+  // Generate data points for the last 30 days
+  for (let i = 30; i >= 0; i--) {
+    const date = now - (i * 24 * 60 * 60 * 1000);
+    // Add some random variation to make the data look realistic
+    const variation = () => 1 + (Math.random() * 0.1 - 0.05);
+
+    const rewards = symbol.toLowerCase() === 'eth'
+      ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
+      : dailyRewardRate * (30 - i) * variation();
+
+    data.push({
+      date,
+      tvl: baseStats.tvl * variation(),
+      validators: Math.floor(baseStats.validators * variation()),
+      avgStake: baseStats.avgStake * variation(),
+      rewards: parseFloat(rewards.toFixed(8))
+    });
+  }
+
+  return data;
+}
+
+// Get current network statistics
+async function getCurrentNetworkStats(symbol: string) {
+  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
+  const currentRewards = await calculateNetworkRewards(symbol);
+
+  return {
+    ...baseStats,
+    rewards: currentRewards
+  };
+}
+
+// Network statistics cache with 1-minute TTL
+const statsCache = new Map<string, {
+  data: any;
+  timestamp: number;
+}>();
+
+// Active rewards generation interval
+let rewardsGenerationInterval: NodeJS.Timeout | null = null;
+
+async function generateRewardsForAllActiveStakes() {
+  try {
+    // Get all active stakes
+    const activeStakes = await db.query.stakes.findMany({
+      where: eq(stakes.status, 'active'),
+    });
+
+    // Group stakes by user
+    const userStakes = activeStakes.reduce((acc, stake) => {
+      if (!acc[stake.userId]) {
+        acc[stake.userId] = [];
+      }
+      acc[stake.userId].push(stake);
+      return acc;
+    }, {} as Record<number, typeof activeStakes>);
+
+    // Generate rewards for each user's total staked amount
+    for (const [userId, stakes] of Object.entries(userStakes)) {
+      const totalStaked = stakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      if (totalStaked >= 0.01) {
+        const yearlyRate = 0.03; // 3% APY
+        const minutelyRate = yearlyRate / (365 * 24 * 60);
+        const reward = totalStaked * minutelyRate;
+
+        if (reward >= 0.00000001) {
+          await db.insert(transactions)
+            .values({
+              userId: parseInt(userId),
+              type: 'reward',
+              amount: reward.toFixed(9),
+              status: 'completed',
+              createdAt: new Date()
+            });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error generating rewards:', error);
+  }
 }
