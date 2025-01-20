@@ -40,30 +40,36 @@ export default function Home() {
 
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <CoinCard
-            name="Ethereum"
-            symbol="ETH"
-            apy={3.00}
-            minStake="0.01"
-            icon={SiEthereum}
-            enabled={true}
-          />
-          <CoinCard
-            name="Polkadot"
-            symbol="DOT"
-            apy={12.00}
-            minStake="5.00"
-            icon={SiPolkadot}
-            enabled={false}
-          />
-          <CoinCard
-            name="Solana"
-            symbol="SOL"
-            apy={6.50}
-            minStake="1.00"
-            icon={SiSolana}
-            enabled={false}
-          />
+          <Link href="/coins/eth">
+            <CoinCard
+              name="Ethereum"
+              symbol="ETH"
+              apy={3.00}
+              minStake="0.01"
+              icon={SiEthereum}
+              enabled={true}
+            />
+          </Link>
+          <Link href="/coins/dot">
+            <CoinCard
+              name="Polkadot"
+              symbol="DOT"
+              apy={12.00}
+              minStake="5.00"
+              icon={SiPolkadot}
+              enabled={false}
+            />
+          </Link>
+          <Link href="/coins/sol">
+            <CoinCard
+              name="Solana"
+              symbol="SOL"
+              apy={6.50}
+              minStake="1.00"
+              icon={SiSolana}
+              enabled={false}
+            />
+          </Link>
         </div>
 
         {/* Features Section */}
