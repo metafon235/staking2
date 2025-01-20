@@ -47,6 +47,54 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public routes */}
+      <Route path="/" component={Home} />
+
+      <Route path="/auth">
+        {() => user ? <Redirect to="/dashboard" /> : <AuthPage />}
+      </Route>
+
+      {/* Protected user routes */}
+      <Route path="/dashboard">
+        {() => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
+        )}
+      </Route>
+
+      <Route path="/portfolio">
+        {() => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <Portfolio />
+          </AppLayout>
+        )}
+      </Route>
+
+      <Route path="/coins/:symbol">
+        {({ symbol }) => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <CoinDetail symbol={symbol} />
+          </AppLayout>
+        )}
+      </Route>
+
+      <Route path="/analytics">
+        {() => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <Analytics />
+          </AppLayout>
+        )}
+      </Route>
+
+      <Route path="/settings">
+        {() => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <Settings />
+          </AppLayout>
+        )}
+      </Route>
+
       {/* Admin routes - these should be checked first */}
       <Route path="/admin/login" component={AdminAuth} />
       <Route path="/admin/dashboard">
@@ -81,56 +129,6 @@ function Router() {
         {() => <Redirect to="/admin/dashboard" />}
       </Route>
 
-      {/* Public routes */}
-      <Route path="/auth">
-        {() => user ? <Redirect to="/dashboard" /> : <AuthPage />}
-      </Route>
-
-      {/* Protected user routes */}
-      <Route path="/dashboard">
-        {() => !user ? <Redirect to="/auth" /> : (
-          <AppLayout>
-            <Dashboard />
-          </AppLayout>
-        )}
-      </Route>
-
-      <Route path="/portfolio">
-        {() => !user ? <Redirect to="/auth" /> : (
-          <AppLayout>
-            <Portfolio />
-          </AppLayout>
-        )}
-      </Route>
-
-      <Route path="/coins/:symbol">
-        {(params) => !user ? <Redirect to="/auth" /> : (
-          <AppLayout>
-            <CoinDetail symbol={params.symbol} />
-          </AppLayout>
-        )}
-      </Route>
-
-      <Route path="/analytics">
-        {() => !user ? <Redirect to="/auth" /> : (
-          <AppLayout>
-            <Analytics />
-          </AppLayout>
-        )}
-      </Route>
-
-      <Route path="/settings">
-        {() => !user ? <Redirect to="/auth" /> : (
-          <AppLayout>
-            <Settings />
-          </AppLayout>
-        )}
-      </Route>
-
-      {/* Home route should be at the root */}
-      <Route path="/">
-        {() => user ? <Redirect to="/dashboard" /> : <Home />}
-      </Route>
 
       {/* Fallback 404 - should be last */}
       <Route component={NotFound} />
