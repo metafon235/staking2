@@ -1,39 +1,45 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
   LayoutDashboard,
   Settings,
   Users,
   Activity,
-  LogOut
+  LogOut,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { SelectUser } from "@db/schema";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: admin, isLoading } = useQuery<{ user: SelectUser }>({
+  const { data: adminSession, isLoading } = useQuery<{ user: SelectUser }>({
     queryKey: ['/api/admin/session'],
-    retry: false,
+    retry: 1,
+    refetchOnWindowFocus: false,
     onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Nicht autorisiert",
+        description: "Bitte melden Sie sich als Administrator an."
+      });
       setLocation('/admin/login');
     }
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  if (!admin?.user.isAdmin) {
-    toast({
-      variant: "destructive",
-      title: "Access Denied",
-      description: "You need admin privileges to access this area."
-    });
-    setLocation('/admin/login');
+  if (!adminSession?.user.isAdmin) {
     return null;
   }
 
@@ -72,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="h-full px-3 py-4">
             <div className="mb-8 px-3">
               <h2 className="text-lg font-semibold">Admin Panel</h2>
-              <p className="text-sm text-muted-foreground">{admin.user.email}</p>
+              <p className="text-sm text-muted-foreground">{adminSession.user.email}</p>
             </div>
 
             <nav className="space-y-1">
@@ -102,7 +108,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   fetch('/api/admin/logout', { 
                     method: 'POST',
                     credentials: 'include'
-                  }).then(() => setLocation('/admin/login'));
+                  }).then(() => {
+                    setLocation('/admin/login');
+                    // Invalidate admin session
+                    queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
+                  });
                 }}
               >
                 <LogOut className="mr-3 h-5 w-5" />
