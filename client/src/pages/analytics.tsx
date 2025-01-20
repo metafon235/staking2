@@ -63,13 +63,12 @@ export default function Analytics() {
   const { data: liveEthPrice } = useQuery({
     queryKey: ['binanceEthPrice'],
     queryFn: getEthPrice,
-    refetchInterval: 30000,
+    refetchInterval: 30000, //This line was updated
   });
 
   const { data: ethStats } = useQuery({
     queryKey: ['binanceEthStats'],
     queryFn: getEthStats,
-    // Removed refetchInterval for static data that only updates on page reload
     staleTime: Infinity, // Prevents background refetches
   });
 
