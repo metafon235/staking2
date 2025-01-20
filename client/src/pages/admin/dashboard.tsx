@@ -16,11 +16,9 @@ import {
   Coins
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 
 interface SystemOverview {
   users: number;
@@ -46,7 +44,8 @@ interface SystemOverview {
 
 export default function AdminDashboard() {
   const { data: overview, isLoading } = useQuery<SystemOverview>({
-    queryKey: ['/api/admin/overview']
+    queryKey: ['/api/admin/overview'],
+    refetchInterval: 60000, // Refetch every minute (60000ms)
   });
 
   if (isLoading) {
@@ -152,6 +151,9 @@ export default function AdminDashboard() {
             </div>
             <p className="text-xs text-muted-foreground">
               Accumulated from {apyDiff.toFixed(2)}% APY difference
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 italic">
+              Updates automatically every minute
             </p>
           </CardContent>
         </Card>
