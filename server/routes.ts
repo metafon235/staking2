@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { db } from "@db";
 import { z } from "zod";
 import { setupAuth } from "./auth";
-import { stakes, rewards, transactions, users } from "@db/schema";
+import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
 
 // Network base statistics
@@ -624,7 +624,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Calculate rewards based on 3% APY for a specific time period
-  function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): number {
+  async function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): Promise<number> {
     // Only generate rewards if stake amount is at least 0.01 ETH
     if (stakedAmount < 0.01) {
       return 0;
@@ -639,13 +639,38 @@ export function registerRoutes(app: Express): Server {
       const reward = stakedAmount * minutelyRate; // Calculate one minute's reward
       // Record transaction if it's a meaningful reward
       if (reward >= 0.00000001) { // Threshold at 8 decimals
-        recordRewardTransaction(userId, reward);
+        await recordRewardTransaction(userId, reward);
       }
       return reward;
     } else {
       // For total rewards calculation (withdrawal, display), calculate accumulated rewards
       return stakedAmount * minutelyRate * minutesElapsed;
     }
+  }
+
+  // Generate a unique referral code
+  async function generateReferralCode(): Promise<string> {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code: string;
+    let isUnique = false;
+
+    while (!isUnique) {
+      code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const existing = await db.query.users.findFirst({
+        where: eq(users.referralCode, code)
+      });
+
+      if (!existing) {
+        isUnique = true;
+        return code;
+      }
+    }
+
+    throw new Error('Failed to generate unique referral code');
   }
 
   async function recordRewardTransaction(userId: number, reward: number) {
@@ -664,14 +689,43 @@ export function registerRoutes(app: Express): Server {
 
       // Only create new reward transaction if none exists in the last minute
       if (!recentReward) {
-        await db.insert(transactions)
+        const [transaction] = await db.insert(transactions)
           .values({
             userId,
             type: 'reward',
             amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
             status: 'completed',
             createdAt: new Date()
-          });
+          })
+          .returning();
+
+        // Calculate and record referral rewards
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, userId),
+          columns: {
+            referrerId: true
+          }
+        });
+
+        if (user?.referrerId) {
+          const referralReward = reward * 0.01; // 1% referral reward
+          await db.insert(transactions)
+            .values({
+              userId: user.referrerId,
+              type: 'referral_reward',
+              amount: referralReward.toFixed(9),
+              status: 'completed',
+              createdAt: new Date()
+            });
+
+          await db.insert(referralRewards)
+            .values({
+              referrerId: user.referrerId,
+              referredId: userId,
+              rewardId: transaction.id,
+              amount: referralReward,
+            });
+        }
       }
     }
   }
@@ -743,12 +797,48 @@ export function registerRoutes(app: Express): Server {
       const user = await db.query.users.findFirst({
         where: eq(users.id, req.user.id),
         columns: {
-          walletAddress: true
+          walletAddress: true,
+          referralCode: true
         }
       });
 
+      // Get referral statistics
+      const referrals = await db.select({
+        count: count(),
+      })
+      .from(users)
+      .where(eq(users.referrerId, req.user.id));
+
+      const referralRewardsSum = await db.select({
+        total: sql<string>`sum(amount)::numeric`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, req.user.id),
+          eq(transactions.type, 'referral_reward')
+        )
+      );
+
+      const totalReferrals = parseInt(referrals[0].count.toString());
+      const totalRewards = parseFloat(referralRewardsSum[0]?.total || '0');
+
+      // Generate referral code if not exists
+      let referralCode = user?.referralCode;
+      if (!referralCode) {
+        referralCode = await generateReferralCode();
+        await db.update(users)
+          .set({ referralCode })
+          .where(eq(users.id, req.user.id));
+      }
+
       res.json({
-        walletAddress: user?.walletAddress || ''
+        walletAddress: user?.walletAddress || '',
+        referralCode,
+        referralStats: {
+          totalReferrals,
+          totalRewards
+        }
       });
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -872,6 +962,44 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching analytics data:', error);
       res.status(500).json({ error: 'Failed to fetch analytics data' });
+    }
+  });
+
+  // Update auth.ts registration to handle referral codes
+  app.post('/api/register', async (req, res) => {
+    const { email, password, referralCode } = req.body;
+
+    try {
+      let referrerId: number | null = null;
+
+      if (referralCode) {
+        const referrer = await db.query.users.findFirst({
+          where: eq(users.referralCode, referralCode),
+          columns: {
+            id: true
+          }
+        });
+
+        if (referrer) {
+          referrerId = referrer.id;
+        }
+      }
+
+      const newReferralCode = await generateReferralCode();
+
+      const [user] = await db.insert(users)
+        .values({
+          email,
+          password,
+          referrerId,
+          referralCode: newReferralCode
+        })
+        .returning();
+
+      res.json({ message: 'Registration successful', user });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ error: 'Failed to register user' });
     }
   });
 

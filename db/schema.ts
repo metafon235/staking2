@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   email: text("email").unique().notNull(),
   password: text("password").notNull(),
   walletAddress: text("wallet_address"),
+  referrerId: integer("referrer_id").references(() => users.id),
+  referralCode: text("referral_code").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -29,10 +31,19 @@ export const rewards = pgTable("rewards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const referralRewards = pgTable("referral_rewards", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").references(() => users.id).notNull(),
+  referredId: integer("referred_id").references(() => users.id).notNull(),
+  rewardId: integer("reward_id").references(() => rewards.id).notNull(),
+  amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  type: text("type").notNull(), // stake, unstake, claim_reward
+  type: text("type").notNull(), // stake, unstake, claim_reward, referral_reward
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
   transactionHash: text("transaction_hash").unique(),
@@ -57,6 +68,11 @@ export const insertRewardSchema = createInsertSchema(rewards);
 export const selectRewardSchema = createSelectSchema(rewards);
 export type InsertReward = typeof rewards.$inferInsert;
 export type SelectReward = typeof rewards.$inferSelect;
+
+export const insertReferralRewardSchema = createInsertSchema(referralRewards);
+export const selectReferralRewardSchema = createSelectSchema(referralRewards);
+export type InsertReferralReward = typeof referralRewards.$inferInsert;
+export type SelectReferralReward = typeof referralRewards.$inferSelect;
 
 export const insertTransactionSchema = createInsertSchema(transactions);
 export const selectTransactionSchema = createSelectSchema(transactions);

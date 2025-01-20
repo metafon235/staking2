@@ -8,6 +8,11 @@ import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
+function getQueryParam(param: string): string | null {
+  const searchParams = new URLSearchParams(window.location.search);
+  return searchParams.get(param);
+}
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -18,13 +23,20 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
 
+  // Get referral code from URL if present
+  const referralCode = getQueryParam('ref');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
 
     setIsLoading(true);
     try {
-      const result = await (isLogin ? login : register)({ email, password });
+      const result = await (isLogin ? login : register)({ 
+        email, 
+        password,
+        referralCode: !isLogin ? referralCode : undefined // Only send referralCode during registration
+      });
 
       if (!result.ok) {
         toast({
@@ -40,10 +52,10 @@ export default function AuthPage() {
         description: "Welcome to the Staking Platform"
       });
 
-      // Warte auf die nächste Tick des Event-Loops
+      // Wait for next tick
       await new Promise(resolve => setTimeout(resolve, 0));
 
-      // Prüfe explizit den User-Status
+      // Check user status
       const user = queryClient.getQueryData(['user']);
       if (user) {
         navigate("/");
@@ -69,7 +81,9 @@ export default function AuthPage() {
           <CardDescription className="text-zinc-400">
             {isLogin
               ? "Enter your credentials to access your account"
-              : "Create an account to start staking"}
+              : referralCode 
+                ? "Create an account using your referral invitation"
+                : "Create an account to start staking"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -96,6 +110,14 @@ export default function AuthPage() {
                 required
               />
             </div>
+
+            {!isLogin && referralCode && (
+              <div className="bg-purple-900/20 border border-purple-900/50 rounded-lg p-3">
+                <p className="text-sm text-purple-400">
+                  You've been invited! Sign up to start earning rewards together.
+                </p>
+              </div>
+            )}
 
             <Button 
               type="submit" 
