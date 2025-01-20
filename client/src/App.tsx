@@ -48,40 +48,23 @@ function Router() {
 
       {/* Protected app routes */}
       <Route path="/app">
-        {() => {
-          if (!user) return <Redirect to="/auth" />;
-
-          return (
-            <AppLayout>
-              <Switch>
-                <Route path="/app">
-                  <Dashboard />
-                </Route>
-                <Route path="/app/portfolio">
-                  <Portfolio />
-                </Route>
-                <Route path="/app/coins/:symbol">
-                  <CoinDetail />
-                </Route>
-                <Route path="/app/analytics">
-                  <Analytics />
-                </Route>
-                <Route path="/app/settings">
-                  <Settings />
-                </Route>
-                <Route>
-                  <NotFound />
-                </Route>
-              </Switch>
-            </AppLayout>
-          );
-        }}
+        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Dashboard /></AppLayout>}
+      </Route>
+      <Route path="/app/portfolio">
+        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Portfolio /></AppLayout>}
+      </Route>
+      <Route path="/app/coins/:symbol">
+        {() => !user ? <Redirect to="/auth" /> : <AppLayout><CoinDetail /></AppLayout>}
+      </Route>
+      <Route path="/app/analytics">
+        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Analytics /></AppLayout>}
+      </Route>
+      <Route path="/app/settings">
+        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Settings /></AppLayout>}
       </Route>
 
       {/* Fallback */}
-      <Route>
-        <NotFound />
-      </Route>
+      <Route component={NotFound} />
     </Switch>
   );
 }
