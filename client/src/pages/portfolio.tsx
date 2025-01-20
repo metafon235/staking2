@@ -49,8 +49,8 @@ export default function Portfolio() {
   const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
     queryFn: fetchPortfolioData,
-    refetchInterval: 60000,
-    staleTime: 0
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 0 // Always consider data stale to force refresh
   });
 
   const handleWithdrawAll = async (coin: string) => {
@@ -78,6 +78,17 @@ export default function Portfolio() {
   const totalRewards = portfolio ? parseFloat(portfolio.eth.rewards) : 0;
   const totalValue = totalStaked + totalRewards;
 
+  const formatEth = (value: number) => value.toFixed(6);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-[250px] bg-zinc-800" />
+        <Skeleton className="h-4 w-[200px] bg-zinc-800" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -97,13 +108,13 @@ export default function Portfolio() {
               <div>
                 <p className="text-sm text-zinc-300">Total Value Staked</p>
                 <p className="text-3xl font-bold text-white">
-                  {totalStaked.toFixed(6)} ETH
+                  {formatEth(totalStaked)} ETH
                 </p>
               </div>
               <div>
                 <p className="text-sm text-zinc-300">Total Current Rewards</p>
                 <p className="text-3xl font-bold text-green-400">
-                  {totalRewards.toFixed(6)} ETH
+                  {formatEth(totalRewards)} ETH
                 </p>
               </div>
             </div>
@@ -124,41 +135,32 @@ export default function Portfolio() {
               </Badge>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-4 w-[250px] bg-zinc-800" />
-                  <Skeleton className="h-4 w-[200px] bg-zinc-800" />
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-zinc-400">Initial Stake</p>
+                  <p className="text-2xl font-bold text-white">
+                    {formatEth(totalStaked)} ETH
+                  </p>
                 </div>
-              ) : portfolio ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-zinc-400">Initial Stake</p>
-                    <p className="text-2xl font-bold text-white">
-                      {totalStaked.toFixed(6)} ETH
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Generated Rewards</p>
-                    <p className="text-2xl font-bold text-green-500">
-                      +{totalRewards.toFixed(6)} ETH
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
-                    <p className="text-2xl font-bold text-purple-500">
-                      {totalValue.toFixed(6)} ETH
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Current APY</p>
-                    <p className="text-lg text-purple-400">
-                      {portfolio.eth.apy.toFixed(2)}%
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-sm text-zinc-400">Generated Rewards</p>
+                  <p className="text-2xl font-bold text-green-500">
+                    +{formatEth(totalRewards)} ETH
+                  </p>
                 </div>
-              ) : (
-                <p className="text-zinc-400">Failed to load data</p>
-              )}
+                <div>
+                  <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
+                  <p className="text-2xl font-bold text-purple-500">
+                    {formatEth(totalValue)} ETH
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-400">Current APY</p>
+                  <p className="text-lg text-purple-400">
+                    {portfolio?.eth.apy.toFixed(2)}%
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
