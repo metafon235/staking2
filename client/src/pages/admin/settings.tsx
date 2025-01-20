@@ -35,7 +35,7 @@ export default function AdminSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery<AdminSettings>({
+  const { data: settings, isLoading, error } = useQuery<AdminSettings>({
     queryKey: ['/api/admin/settings'],
   });
 
@@ -82,8 +82,17 @@ export default function AdminSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="w-8 h-8 text-destructive" />
+        <p className="text-destructive">Failed to load settings</p>
       </div>
     );
   }
@@ -94,13 +103,13 @@ export default function AdminSettings() {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Settings</h1>
+      <h1 className="text-3xl font-bold mb-6 text-foreground">Admin Settings</h1>
 
       <div className="grid gap-6">
-        <Card>
+        <Card className="bg-card">
           <CardHeader>
-            <CardTitle>Master Staking Wallet</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-card-foreground">Master Staking Wallet</CardTitle>
+            <CardDescription className="text-card-foreground/60">
               Configure the master wallet that will be used for staking operations.
               All user stakes will be managed through this wallet.
             </CardDescription>
@@ -108,14 +117,21 @@ export default function AdminSettings() {
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="walletAddress">Ethereum Wallet Address</Label>
+                <Label htmlFor="walletAddress" className="text-card-foreground">
+                  Ethereum Wallet Address
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     id="walletAddress"
                     placeholder="0x..."
+                    className="bg-card-foreground/5 border-card-foreground/20 text-card-foreground placeholder:text-card-foreground/40"
                     {...form.register("walletAddress")}
                   />
-                  <Button type="submit" disabled={isUpdating}>
+                  <Button 
+                    type="submit" 
+                    disabled={isUpdating}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
                     {isUpdating ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
@@ -132,7 +148,7 @@ export default function AdminSettings() {
               </div>
 
               {settings?.updatedAt && (
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <p className="text-sm text-card-foreground/60 flex items-center gap-1">
                   <CheckCircle2 className="w-4 h-4" />
                   Last updated: {format(new Date(settings.updatedAt), 'PPpp')}
                 </p>
