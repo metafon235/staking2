@@ -36,38 +36,37 @@ function Router() {
 
   return (
     <Switch>
+      {/* Admin routes - these should be checked first */}
+      <Route path="/admin/login" component={AdminAuth} />
+      <Route path="/admin/dashboard">
+        {() => (
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path="/admin">
+        {() => <Redirect to="/admin/dashboard" />}
+      </Route>
+
       {/* Public routes */}
-      <Route path="/" component={Home} />
       <Route path="/auth">
         {() => user ? <Redirect to="/dashboard" /> : <AuthPage />}
       </Route>
 
       {/* Protected routes */}
       <Route path="/dashboard">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Dashboard /></AppLayout>}
+        {() => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
+        )}
       </Route>
 
-      {/* Admin routes */}
-      <Route path="/admin">
-        {() => <Redirect to="/admin/dashboard" />}
-      </Route>
-      <Route path="/admin/login">
-        {() => user?.isAdmin ? <Redirect to="/admin/dashboard" /> : <AdminAuth />}
-      </Route>
-      <Route path="/admin/dashboard">
-        {() => {
-          if (!user?.isAdmin) {
-            return <Redirect to="/admin/login" />;
-          }
-          return (
-            <AdminLayout>
-              <AdminDashboard />
-            </AdminLayout>
-          );
-        }}
-      </Route>
+      {/* Home route should be last of the defined routes */}
+      <Route path="/" component={Home} />
 
-      {/* Fallback */}
+      {/* Fallback 404 */}
       <Route component={NotFound} />
     </Switch>
   );
