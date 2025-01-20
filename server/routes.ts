@@ -7,23 +7,25 @@ import { stakes, rewards, transactions } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { cdpConfig } from "../config/cdp.config";
 import crypto from 'crypto';
+import { cdpClient } from './services/cdp/client';
 
 // Webhook event validation
-function validateWebhookSignature(req: Request): boolean {
-  const signature = req.headers['x-webhook-signature'];
-  if (!signature || typeof signature !== 'string') return false;
-
-  const payload = JSON.stringify(req.body);
-  const expectedSignature = crypto
-    .createHmac('sha256', cdpConfig.webhookSecret)
-    .update(payload)
-    .digest('hex');
-
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
-}
+// This function is now replaced by cdpClient.verifyWebhookSignature
+// function validateWebhookSignature(req: Request): boolean {
+//   const signature = req.headers['x-webhook-signature'];
+//   if (!signature || typeof signature !== 'string') return false;
+//
+//   const payload = JSON.stringify(req.body);
+//   const expectedSignature = crypto
+//     .createHmac('sha256', cdpConfig.webhookSecret)
+//     .update(payload)
+//     .digest('hex');
+//
+//   return crypto.timingSafeEqual(
+//     Buffer.from(signature),
+//     Buffer.from(expectedSignature)
+//   );
+// }
 
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
@@ -609,8 +611,6 @@ export function registerRoutes(app: Express): Server {
               status: 'completed',
               createdAt: new Date()
             });
-
-
         }
       }
     }
@@ -880,26 +880,43 @@ export function registerRoutes(app: Express): Server {
   // CDP Webhook endpoint
   app.post('/api/cdp/webhook', async (req: Request, res: Response) => {
     try {
-      // Validate webhook signature
-      if (!validateWebhookSignature(req)) {
-        console.error('Invalid webhook signature');
+      console.log('Received CDP webhook:', {
+        headers: req.headers,
+        body: req.body
+      });
+
+      const signature = req.headers['x-webhook-signature'];
+      if (!signature || typeof signature !== 'string') {
+        console.error('Missing CDP webhook signature');
+        return res.status(401).json({ error: 'Missing signature' });
+      }
+
+      // Verify webhook signature using CDP client
+      const payload = JSON.stringify(req.body);
+      if (!cdpClient.verifyWebhookSignature(signature, payload)) {
+        console.error('Invalid CDP webhook signature');
         return res.status(401).json({ error: 'Invalid signature' });
       }
 
       const { event_type, data } = req.body;
+      console.log('Processing CDP webhook event:', { event_type, data });
 
       switch (event_type) {
         case 'STAKE_CREATED':
+          console.log('Updating stake status for created stake:', data);
           // Update stake status in database
           await db.update(stakes)
             .set({
               status: 'active',
+              cdpStakeId: data.stake_id,
+              cdpValidatorId: data.validator_id,
               updatedAt: new Date()
             })
             .where(eq(stakes.cdpStakeId, data.stake_id));
           break;
 
         case 'STAKE_UPDATED':
+          console.log('Updating stake status:', data);
           // Update stake status
           await db.update(stakes)
             .set({
@@ -910,32 +927,38 @@ export function registerRoutes(app: Express): Server {
           break;
 
         case 'REWARD_DISTRIBUTED':
+          console.log('Recording new reward distribution:', data);
           // Record new reward
-          await db.insert(rewards)
+          const [reward] = await db.insert(rewards)
             .values({
               stakeId: data.stake_id,
               amount: data.amount,
-              createdAt: new Date()
-            });
+              cdpRewardId: data.reward_id,createdAt: new Date()
+            })
+            .returning();
 
-          // Record reward transaction
-          await db.insert(transactions)
-            .values({
-              userId: data.user_id,
-              type: 'reward',
-              amount: data.amount,
-              status: 'completed',
-              createdAt: new Date()
-            });
-          break;
+        // Record reward transaction
+        await db.insert(transactions)
+          .values({
+            userId: data.user_id,
+            type: 'reward',
+            amount: data.amount,
+            status: 'completed',
+            cdpTransactionId: data.transaction_id,
+            createdAt: new Date()
+          });
+
+        console.log('Reward recorded:', { reward });
+        break;
 
         default:
-          console.warn(`Unhandled webhook event type: ${event_type}`);
+          console.warn('Unhandled CDP webhook event type:', event_type);
       }
 
+      console.log('CDP webhook processed successfully');
       res.json({ status: 'success' });
     } catch (error) {
-      console.error('Webhook processing error:', error);
+      console.error('CDP webhook processing error:', error);
       res.status(500).json({ error: 'Webhook processing failed' });
     }
   });
