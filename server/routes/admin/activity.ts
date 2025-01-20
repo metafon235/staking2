@@ -10,14 +10,7 @@ router.get('/logs', async (_req, res) => {
   try {
     const logs = await db.query.activityLogs.findMany({
       orderBy: desc(activityLogs.createdAt),
-      limit: 100,
-      with: {
-        user: {
-          columns: {
-            email: true
-          }
-        }
-      }
+      limit: 100
     });
 
     res.json(logs);
@@ -31,7 +24,7 @@ router.get('/logs', async (_req, res) => {
 router.get('/metrics', async (req, res) => {
   try {
     const { period = '7d' } = req.query;
-    
+
     let dateFilter;
     switch(period) {
       case '30d':
@@ -50,21 +43,33 @@ router.get('/metrics', async (req, res) => {
       orderBy: activityMetrics.date
     });
 
-    // Get current day metrics
+    // Get current day metrics with real-time APY difference calculation
     const [currentMetrics] = await db.select({
       totalValueLocked: sum(stakes.amount),
       userCount: count(users.id),
-      activeStakes: count(stakes.id),
-      transactionCount: count(transactions.id)
+      activeStakes: count(stakes.id)
     })
     .from(stakes)
-    .leftJoin(users, true)
-    .leftJoin(transactions, true)
     .where(sql`${stakes.status} = 'active'`);
+
+    // Calculate admin rewards based on APY difference (3.57% - 3% = 0.57%)
+    const apyDifference = 0.0057; // 0.57%
+    const yearInMinutes = 365 * 24 * 60;
+    const minutelyRate = apyDifference / yearInMinutes;
+
+    // Calculate admin rewards based on TVL and time passed
+    const realTimeAdminRewards = currentMetrics.totalValueLocked 
+      ? parseFloat(currentMetrics.totalValueLocked.toString()) * minutelyRate * 60 // Last hour's rewards
+      : 0;
 
     res.json({
       historical: metrics,
-      current: currentMetrics
+      current: {
+        ...currentMetrics,
+        adminRewards: realTimeAdminRewards,
+        apyDifference: 0.57,
+        lastUpdated: new Date().toISOString()
+      }
     });
   } catch (error) {
     console.error('Error fetching activity metrics:', error);
