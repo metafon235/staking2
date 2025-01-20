@@ -12,7 +12,8 @@ import {
   Wallet,
   Activity,
   Server,
-  Settings
+  Settings,
+  Coins
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -36,6 +37,17 @@ interface SystemOverview {
     databaseStatus: string;
     lastSync: string;
   };
+}
+
+function calculateMonthlyEarnings(totalStaked: number, apyDiff: number): number {
+  // Convert APY difference to monthly rate
+  const monthlyRate = apyDiff / 100 / 12;
+  return totalStaked * monthlyRate;
+}
+
+function calculateYearlyEarnings(totalStaked: number, apyDiff: number): number {
+  // Calculate yearly earnings from APY difference
+  return totalStaked * (apyDiff / 100);
 }
 
 function StakingSettingsDialog({ config, onClose }: { 
@@ -139,6 +151,12 @@ export default function AdminDashboard() {
     );
   }
 
+  // Calculate admin earnings for ETH staking
+  const ethConfig = overview?.stakingConfig.find(config => config.coinSymbol === 'ETH');
+  const apyDiff = ethConfig ? (ethConfig.actualApy - ethConfig.displayedApy) : 0;
+  const monthlyEarnings = overview?.totalStaked ? calculateMonthlyEarnings(overview.totalStaked, apyDiff) : 0;
+  const yearlyEarnings = overview?.totalStaked ? calculateYearlyEarnings(overview.totalStaked, apyDiff) : 0;
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">System Overview</h1>
@@ -213,6 +231,39 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <h2 className="text-2xl font-bold mb-4">Platform Earnings</h2>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Earnings</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {monthlyEarnings.toFixed(4)} ETH
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Based on {apyDiff.toFixed(2)}% APY difference
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Projected Yearly Earnings</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {yearlyEarnings.toFixed(4)} ETH
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Annualized platform earnings
+            </p>
           </CardContent>
         </Card>
       </div>

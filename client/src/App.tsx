@@ -10,6 +10,7 @@ import CoinDetail from "@/pages/coin-detail";
 import Portfolio from "@/pages/portfolio";
 import Settings from "@/pages/settings";
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
@@ -68,7 +69,10 @@ function Router() {
 
       {/* Admin routes */}
       <Route path="/admin">
-        {() => !user ? <Redirect to="/auth" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
+        {() => !user?.isAdmin ? <Redirect to="/auth" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
+      </Route>
+      <Route path="/admin/users">
+        {() => !user?.isAdmin ? <Redirect to="/auth" /> : <AdminLayout><AdminUsers /></AdminLayout>}
       </Route>
 
       {/* Fallback */}

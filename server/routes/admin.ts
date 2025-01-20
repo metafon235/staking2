@@ -97,12 +97,12 @@ router.put('/settings/staking/:coinSymbol', async (req, res) => {
 
     const { coinSymbol, displayedApy, actualApy, minStakeAmount } = validation.data;
 
-    // Update settings
+    // Convert numbers to strings for database storage
     const [updated] = await db
       .update(stakingSettings)
       .set({
-        displayedApy,
-        actualApy,
+        displayedApy: displayedApy.toString(),
+        actualApy: actualApy.toString(),
         minStakeAmount,
         updatedAt: new Date(),
         updatedBy: req.user?.id
