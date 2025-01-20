@@ -20,7 +20,7 @@ import Analytics from "@/pages/analytics";
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-black">
+    <div className="flex min-h-screen bg-background">
       <Navigation />
       <main className="flex-1 p-6 lg:pl-72">
         {children}
@@ -35,8 +35,8 @@ function Router() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -67,12 +67,20 @@ function Router() {
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Settings /></AppLayout>}
       </Route>
 
-      {/* Admin routes */}
+      {/* Admin routes - require both authentication and admin privileges */}
       <Route path="/admin">
-        {() => !user?.isAdmin ? <Redirect to="/auth" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
+        {() => {
+          if (!user) return <Redirect to="/auth" />;
+          if (!user.isAdmin) return <Redirect to="/app" />;
+          return <AdminLayout><AdminDashboard /></AdminLayout>;
+        }}
       </Route>
       <Route path="/admin/users">
-        {() => !user?.isAdmin ? <Redirect to="/auth" /> : <AdminLayout><AdminUsers /></AdminLayout>}
+        {() => {
+          if (!user) return <Redirect to="/auth" />;
+          if (!user.isAdmin) return <Redirect to="/app" />;
+          return <AdminLayout><AdminUsers /></AdminLayout>;
+        }}
       </Route>
 
       {/* Fallback */}
