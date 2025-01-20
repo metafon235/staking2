@@ -10,16 +10,23 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { SelectUser } from "@db/schema";
+
+interface AdminSession {
+  user: {
+    id: number;
+    email: string;
+    isAdmin: boolean;
+  };
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: adminSession, isLoading } = useQuery<{ user: SelectUser }>({
+  const { data: adminSession, isLoading } = useQuery<AdminSession>({
     queryKey: ['/api/admin/session'],
-    retry: 1,
+    retry: false,
     refetchOnWindowFocus: false,
     onError: () => {
       toast({
@@ -40,6 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (!adminSession?.user.isAdmin) {
+    setLocation('/admin/login');
     return null;
   }
 
@@ -85,7 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {navigation.map((item) => (
                 <Button
                   key={item.name}
-                  variant="ghost"
+                  variant={item.current ? "default" : "ghost"}
                   className={`
                     w-full justify-start px-3 py-2 text-sm
                     ${item.current 
@@ -104,15 +112,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Button 
                 variant="ghost" 
                 className="w-full justify-start" 
-                onClick={() => {
-                  fetch('/api/admin/logout', { 
-                    method: 'POST',
-                    credentials: 'include'
-                  }).then(() => {
-                    setLocation('/admin/login');
-                    // Invalidate admin session
+                onClick={async () => {
+                  try {
+                    await fetch('/api/admin/logout', { 
+                      method: 'POST',
+                      credentials: 'include'
+                    });
                     queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
-                  });
+                    setLocation('/admin/login');
+                  } catch (error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Logout fehlgeschlagen",
+                      description: "Bitte versuchen Sie es erneut."
+                    });
+                  }
                 }}
               >
                 <LogOut className="mr-3 h-5 w-5" />
