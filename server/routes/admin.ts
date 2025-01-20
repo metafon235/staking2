@@ -56,52 +56,37 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/session', async (req, res) => {
-  try {
-    console.log('Admin session check:', req.session);
-    if (!req.session?.adminId || !req.session?.isAdminSession) {
-      console.log('No active admin session found');
-      return res.status(401).json({ message: "No active admin session" });
-    }
-
-    console.log('Valid admin session found');
-    res.json({
-      user: {
-        id: MOCK_ADMIN.id,
-        email: MOCK_ADMIN.email,
-        isAdmin: MOCK_ADMIN.isAdmin
-      }
-    });
-  } catch (error) {
-    console.error('Admin session check error:', error);
-    res.status(500).json({ message: "Session check failed" });
-  }
-});
-
-// Get all users
+// Get all users with their stakes
 router.get('/users', async (_req, res) => {
   try {
-    const users = await db.query.users.findMany({
-      columns: {
-        id: true,
-        email: true,
-        walletAddress: true,
-        referralCode: true,
-        isAdmin: true,
-        createdAt: true
-      },
-      with: {
-        stakes: {
-          columns: {
-            amount: true,
-            status: true,
-            createdAt: true
-          }
-        }
-      }
-    });
+    const allUsers = await db.select({
+      id: users.id,
+      email: users.email,
+      walletAddress: users.walletAddress,
+      referralCode: users.referralCode,
+      isAdmin: users.isAdmin,
+      createdAt: users.createdAt,
+    }).from(users);
 
-    res.json(users);
+    // For each user, get their stakes
+    const usersWithStakes = await Promise.all(
+      allUsers.map(async (user) => {
+        const userStakes = await db.select({
+          amount: stakes.amount,
+          status: stakes.status,
+          createdAt: stakes.createdAt,
+        })
+        .from(stakes)
+        .where(eq(stakes.userId, user.id));
+
+        return {
+          ...user,
+          stakes: userStakes,
+        };
+      })
+    );
+
+    res.json(usersWithStakes);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ message: "Failed to fetch users" });
@@ -119,11 +104,9 @@ router.delete('/users/:userId', async (req, res) => {
     }
 
     // First check if user exists
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId)
-    });
+    const user = await db.select().from(users).where(eq(users.id, userId));
 
-    if (!user) {
+    if (!user[0]) {
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -144,7 +127,7 @@ router.delete('/users/:userId', async (req, res) => {
 });
 
 // Get system overview for admin dashboard
-router.get('/overview', async (req, res) => {
+router.get('/overview', async (_req, res) => {
   try {
     // Constants for APY calculations
     const DISPLAYED_APY = 3.00;  // 3% shown to users
@@ -165,10 +148,12 @@ router.get('/overview', async (req, res) => {
     const totalStakedAmount = parseFloat(totalStaked[0].sum ?? '0');
 
     // Calculate accumulated admin rewards (total rewards from APY difference)
-    const activeStakes = await db.query.stakes.findMany({
-      where: eq(stakes.status, 'active'),
-      orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
-    });
+    const activeStakes = await db.select({
+      amount: stakes.amount,
+      createdAt: stakes.createdAt,
+    })
+    .from(stakes)
+    .where(eq(stakes.status, 'active'));
 
     let totalAdminRewards = 0;
     const now = Date.now();
@@ -187,10 +172,7 @@ router.get('/overview', async (req, res) => {
     const monthlyEarnings = (totalStakedAmount * (APY_DIFFERENCE / 100)) / 12;
     const yearlyEarnings = totalStakedAmount * (APY_DIFFERENCE / 100);
 
-    // Get staking settings
-    const config = await db.select().from(stakingSettings);
-
-    // Mock system health data (this should be replaced with real monitoring)
+    // Mock system health data
     const systemHealth = {
       cdpApiStatus: 'operational',
       databaseStatus: 'healthy',
@@ -221,7 +203,6 @@ router.get('/overview', async (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  console.log('Admin logout request');
   if (req.session) {
     req.session.destroy((err) => {
       if (err) {
@@ -235,7 +216,6 @@ router.post('/logout', (req, res) => {
   }
 });
 
-// Update staking settings
 router.put('/settings/staking/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;

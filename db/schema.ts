@@ -58,8 +58,8 @@ export const transactions = pgTable("transactions", {
 export const stakingSettings = pgTable("staking_settings", {
   id: serial("id").primaryKey(),
   coinSymbol: text("coin_symbol").notNull(),
-  displayedApy: decimal("displayed_apy", { precision: 4, scale: 2 }).notNull(), 
-  actualApy: decimal("actual_apy", { precision: 4, scale: 2 }).notNull(), 
+  displayedApy: decimal("displayed_apy", { precision: 4, scale: 2 }).notNull(),
+  actualApy: decimal("actual_apy", { precision: 4, scale: 2 }).notNull(),
   minStakeAmount: decimal("min_stake_amount", { precision: 36, scale: 18 }).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: integer("updated_by").references(() => users.id),
