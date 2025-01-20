@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import adminRoutes from './routes/admin';
 import activityRoutes from './routes/admin/activity';
+import settingsRoutes from './routes/admin/settings';
 import { z } from 'zod';
 import { db } from '@db';
 import { stakes, rewards, transactions, users } from '@db/schema';
@@ -16,6 +17,7 @@ export function registerRoutes(app: Express): Server {
   // Important: Do NOT apply any middleware here
   app.use('/api/admin', adminRoutes);
   app.use('/api/admin/activity', activityRoutes);
+  app.use('/api/admin/settings', settingsRoutes);
 
   // Add new route for news
   app.get('/api/news', async (_req, res) => {
