@@ -37,6 +37,15 @@ export default function AdminSettings() {
 
   const { data: settings, isLoading, error } = useQuery<AdminSettings>({
     queryKey: ['/api/admin/settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/settings', {
+        credentials: 'include'  // Add this to include credentials
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    }
   });
 
   const { mutate: updateWallet, isPending: isUpdating } = useMutation({
@@ -124,7 +133,7 @@ export default function AdminSettings() {
                   <Input
                     id="walletAddress"
                     placeholder="0x..."
-                    className="bg-card-foreground/5 border-card-foreground/20 text-card-foreground placeholder:text-card-foreground/40"
+                    className="flex-1 bg-card-foreground/5 border-card-foreground/20 text-card-foreground placeholder:text-card-foreground/40"
                     {...form.register("walletAddress")}
                   />
                   <Button 
