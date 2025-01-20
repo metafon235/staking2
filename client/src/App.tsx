@@ -45,6 +45,7 @@ function Router() {
       <Route path="/auth">
         {() => user ? <Redirect to="/app" /> : <AuthPage />}
       </Route>
+      <Route path="/coins/:symbol" component={CoinDetail} />
 
       {/* Protected app routes */}
       <Route path="/app">
