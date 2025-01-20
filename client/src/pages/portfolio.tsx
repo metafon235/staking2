@@ -76,8 +76,8 @@ export default function Portfolio() {
   // Calculate totals - Fixed the calculation logic
   const totalStaked = portfolio ? Number(portfolio.eth.staked) : 0;
   const totalRewards = portfolio ? Number(portfolio.eth.rewards) : 0;
-  // Ensure we're adding the numbers with proper precision
-  const totalValue = Number((totalStaked + totalRewards).toFixed(6));
+  // Keep precision during calculation, only format for display
+  const totalValue = totalStaked + totalRewards;
 
   return (
     <div className="space-y-6">
