@@ -631,7 +631,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add portfolio endpoint
+  // Portfolio endpoint
   app.get('/api/portfolio', async (req, res) => {
     try {
       if (!req.user) {
@@ -654,10 +654,11 @@ export function registerRoutes(app: Express): Server {
         currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
+      // Format values with consistent precision
       const portfolioData = {
         eth: {
-          staked: totalStaked,
-          rewards: parseFloat(currentRewards.toFixed(9)),
+          staked: totalStaked.toFixed(6),
+          rewards: currentRewards.toFixed(9),
           apy: 3.00
         }
       };
@@ -930,7 +931,7 @@ export function registerRoutes(app: Express): Server {
               stakeId: data.stake_id,
               amount: data.amount,
               cdpRewardId: data.reward_id,
-              createdAt: new Date()
+              createdAt: newDate()
             })
             .returning();
 
