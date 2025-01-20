@@ -5,6 +5,7 @@ import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
+import { NotificationService } from "./services/notifications";
 
 // Network base statistics
 const BASE_STATS = {
@@ -1007,6 +1008,67 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Registration error:', error);
       res.status(500).json({ error: 'Failed to register user' });
+    }
+  });
+
+  // Get user notifications
+  app.get('/api/notifications', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const notifications = await NotificationService.getUserNotifications(req.user.id);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  // Mark notification as read
+  app.post('/api/notifications/:id/read', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const notificationId = parseInt(req.params.id);
+      await NotificationService.markAsRead(req.user.id, notificationId);
+      res.json({ message: 'Notification marked as read' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+  });
+
+  // Get notification settings
+  app.get('/api/notifications/settings', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const settings = await NotificationService.getUserSettings(req.user.id);
+      res.json(settings || {});
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+      res.status(500).json({ error: 'Failed to fetch notification settings' });
+    }
+  });
+
+  // Update notification settings
+  app.post('/api/notifications/settings', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const settings = await NotificationService.updateUserSettings(req.user.id, req.body);
+      res.json(settings[0]);
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      res.status(500).json({ error: 'Failed to update notification settings' });
     }
   });
 

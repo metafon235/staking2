@@ -2,6 +2,30 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "dri
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Add notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // reward, price_change, system
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  read: boolean("read").default(false).notNull(),
+  data: text("data"), // JSON string for additional data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Add notification settings table
+export const notificationSettings = pgTable("notification_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rewardThreshold: decimal("reward_threshold", { precision: 36, scale: 18 }), // Minimum reward amount to notify
+  priceChangeThreshold: decimal("price_change_threshold", { precision: 5, scale: 2 }), // Percentage change to trigger notification
+  emailNotifications: boolean("email_notifications").default(true),
+  browserNotifications: boolean("browser_notifications").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique().notNull(),
@@ -50,7 +74,17 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Schema types with username validation
+// Add schemas for new tables
+export const insertNotificationSchema = createInsertSchema(notifications);
+export const selectNotificationSchema = createSelectSchema(notifications);
+export type InsertNotification = typeof notifications.$inferInsert;
+export type SelectNotification = typeof notifications.$inferSelect;
+
+export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings);
+export const selectNotificationSettingsSchema = createSelectSchema(notificationSettings);
+export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;
+export type SelectNotificationSettings = typeof notificationSettings.$inferSelect;
+
 export const insertUserSchema = createInsertSchema(users, {
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
