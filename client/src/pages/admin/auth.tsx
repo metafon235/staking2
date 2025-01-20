@@ -34,37 +34,15 @@ export default function AdminAuth() {
       // Invalidate and refetch admin session
       await queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
 
-      // Verify admin session
-      try {
-        const sessionResponse = await fetch('/api/admin/session', {
-          credentials: 'include'
-        });
+      toast({
+        title: "Login erfolgreich",
+        description: "Sie werden zum Admin-Dashboard weitergeleitet."
+      });
 
-        if (!sessionResponse.ok) {
-          throw new Error('Failed to verify admin session');
-        }
-
-        const sessionData = await sessionResponse.json();
-        if (!sessionData?.user?.isAdmin) {
-          throw new Error('Admin session verification failed');
-        }
-
-        toast({
-          title: "Login erfolgreich",
-          description: "Sie werden zum Admin-Dashboard weitergeleitet."
-        });
-
-        // Force a small delay to ensure the session is properly set
-        setTimeout(() => {
-          setLocation("/admin/dashboard");
-        }, 100);
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Login fehlgeschlagen",
-          description: "Sitzungsüberprüfung fehlgeschlagen. Bitte versuchen Sie es erneut."
-        });
-      }
+      // Force a small delay to ensure the session is properly set
+      setTimeout(() => {
+        setLocation("/admin/dashboard");
+      }, 500);
     },
     onError: (error) => {
       toast({

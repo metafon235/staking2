@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -20,7 +20,6 @@ interface AdminSession {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -36,7 +35,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return response.json();
     },
     retry: false,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000 // Check session every 30 seconds
   });
 
   if (isLoading) {
@@ -79,6 +79,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   ];
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
+      setLocation('/admin/login');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Logout fehlgeschlagen",
+        description: "Bitte versuchen Sie es erneut."
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
@@ -113,22 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Button 
                 variant="ghost" 
                 className="w-full justify-start" 
-                onClick={async () => {
-                  try {
-                    await fetch('/api/admin/logout', { 
-                      method: 'POST',
-                      credentials: 'include'
-                    });
-                    queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
-                    setLocation('/admin/login');
-                  } catch (error) {
-                    toast({
-                      variant: "destructive",
-                      title: "Logout fehlgeschlagen",
-                      description: "Bitte versuchen Sie es erneut."
-                    });
-                  }
-                }}
+                onClick={handleLogout}
               >
                 <LogOut className="mr-3 h-5 w-5" />
                 Logout
@@ -138,8 +139,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Main content */}
-        <main className="flex-1">
-          <div className="py-6">
+        <main className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>

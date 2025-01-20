@@ -48,6 +48,9 @@ function Router() {
       </Route>
 
       {/* Admin routes */}
+      <Route path="/admin">
+        {() => <Redirect to="/admin/dashboard" />}
+      </Route>
       <Route path="/admin/login">
         {() => user?.isAdmin ? <Redirect to="/admin/dashboard" /> : <AdminAuth />}
       </Route>
