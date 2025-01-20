@@ -231,14 +231,14 @@ export default function Analytics() {
 
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-white">Total Staked</CardTitle>
+                <CardTitle className="text-white">Total Rewards</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  {analytics.portfolio.totalStaked.toFixed(6)} ETH
+                  {analytics.portfolio.currentRewards.toFixed(6)} ETH
                 </p>
                 <p className="text-lg text-zinc-400">
-                  ${(analytics.portfolio.totalStaked * (liveEthPrice || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${(analytics.portfolio.currentRewards * (liveEthPrice || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
