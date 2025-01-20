@@ -34,6 +34,7 @@ router.post('/login', async (req, res) => {
         });
       }
 
+      console.log('Admin session saved:', req.session);
       res.json({
         message: "Admin login successful",
         user: {
@@ -59,10 +60,11 @@ router.get('/session', async (req, res) => {
   try {
     console.log('Admin session check:', req.session);
     if (!req.session?.adminId || !req.session?.isAdminSession) {
+      console.log('No active admin session found');
       return res.status(401).json({ message: "No active admin session" });
     }
 
-    // Return mock admin data
+    console.log('Valid admin session found');
     res.json({
       user: {
         id: MOCK_ADMIN.id,
@@ -76,8 +78,6 @@ router.get('/session', async (req, res) => {
   }
 });
 
-
-// Admin logout
 router.post('/logout', (req, res) => {
   console.log('Admin logout request');
   if (req.session) {

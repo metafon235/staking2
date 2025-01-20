@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 
-// Mock admin data
+// Mock admin data (matches routes/admin.ts)
 const MOCK_ADMIN = {
   id: 1,
-  email: 'admin@example.com',
+  email: 'monerominercom@gmail.com',
+  password: 'metafon23',
   isAdmin: true
 };
 
