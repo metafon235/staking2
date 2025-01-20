@@ -1,35 +1,158 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
-import adminRoutes from './routes/admin';
-import activityRoutes from './routes/admin/activity';
-import settingsRoutes from './routes/admin/settings';
-import { z } from 'zod';
-import { db } from '@db';
-import { stakes, rewards, transactions, users } from '@db/schema';
-import { eq, and, count, sql } from 'drizzle-orm';
+import { db } from "@db";
+import { z } from "zod";
+import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
+import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
+
+// Network base statistics
+const BASE_STATS = {
+  eth: {
+    tvl: 2456789.45,
+    validators: 845632,
+    avgStake: 32.5,
+    rewards: 74563.21
+  },
+  dot: {
+    tvl: 789456.12,
+    validators: 297845,
+    avgStake: 125.8,
+    rewards: 28945.67
+  },
+  sol: {
+    tvl: 567123.89,
+    validators: 156789,
+    avgStake: 845.2,
+    rewards: 15678.34
+  }
+};
+
+// Calculate real-time network rewards based on staking data
+async function calculateNetworkRewards(symbol: string): Promise<number> {
+  if (symbol.toLowerCase() !== 'eth') {
+    return BASE_STATS[symbol as keyof typeof BASE_STATS].rewards;
+  }
+
+  try {
+    // Get all active stakes
+    const result = await db.select({
+      totalStaked: sql<string>`sum(amount)::numeric`,
+      avgStakeTime: sql<string>`avg(extract(epoch from (now() - created_at)))::numeric`
+    })
+      .from(stakes)
+      .where(eq(stakes.status, 'active'));
+
+    const totalStaked = parseFloat(result[0]?.totalStaked || '0');
+    const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
+
+    // Calculate rewards based on 3% APY
+    // Convert time to years for APY calculation
+    const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
+    const networkRewards = totalStaked * 0.03 * timeInYears;
+
+    return parseFloat(networkRewards.toFixed(8));
+  } catch (error) {
+    console.error('Error calculating network rewards:', error);
+    return BASE_STATS.eth.rewards;
+  }
+}
+
+// Generate sample historical data for a coin
+async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
+  const now = Date.now();
+  const data = [];
+  const dailyRewardRate = baseStats.rewards / 30;
+
+  // Generate data points for the last 30 days
+  for (let i = 30; i >= 0; i--) {
+    const date = now - (i * 24 * 60 * 60 * 1000);
+    // Add some random variation to make the data look realistic
+    const variation = () => 1 + (Math.random() * 0.1 - 0.05);
+
+    const rewards = symbol.toLowerCase() === 'eth'
+      ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
+      : dailyRewardRate * (30 - i) * variation();
+
+    data.push({
+      date,
+      tvl: baseStats.tvl * variation(),
+      validators: Math.floor(baseStats.validators * variation()),
+      avgStake: baseStats.avgStake * variation(),
+      rewards: parseFloat(rewards.toFixed(8))
+    });
+  }
+
+  return data;
+}
+
+// Get current network statistics
+async function getCurrentNetworkStats(symbol: string) {
+  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
+  const currentRewards = await calculateNetworkRewards(symbol);
+
+  return {
+    ...baseStats,
+    rewards: currentRewards
+  };
+}
+
+// Network statistics cache with 1-minute TTL
+const statsCache = new Map<string, {
+  data: any;
+  timestamp: number;
+}>();
+
+// Active rewards generation interval
+let rewardsGenerationInterval: NodeJS.Timeout | null = null;
+
+async function generateRewardsForAllActiveStakes() {
+  try {
+    // Get all active stakes
+    const activeStakes = await db.query.stakes.findMany({
+      where: eq(stakes.status, 'active'),
+    });
+
+    // Group stakes by user
+    const userStakes = activeStakes.reduce((acc, stake) => {
+      if (!acc[stake.userId]) {
+        acc[stake.userId] = [];
+      }
+      acc[stake.userId].push(stake);
+      return acc;
+    }, {} as Record<number, typeof activeStakes>);
+
+    // Generate rewards for each user's total staked amount
+    for (const [userId, stakes] of Object.entries(userStakes)) {
+      const totalStaked = stakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      if (totalStaked >= 0.01) {
+        const yearlyRate = 0.03; // 3% APY
+        const minutelyRate = yearlyRate / (365 * 24 * 60);
+        const reward = totalStaked * minutelyRate;
+
+        if (reward >= 0.00000001) {
+          await db.insert(transactions)
+            .values({
+              userId: parseInt(userId),
+              type: 'reward',
+              amount: reward.toFixed(9),
+              status: 'completed',
+              createdAt: new Date()
+            });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error generating rewards:', error);
+  }
+}
+
 
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
-
-  // Register admin routes - make sure this comes before other routes
-  // Important: Do NOT apply any middleware here
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/admin/activity', activityRoutes);
-  app.use('/api/admin/settings', settingsRoutes);
-
-  // Add new route for news
-  app.get('/api/news', async (_req, res) => {
-    try {
-      const news = await fetchCryptoNews();
-      res.json(news);
-    } catch (error) {
-      console.error('Error fetching news:', error);
-      // Always return some data to prevent frontend errors
-      res.json(FALLBACK_NEWS);
-    }
-  });
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
@@ -40,39 +163,15 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Try to get real network stats first
-      const realStats = await masterWallet.getNetworkStats();
-
-      if (realStats) {
-        // Use real data
-        const stats = {
-          current: {
-            tvl: realStats.totalStaked,
-            validators: realStats.activeValidators,
-            avgStake: realStats.totalStaked / realStats.activeValidators,
-            rewards: realStats.networkRewards
-          },
-          history: await generateHistoricalData(symbol, BASE_STATS[symbol as keyof typeof BASE_STATS]),
-          lastUpdated: new Date().toISOString()
-        };
-
-        // Update cache
-        statsCache.set(symbol, {
-          data: stats,
-          timestamp: Date.now()
-        });
-
-        return res.json(stats);
-      }
-
-      // Fallback to mock data if real data not available
       const now = Date.now();
       const cached = statsCache.get(symbol);
 
+      // Return cached data if it's less than 1 minute old
       if (cached && (now - cached.timestamp) < 60000) {
         return res.json(cached.data);
       }
 
+      // Get fresh data
       const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
       const current = await getCurrentNetworkStats(symbol);
       const history = await generateHistoricalData(symbol, baseStats);
@@ -83,6 +182,7 @@ export function registerRoutes(app: Express): Server {
         lastUpdated: new Date().toISOString()
       };
 
+      // Update cache
       statsCache.set(symbol, {
         data: stats,
         timestamp: now
@@ -197,27 +297,24 @@ export function registerRoutes(app: Express): Server {
       }
 
       const { amount } = validationResult.data;
-      const amountNumber = parseFloat(amount);
 
-      // Insert the stake directly
+      // Create stake in database
       const [newStake] = await db.insert(stakes)
         .values({
           userId: req.user.id,
-          amount: amount.toString(),
+          amount: amount,
           status: 'active',
-          createdAt: new Date(),
-          updatedAt: new Date()
         })
         .returning();
 
-      // Start generating rewards immediately for this stake
-      await calculateRewardsForTimestamp(
-        req.user.id,
-        amountNumber,
-        newStake.createdAt.getTime(),
-        Date.now(),
-        true
-      );
+      // Record the transaction
+      await db.insert(transactions)
+        .values({
+          userId: req.user.id,
+          type: 'stake',
+          amount: amount,
+          status: 'completed',
+        });
 
       res.json(newStake);
     } catch (error) {
@@ -230,10 +327,8 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/users/:userId/stakes', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const userStakes = await db.query.stakes.findMany({
-        where: eq(stakes.userId, userId)
-      });
-      res.json(userStakes);
+      const stakes = store.getStakesByUser(userId);
+      res.json(stakes);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch user stakes' });
     }
@@ -243,10 +338,8 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/stakes/:stakeId/rewards', async (req, res) => {
     try {
       const stakeId = parseInt(req.params.stakeId);
-      const stakeRewards = await db.query.rewards.findMany({
-        where: eq(rewards.stakeId, stakeId)
-      });
-      res.json(stakeRewards);
+      const rewards = store.getRewardsByStake(stakeId);
+      res.json(rewards);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch stake rewards' });
     }
@@ -257,16 +350,12 @@ export function registerRoutes(app: Express): Server {
     try {
       const stakeId = parseInt(req.params.stakeId);
       const { amount } = req.body;
-
-      const [newReward] = await db.insert(rewards)
-        .values({
-          stakeId,
-          amount: amount.toString(),
-          createdAt: new Date()
-        })
-        .returning();
-
-      res.json(newReward);
+      const reward = store.createReward({
+        stakeId,
+        amount: amount.toString(),
+        createdAt: new Date()
+      });
+      res.json(reward);
     } catch (error) {
       res.status(500).json({ error: 'Failed to create reward' });
     }
@@ -276,16 +365,13 @@ export function registerRoutes(app: Express): Server {
   app.post('/api/transactions', async (req, res) => {
     try {
       const { userId, type, amount } = req.body;
-      const [transaction] = await db.insert(transactions)
-        .values({
-          userId,
-          type,
-          amount: amount.toString(),
-          status: 'pending',
-          createdAt: new Date()
-        })
-        .returning();
-
+      const transaction = store.createTransaction({
+        userId,
+        type,
+        amount: amount.toString(),
+        status: 'pending',
+        createdAt: new Date()
+      });
       res.json(transaction);
     } catch (error) {
       res.status(500).json({ error: 'Failed to create transaction' });
@@ -543,67 +629,16 @@ export function registerRoutes(app: Express): Server {
     const yearlyRate = 0.03; // 3% APY
     const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
 
-    // Calculate rewards with high precision
-    const reward = stakedAmount * minutelyRate * minutesElapsed;
-
     if (forTransaction) {
-      // For minute-by-minute rewards, calculate just the last minute's reward
-      const oneMinuteReward = stakedAmount * minutelyRate;
-      if (oneMinuteReward >= 0.000000001) { // Ensure meaningful rewards (9 decimals)
-        await recordRewardTransaction(userId, oneMinuteReward);
+      const reward = stakedAmount * minutelyRate; // Calculate one minute's reward
+      // Record transaction if it's a meaningful reward
+      if (reward >= 0.00000001) { // Threshold at 8 decimals
+        await recordRewardTransaction(userId, reward);
       }
-      return oneMinuteReward;
-    }
-
-    return reward;
-  }
-
-  // Add this helper function to record per-minute rewards
-  async function recordRewardTransaction(userId: number, reward: number) {
-    if (reward <= 0) return;
-
-    // Check if we already have a reward transaction in the last minute
-    const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
-
-    const recentReward = await db.query.transactions.findFirst({
-      where: (transactions, { and, eq, gt }) => and(
-        eq(transactions.userId, userId),
-        eq(transactions.type, 'reward'),
-        gt(transactions.createdAt, lastMinute)
-      ),
-      orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-    });
-
-    // Only create new reward transaction if none exists in the last minute
-    if (!recentReward) {
-      await db.insert(transactions)
-        .values({
-          userId,
-          type: 'reward',
-          amount: reward.toFixed(9), // Store reward with 9 decimal precision
-          status: 'completed',
-          createdAt: new Date()
-        });
-
-      // Calculate and record referral rewards
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-        columns: {
-          referrerId: true
-        }
-      });
-
-      if (user?.referrerId) {
-        const referralReward = reward * 0.01; // 1% referral reward
-        await db.insert(transactions)
-          .values({
-            userId: user.referrerId,
-            type: 'referral_reward',
-            amount: referralReward.toFixed(9),
-            status: 'completed',
-            createdAt: new Date()
-          });
-      }
+      return reward;
+    } else {
+      // For total rewards calculation (withdrawal, display), calculate accumulated rewards
+      return stakedAmount * minutelyRate * minutesElapsed;
     }
   }
 
@@ -632,6 +667,62 @@ export function registerRoutes(app: Express): Server {
     throw new Error('Failed to generate unique referral code');
   }
 
+  async function recordRewardTransaction(userId: number, reward: number) {
+    if (reward > 0) {
+      // Check if we already have a reward transaction in the last minute
+      const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
+
+      const recentReward = await db.query.transactions.findFirst({
+        where: (transactions, { and, eq, gt }) => and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'reward'),
+          gt(transactions.createdAt, lastMinute)
+        ),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+      });
+
+      // Only create new reward transaction if none exists in the last minute
+      if (!recentReward) {
+        const [transaction] = await db.insert(transactions)
+          .values({
+            userId,
+            type: 'reward',
+            amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
+            status: 'completed',
+            createdAt: new Date()
+          })
+          .returning();
+
+        // Calculate and record referral rewards
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, userId),
+          columns: {
+            referrerId: true
+          }
+        });
+
+        if (user?.referrerId) {
+          const referralReward = reward * 0.01; // 1% referral reward
+          await db.insert(transactions)
+            .values({
+              userId: user.referrerId,
+              type: 'referral_reward',
+              amount: referralReward.toFixed(9),
+              status: 'completed',
+              createdAt: new Date()
+            });
+
+          await db.insert(referralRewards)
+            .values({
+              referrerId: user.referrerId,
+              referredId: userId,
+              rewardId: transaction.id,
+              amount: referralReward,
+            });
+        }
+      }
+    }
+  }
 
   app.get('/api/transactions', async (req, res) => {
     try {
@@ -652,7 +743,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Portfolio endpoint
+  // Add portfolio endpoint
   app.get('/api/portfolio', async (req, res) => {
     try {
       if (!req.user) {
@@ -675,11 +766,10 @@ export function registerRoutes(app: Express): Server {
         currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
-      // Format values with consistent precision
       const portfolioData = {
         eth: {
-          staked: totalStaked.toFixed(6),
-          rewards: currentRewards.toFixed(9),
+          staked: totalStaked,
+          rewards: parseFloat(currentRewards.toFixed(9)),
           apy: 3.00
         }
       };
@@ -774,14 +864,14 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add analytics endpoint with real-time staking data
+  // Add new analytics endpoint
   app.get('/api/analytics', async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      // Get user's stakes and calculate total value - using same logic as staking data
+      // Get user's stakes and calculate total value
       const userStakes = await db.query.stakes.findMany({
         where: eq(stakes.userId, req.user.id),
         orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
@@ -790,88 +880,81 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      // Calculate current rewards using same logic as staking data
+      // Calculate current rewards
       let currentRewards = 0;
       if (userStakes.length > 0) {
         const earliestStake = userStakes[0].createdAt;
-        currentRewards = await calculateRewardsForTimestamp(
-          req.user.id,
-          totalStaked,
-          earliestStake.getTime(),
-          Date.now(),
-          false
-        );
+        currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
       // Calculate ROI
       const totalValue = totalStaked + currentRewards;
       const roi = totalStaked > 0 ? ((totalValue - totalStaked) / totalStaked) * 100 : 0;
 
-      // Generate historical data for the last 30 days
+      // Generate historical data
       const now = Date.now();
       const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
       const rewardsHistory = [];
       const priceHistory = [];
       const validatorHistory = [];
 
-      // Calculate historical rewards data points every 24 hours
       for (let timestamp = thirtyDaysAgo; timestamp <= now; timestamp += 24 * 60 * 60 * 1000) {
-        // Calculate rewards at each point in time using the same reward calculation logic
-        const historicalRewards = await calculateRewardsForTimestamp(
-          req.user.id,
-          totalStaked,
-          userStakes[0]?.createdAt?.getTime() || timestamp,
-          timestamp,
-          false
-        );
-        rewardsHistory.push({
-          timestamp,
-          value: parseFloat(historicalRewards.toFixed(9))
-        });
+        // Calculate rewards at each point in time
+        const rewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, userStakes[0]?.createdAt?.getTime() || timestamp, timestamp, false);
+        rewardsHistory.push({ timestamp, value: rewards });
 
-        // Use real ETH price data if available, otherwise simulate
+        // Simulate price variations for demo
         const basePrice = 2500; // Base ETH price in USD
         const priceVariation = Math.sin(timestamp / (2 * Math.PI * 1000000)) * 100;
-        priceHistory.push({
-          timestamp,
-          price: parseFloat((basePrice + priceVariation).toFixed(2))
-        });
+        priceHistory.push({ timestamp, price: basePrice + priceVariation });
 
-        // Use real validator metrics if available, otherwise simulate
+        // Generate validator metrics
         const baseValidators = 100000;
         const validatorVariation = Math.cos(timestamp / (2 * Math.PI * 1000000)) * 1000;
         validatorHistory.push({
           timestamp,
           activeValidators: Math.floor(baseValidators + validatorVariation),
-          effectiveness: parseFloat((95 + (Math.sin(timestamp / (2 * Math.PI * 1000000)) * 3)).toFixed(2))
+          effectiveness: 95 + (Math.sin(timestamp / (2 * Math.PI * 1000000)) * 3)
         });
       }
 
-      // Calculate current network health metrics
-      const networkHealth = parseFloat((98.5 + (Math.random() * 1)).toFixed(2)); // 98.5-99.5%
-      const participationRate = parseFloat((95 + (Math.random() * 3)).toFixed(2)); // 95-98%
-      const validatorEffectiveness = parseFloat((96 + (Math.random() * 2)).toFixed(2)); // 96-98%
+      // Calculate network health metrics
+      const networkHealth = 98.5 + (MathMath.random() * 1); // 98.5-99.5%
+      const participationRate = 95 + (Math.random() * 3); // 95-98%
+      const validatorEffectiveness = 96 + (Math.random() * 2); // 96-98%
 
-      res.json({
-        portfolio: {
-          totalStaked: parseFloat(totalStaked.toFixed(6)), // 6 decimal places like in portfolio
-          currentRewards: parseFloat(currentRewards.toFixed(9)), // 9 decimal places like in portfolio
-          totalValue: parseFloat(totalValue.toFixed(6)),
-          roi: parseFloat(roi.toFixed(2))
-        },
-        history: {
-          rewards: rewardsHistory,
-          prices: priceHistory,
-          validators: validatorHistory
+      // Prepare response data
+      const analyticsData = {
+        performance: {
+          roi,
+          apy: 3.00, // Current fixed APY
+          totalRewards: currentRewards,
+          rewardsHistory
         },
         network: {
-          health: networkHealth,
+          validatorEffectiveness,
+          networkHealth,
           participationRate,
-          validatorEffectiveness
+          validatorHistory
+        },
+        portfolio: {
+          totalValue,
+          profitLoss: currentRewards,
+          stakingPositions: [
+            {
+              coin: 'ETH',
+              amount: totalStaked,
+              value: totalValue,
+              apy: 3.00
+            }
+          ],
+          priceHistory
         }
-      });
+      };
+
+      res.json(analyticsData);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error('Error fetching analytics data:', error);
       res.status(500).json({ error: 'Failed to fetch analytics data' });
     }
   });
@@ -914,138 +997,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // CDP Webhook endpoint
-  app.post('/api/cdp/webhook', async (req: any, res: any) => { // Added any type for req and res
-    try {
-      console.log('Received CDP webhook:', {
-        headers: req.headers,
-        body: req.body
-      });
-
-      const signature = req.headers['x-webhook-signature'];
-      if (!signature || typeof signature !== 'string') {
-        console.error('Missing CDP webhook signature');
-        return res.status(401).json({ error: 'Missing signature' });
-      }
-
-      // Verify webhook signature using CDP client
-      const payload = JSON.stringify(req.body);
-      if (!cdpClient.verifyWebhookSignature(signature, payload)) {
-        console.error('Invalid CDP webhook signature');
-        return res.status(401).json({ error: 'Invalid signature' });
-      }
-
-      const { event_type, data } = req.body;
-      console.log('Processing CDP webhook event:', { event_type, data });
-
-      switch (event_type) {
-        case 'STAKE_CREATED':
-          console.log('Updatingstake status for created stake:', data);
-          // Update stake status in database
-          await db.update(stakes)
-            .set({
-              status: 'active',
-              cdpStakeId: data.stake_id,
-              cdpValidatorId: data.validator_id,
-              updatedAt: new Date()
-            })
-            .where(eq(stakes.cdpStakeId, data.stake_id));
-          break;
-
-        case 'STAKE_UPDATED':
-          console.log('Updating stake status:', data);
-          // Update stake status
-          await db.update(stakes)
-            .set({
-              status: data.status.toLowerCase(),
-              updatedAt: new Date()
-            })
-            .where(eq(stakes.cdpStakeId, data.stake_id));
-          break;
-
-        case 'REWARD_DISTRIBUTED':
-          console.log('Recording new reward distribution:', data);
-          // Record new reward
-          const [reward] = await db.insert(rewards)
-            .values({
-              stakeId: data.stake_id,
-              amount: data.amount,
-              cdpRewardId: data.reward_id,
-              createdAt: new Date()
-            })
-            .returning();
-
-          // Record reward transaction
-          await db.insert(transactions)
-            .values({
-              userId: data.user_id,
-              type: 'reward',
-              amount: data.amount,
-              status: 'completed',
-              cdpTransactionId: data.transaction_id,
-              createdAt: new Date()
-            });
-
-          console.log('Reward recorded:', { reward });
-          break;
-
-        default:
-          console.warn('Unhandled CDP webhook event type:', event_type);
-      }
-
-      console.log('CDP webhook processed successfully');
-      res.json({ status: 'success' });
-    } catch (error) {
-      console.error('CDP webhook processing error:', error);
-      res.status(500).json({ error: 'Webhook processing failed' });
-    }
-  });
-
-  // Initialize master wallet when server starts
-  masterWallet.initialize().catch(error => {
-    console.error('Failed to initialize master wallet:', error);
-    process.exit(1);
-  });
-
-  // Add after the last route handler, before the return httpServer statement
-  async function generateRewardsForAllActiveStakes() {
-    try {
-      console.log('Generating rewards for all active stakes...');
-
-      // Get all active stakes
-      const activeStakes = await db.query.stakes.findMany({
-        where: eq(stakes.status, 'active'),
-        with: {
-          user: {
-            columns: {
-              id: true
-            }
-          }
-        }
-      });
-
-      // Process rewards for each stake
-      for (const stake of activeStakes) {
-        const stakeAmount = parseFloat(stake.amount.toString());
-        if (stakeAmount >= 0.01) { // Only process meaningful stakes
-          await calculateRewardsForTimestamp(
-            stake.user.id,
-            stakeAmount,
-            stake.createdAt.getTime(),
-            Date.now(),
-            true // Generate transaction for the last minute
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error generating rewards:', error);
-    }
-  }
-
-  // Set up the reward generation interval
-  let rewardsGenerationInterval: NodeJS.Timeout | null = null;
-
-  // Important: This part should be after all routes are registered
   if (!rewardsGenerationInterval) {
     rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
   }
@@ -1053,139 +1004,3 @@ export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
   return httpServer;
 }
-
-// Mock data and helper functions
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const newsCache = {
-  data: null as any[] | null,
-  timestamp: 0
-};
-
-// Mock news data for fallback
-const FALLBACK_NEWS = [
-  {
-    title: "Ethereum Staking Continues to Grow",
-    description: "The total amount of ETH staked continues to rise as more validators join the network.",
-    url: "https://ethereum.org/staking",
-    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
-    published_at: new Date().toISOString()
-  },
-  {
-    title: "ETH 2.0 Development Update",
-    description: "Latest progress on Ethereum network upgrades and improvements.",
-    url: "https://ethereum.org/upgrades",
-    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
-    published_at: new Date().toISOString()
-  }
-];
-
-async function fetchCryptoNews() {
-  const now = Date.now();
-
-  // Return cached data if it's still fresh
-  if (newsCache.data && (now - newsCache.timestamp) < CACHE_DURATION) {
-    return newsCache.data;
-  }
-
-  // Return mock news data
-  newsCache.data = FALLBACK_NEWS;
-  newsCache.timestamp = now;
-  return newsCache.data;
-}
-
-// Network base statistics
-const BASE_STATS = {
-  eth: {
-    tvl: 1000000,
-    validators: 500,
-    avgStake: 32,
-    rewards: 450000
-  },
-  sol: {
-    tvl: 500000,
-    validators: 1000,
-    avgStake: 100,
-    rewards: 250000
-  }
-};
-
-// Cache for network statistics
-interface StatsCache {
-  data: any;
-  timestamp: number;
-}
-
-const statsCache = new Map<string, StatsCache>();
-
-async function generateHistoricalData(symbol: string, baseStats: any) {
-  const now = Date.now();
-  const history = [];
-
-  // Generate 30 days of historical data
-  for (let i = 0; i < 30; i++) {
-    const timestamp = now - (i * 24 * 60 * 60 * 1000);
-    const variationPercent = (Math.random() - 0.5) * 0.1; // +/- 5% variation
-
-    history.unshift({
-      timestamp,
-      tvl: baseStats.tvl * (1 + variationPercent),
-      validators: Math.floor(baseStats.validators * (1 + variationPercent)),
-      avgStake: baseStats.avgStake * (1 + variationPercent),
-      rewards: baseStats.rewards * (1 + variationPercent)
-    });
-  }
-
-  return history;
-}
-
-async function getCurrentNetworkStats(symbol: string) {
-  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
-  if (!baseStats) return null;
-
-  return {
-    tvl: baseStats.tvl + (Math.random() * 10000),
-    validators: baseStats.validators + Math.floor(Math.random() * 100),
-    avgStake: baseStats.avgStake + (Math.random() * 2),
-    rewards: baseStats.rewards + (Math.random() * 1000)
-  };
-}
-
-// Mock function for calculating network rewards
-async function calculateNetworkRewards(symbol: string) {
-  const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
-  return baseStats ? baseStats.rewards + (Math.random() * 1000) : 0;
-}
-
-
-const masterWallet = {
-  initialize: async () => {
-    console.log('Mock master wallet initialized');
-    return true;
-  },
-  addUserStake: async (userId: number, amount: string) => {
-    return {
-      id: Math.floor(Math.random() * 1000),
-      userId,
-      amount,
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  },
-  getNetworkStats: async () => {
-    return {
-      totalStaked: 1000000,
-      activeValidators: 500,
-      networkRewards: 450000
-    };
-  }
-};
-
-const cdpClient = {
-  verifyWebhookSignature: (signature: string, payload: string) => {
-    // Mock signature verification
-    return true;
-  }
-};
-
-export { masterWallet, cdpClient };

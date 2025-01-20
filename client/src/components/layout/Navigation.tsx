@@ -6,11 +6,11 @@ import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 
 const menuItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: Wallet, label: "Portfolio", href: "/portfolio" },
-  { icon: Coins, label: "Coins", href: "/coins/eth" },
-  { icon: LineChart, label: "Analytics", href: "/analytics" },
-  { icon: Settings, label: "Settings", href: "/settings" }
+  { icon: Home, label: "Dashboard", href: "/app" },
+  { icon: Wallet, label: "Portfolio", href: "/app/portfolio" },
+  { icon: Coins, label: "Coins", href: "/app/coins/eth" },
+  { icon: LineChart, label: "Analytics", href: "/app/analytics" },
+  { icon: Settings, label: "Settings", href: "/app/settings" },
 ];
 
 export default function Navigation() {
@@ -29,11 +29,12 @@ export default function Navigation() {
     }
   };
 
+  // Helper function to check if a menu item is active
   const isMenuItemActive = (href: string) => {
-    if (href === "/dashboard") {
-      return location === "/dashboard";
+    if (href === "/app") {
+      return location === "/app";
     }
-    return location.startsWith(href) || location === href;
+    return location.startsWith(href + "/") || location === href;
   };
 
   return (
@@ -74,14 +75,12 @@ export default function Navigation() {
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                   )}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <Icon className="h-5 w-5" />
                   {!isCollapsed && <span>{item.label}</span>}
                 </Link>
               );
             })}
-          </nav>
 
-          <div className="p-4">
             <button
               onClick={handleLogout}
               className={cn(
@@ -89,10 +88,10 @@ export default function Navigation() {
                 "text-zinc-400 hover:bg-zinc-800 hover:text-white"
               )}
             >
-              <LogOut className="h-5 w-5 flex-shrink-0" />
+              <LogOut className="h-5 w-5" />
               {!isCollapsed && <span>Logout</span>}
             </button>
-          </div>
+          </nav>
         </div>
       </aside>
 

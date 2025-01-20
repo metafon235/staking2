@@ -57,7 +57,7 @@ export default function AuthPage() {
           title: isLogin ? "Login Successful" : "Registration Successful",
           description: "Welcome to the Staking Platform"
         });
-        navigate("/dashboard"); 
+        navigate("/app");
       } else {
         throw new Error("Failed to fetch user data");
       }

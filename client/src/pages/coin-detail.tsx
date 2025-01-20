@@ -21,7 +21,7 @@ interface NetworkStats {
     rewards: number;
   };
   history: Array<{
-    timestamp: string; 
+    date: number;
     tvl: number;
     validators: number;
     avgStake: number;
@@ -46,15 +46,14 @@ export default function CoinDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch settings to check if wallet is set up (only if user is authenticated)
+  // Fetch settings to check if wallet is set up
   const { data: settings } = useQuery({
     queryKey: ['/api/settings'],
     queryFn: async () => {
       const response = await fetch('/api/settings');
       if (!response.ok) throw new Error('Failed to fetch settings');
       return response.json();
-    },
-    enabled: !!user // Only fetch if user is logged in
+    }
   });
 
   const { data: networkStats, isLoading: isLoadingStats } = useQuery({
@@ -76,8 +75,6 @@ export default function CoinDetail() {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
       queryClient.invalidateQueries({ queryKey: ['/api/network-stats/eth'] });
-      // Redirect to dashboard
-      navigate("/app");
     },
     onError: (error: Error) => {
       toast({
@@ -121,7 +118,7 @@ export default function CoinDetail() {
     }
 
     const amountNum = parseFloat(stakeAmount);
-    if (!stakeAmount || amountNum < parseFloat(coinData.minStake)) {
+    if (!stakeAmount || amountNum < coinData.minStake) {
       toast({
         variant: "destructive",
         title: "Invalid Amount",
@@ -164,91 +161,76 @@ export default function CoinDetail() {
               </CardContent>
             </Card>
 
-            {coinData.enabled && (
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Stake {coinData.symbol}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {!user && (
-                    <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Please{" "}
-                        <a href="/auth" className="underline hover:text-yellow-400">
-                          login or create an account
-                        </a>{" "}
-                        to start staking.
-                      </AlertDescription>
-                    </Alert>
-                  )}
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-white">Stake {coinData.symbol}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {!hasWallet && (
+                  <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Please set up your funding/withdrawal wallet address in{" "}
+                      <a href="/app/settings" className="underline hover:text-yellow-400">
+                        Settings
+                      </a>{" "}
+                      to enable staking.
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                  {user && !hasWallet && (
-                    <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Please set up your funding/withdrawal wallet address in{" "}
-                        <a href="/app/settings" className="underline hover:text-yellow-400">
-                          Settings
-                        </a>{" "}
-                        to enable staking.
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400 mb-2 block">
+                    Amount to stake ({coinData.symbol})
+                  </label>
+                  <Input
+                    type="number"
+                    value={stakeAmount}
+                    onChange={(e) => setStakeAmount(e.target.value)}
+                    min={coinData.minStake}
+                    step="0.01"
+                    placeholder={`Min. ${coinData.minStake} ${coinData.symbol}`}
+                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                    disabled={!hasWallet || stakeMutation.isPending}
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm text-zinc-400 mb-2 block">
-                      Amount to stake ({coinData.symbol})
-                    </label>
-                    <Input
-                      type="number"
-                      value={stakeAmount}
-                      onChange={(e) => setStakeAmount(e.target.value)}
-                      min={coinData.minStake}
-                      step="0.01"
-                      placeholder={`Min. ${coinData.minStake} ${coinData.symbol}`}
-                      className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-                      disabled={!user || !hasWallet || stakeMutation.isPending}
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-zinc-400">Monthly Rewards</p>
+                    <p className="text-2xl font-bold text-white">
+                      {monthlyReward.toFixed(6)} {coinData.symbol}
+                    </p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-zinc-400">Monthly Rewards</p>
-                      <p className="text-2xl font-bold text-white">
-                        {monthlyReward.toFixed(6)} {coinData.symbol}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-zinc-400">Yearly Rewards</p>
-                      <p className="text-2xl font-bold text-white">
-                        {yearlyReward.toFixed(6)} {coinData.symbol}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Yearly Rewards</p>
+                    <p className="text-2xl font-bold text-white">
+                      {yearlyReward.toFixed(6)} {coinData.symbol}
+                    </p>
                   </div>
+                </div>
 
-                  <Button
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                    onClick={handleStake}
-                    disabled={
-                      !user ||
-                      !hasWallet ||
-                      stakeMutation.isPending ||
-                      !stakeAmount ||
-                      parseFloat(stakeAmount) < parseFloat(coinData.minStake)
-                    }
-                  >
-                    {!user
-                      ? "Login to Start Staking"
-                      : !hasWallet
-                      ? "Set Up Wallet First"
-                      : stakeMutation.isPending
-                      ? "Staking..."
-                      : "Start Staking"}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={handleStake}
+                  disabled={
+                    !coinData.enabled ||
+                    stakeMutation.isPending ||
+                    !hasWallet ||
+                    !stakeAmount ||
+                    parseFloat(stakeAmount) < parseFloat(coinData.minStake)
+                  }
+                >
+                  {!hasWallet
+                    ? "Set Up Wallet First"
+                    : stakeMutation.isPending
+                    ? "Staking..."
+                    : coinData.enabled
+                    ? "Start Staking"
+                    : "Coming Soon"}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
@@ -313,10 +295,7 @@ export default function CoinDetail() {
 
             {networkStats && (
               <NetworkStatsChart
-                data={networkStats.history.map(item => ({
-                  ...item,
-                  date: item.timestamp 
-                }))}
+                data={networkStats.history}
                 symbol={coinData.symbol}
               />
             )}

@@ -11,8 +11,8 @@ import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 
 interface PortfolioData {
   eth: {
-    staked: string;
-    rewards: string;
+    staked: number;
+    rewards: number;
     apy: number;
   };
 }
@@ -73,21 +73,10 @@ export default function Portfolio() {
     }
   };
 
-  // Parse values from string to number for precise calculations
-  const totalStaked = portfolio ? parseFloat(portfolio.eth.staked) : 0;
-  const totalRewards = portfolio ? parseFloat(portfolio.eth.rewards) : 0;
+  // Calculate totals
+  const totalStaked = portfolio ? portfolio.eth.staked : 0;
+  const totalRewards = portfolio ? portfolio.eth.rewards : 0;
   const totalValue = totalStaked + totalRewards;
-
-  const formatEth = (value: number) => value.toFixed(6);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-4 w-[250px] bg-zinc-800" />
-        <Skeleton className="h-4 w-[200px] bg-zinc-800" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -96,7 +85,9 @@ export default function Portfolio() {
         <SharePortfolioDialog portfolioRef={portfolioRef} />
       </div>
 
+      {/* Content to be included in the snapshot */}
       <div ref={portfolioRef} className="space-y-6 bg-zinc-900 p-6 rounded-lg">
+        {/* Total Overview Card */}
         <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
           <CardHeader>
             <CardTitle className="text-xl font-medium text-white">
@@ -108,13 +99,13 @@ export default function Portfolio() {
               <div>
                 <p className="text-sm text-zinc-300">Total Value Staked</p>
                 <p className="text-3xl font-bold text-white">
-                  {formatEth(totalStaked)} ETH
+                  {totalStaked.toFixed(9)} ETH
                 </p>
               </div>
               <div>
                 <p className="text-sm text-zinc-300">Total Current Rewards</p>
                 <p className="text-3xl font-bold text-green-400">
-                  {formatEth(totalRewards)} ETH
+                  {totalRewards.toFixed(9)} ETH
                 </p>
               </div>
             </div>
@@ -122,6 +113,7 @@ export default function Portfolio() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
+          {/* ETH Staking Card */}
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium text-white">
@@ -135,35 +127,45 @@ export default function Portfolio() {
               </Badge>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-zinc-400">Initial Stake</p>
-                  <p className="text-2xl font-bold text-white">
-                    {formatEth(totalStaked)} ETH
-                  </p>
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-[250px] bg-zinc-800" />
+                  <Skeleton className="h-4 w-[200px] bg-zinc-800" />
                 </div>
-                <div>
-                  <p className="text-sm text-zinc-400">Generated Rewards</p>
-                  <p className="text-2xl font-bold text-green-500">
-                    +{formatEth(totalRewards)} ETH
-                  </p>
+              ) : portfolio ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-zinc-400">Initial Stake</p>
+                    <p className="text-2xl font-bold text-white">
+                      {portfolio.eth.staked.toFixed(9)} ETH
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Generated Rewards</p>
+                    <p className="text-2xl font-bold text-green-500">
+                      +{portfolio.eth.rewards.toFixed(9)} ETH
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
+                    <p className="text-2xl font-bold text-purple-500">
+                      {totalValue.toFixed(9)} ETH
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Current APY</p>
+                    <p className="text-lg text-purple-400">
+                      {portfolio.eth.apy.toFixed(2)}%
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
-                  <p className="text-2xl font-bold text-purple-500">
-                    {formatEth(totalValue)} ETH
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-400">Current APY</p>
-                  <p className="text-lg text-purple-400">
-                    {portfolio?.eth.apy.toFixed(2)}%
-                  </p>
-                </div>
-              </div>
+              ) : (
+                <p className="text-zinc-400">Failed to load data</p>
+              )}
             </CardContent>
           </Card>
 
+          {/* SOL Staking Card (Coming Soon) */}
           <Card className="bg-zinc-900/50 border-zinc-800 relative overflow-hidden">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
               <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-lg py-2">
@@ -198,12 +200,14 @@ export default function Portfolio() {
         </div>
       </div>
 
+      {/* Content excluded from snapshot */}
       <div className="mt-6">
         <div className="grid gap-6">
+          {/* ETH Staking Actions */}
           {portfolio && (
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="pt-6">
-                <Button
+                <Button 
                   className="w-full bg-green-600 hover:bg-green-700"
                   onClick={() => handleWithdrawAll('ETH')}
                   disabled={isWithdrawing || totalValue <= 0}
@@ -214,6 +218,7 @@ export default function Portfolio() {
             </Card>
           )}
 
+          {/* Transaction History */}
           <TransactionHistory />
         </div>
       </div>

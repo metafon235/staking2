@@ -1,130 +1,67 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
-import { useUser } from "@/hooks/use-user";
-import { Link } from "wouter";
-
-console.log("Home component is rendering");
 
 export default function Home() {
-  const { user } = useUser();
-
   return (
-    <div className="min-h-screen bg-black">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-white mb-6">
-            Ethereum Staking Made Simple
-          </h1>
-          <p className="text-xl text-zinc-400 mb-8 max-w-2xl mx-auto">
-            Start earning rewards with as little as 0.01 ETH. No technical knowledge required.
-            Secure, transparent, and efficient staking platform.
-          </p>
+    <div className="min-h-screen bg-black p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-white mb-8">
+          Blockchain Staking Platform
+        </h1>
 
-          {/* CTA Section */}
-          {!user && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link href="/auth">
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg">
-                  Start Staking Now
-                </Button>
-              </Link>
-              <Link href="/auth">
-                <Button variant="outline" className="border-purple-600 text-purple-400 hover:bg-purple-600/10 px-8 py-6 text-lg">
-                  Login to Dashboard
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Features Grid */}
-        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6">
-            <h3 className="text-xl font-semibold text-white mb-3">Secure Staking</h3>
-            <p className="text-zinc-400">
-              Your assets are protected by industry-leading security measures and regular audits.
-            </p>
-          </Card>
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6">
-            <h3 className="text-xl font-semibold text-white mb-3">Real-time Rewards</h3>
-            <p className="text-zinc-400">
-              Track your earnings in real-time with our advanced analytics dashboard.
-            </p>
-          </Card>
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6">
-            <h3 className="text-xl font-semibold text-white mb-3">Low Minimum</h3>
-            <p className="text-zinc-400">
-              Start with just 0.01 ETH and earn rewards proportional to your stake.
-            </p>
-          </Card>
-        </div>
-
-        {/* Coins Grid */}
-        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Ethereum Card */}
+          <Card className="bg-zinc-900 border-zinc-800 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <SiEthereum className="w-8 h-8 text-purple-400" />
+              <SiEthereum className="w-8 h-8 text-blue-400" />
               <div>
                 <h3 className="text-xl font-semibold text-white">Ethereum</h3>
-                <p className="text-purple-400">3.00% APY</p>
+                <p className="text-blue-400">3.00% APY</p>
               </div>
             </div>
-            <p className="text-zinc-400 mb-4">Minimum stake: 0.01 ETH</p>
-            <Link href="/coins/eth">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                Start Staking
-              </Button>
-            </Link>
+            <p className="text-zinc-400 mb-4">
+              Stake ETH and earn rewards through Ethereum 2.0
+            </p>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+              Stake ETH
+            </Button>
           </Card>
 
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6">
+          {/* Polkadot Card */}
+          <Card className="bg-zinc-900 border-zinc-800 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <SiPolkadot className="w-8 h-8 text-purple-400" />
+              <SiPolkadot className="w-8 h-8 text-pink-400" />
               <div>
                 <h3 className="text-xl font-semibold text-white">Polkadot</h3>
-                <p className="text-purple-400">12.00% APY</p>
+                <p className="text-pink-400">12.00% APY</p>
               </div>
             </div>
-            <p className="text-zinc-400 mb-4">Coming Soon</p>
+            <p className="text-zinc-400 mb-4">
+              Secure the network and earn DOT rewards
+            </p>
             <Button className="w-full" disabled>
               Coming Soon
             </Button>
           </Card>
 
-          <Card className="bg-zinc-900/50 border-zinc-800 p-6">
+          {/* Solana Card */}
+          <Card className="bg-zinc-900 border-zinc-800 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <SiSolana className="w-8 h-8 text-purple-400" />
+              <SiSolana className="w-8 h-8 text-green-400" />
               <div>
                 <h3 className="text-xl font-semibold text-white">Solana</h3>
-                <p className="text-purple-400">6.50% APY</p>
+                <p className="text-green-400">6.50% APY</p>
               </div>
             </div>
-            <p className="text-zinc-400 mb-4">Coming Soon</p>
+            <p className="text-zinc-400 mb-4">
+              Participate in Solana's proof-of-stake system
+            </p>
             <Button className="w-full" disabled>
               Coming Soon
             </Button>
           </Card>
         </div>
-
-        {/* Bottom CTA */}
-        {!user && (
-          <div className="mt-24 text-center">
-            <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20 p-12">
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Ready to Start Earning?
-              </h2>
-              <p className="text-lg text-zinc-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of investors already earning passive income through our staking platform.
-              </p>
-              <Link href="/auth">
-                <Button className="bg-white hover:bg-zinc-100 text-purple-600 px-8 py-6 text-lg">
-                  Create Free Account
-                </Button>
-              </Link>
-            </Card>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } f
 import { format } from "date-fns";
 
 interface NetworkStatsHistory {
-  date: string; // Changed from number to string since we're getting ISO date strings
+  date: number;
   tvl: number;
   validators: number;
   avgStake: number;
@@ -27,14 +27,7 @@ export default function NetworkStatsChart({ data, symbol }: NetworkStatsChartPro
             <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <XAxis
                 dataKey="date"
-                tickFormatter={(value) => {
-                  try {
-                    return format(new Date(value), "MMM d");
-                  } catch (e) {
-                    console.error("Invalid date:", value);
-                    return value;
-                  }
-                }}
+                tickFormatter={(value) => format(value, "MMM d")}
                 stroke="#71717a"
                 fontSize={12}
               />
@@ -59,14 +52,7 @@ export default function NetworkStatsChart({ data, symbol }: NetworkStatsChartPro
                   borderRadius: "6px",
                 }}
                 labelStyle={{ color: "#e4e4e7" }}
-                labelFormatter={(value) => {
-                  try {
-                    return format(new Date(value), "PPP");
-                  } catch (e) {
-                    console.error("Invalid date in tooltip:", value);
-                    return value;
-                  }
-                }}
+                labelFormatter={(value) => format(value, "PPP")}
                 formatter={(value: number, name) => {
                   switch (name) {
                     case "TVL":

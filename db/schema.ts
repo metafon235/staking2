@@ -1,103 +1,56 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { relations } from "drizzle-orm";
 import { z } from "zod";
 
-// Table definitions first
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").unique().notNull(),
   password: text("password").notNull(),
   walletAddress: text("wallet_address"),
-  referrerId: integer("referrer_id"),
-  referralCode: text("referral_code"),
-  isAdmin: boolean("is_admin").default(false).notNull(),
+  referrerId: integer("referrer_id").references(() => users.id),
+  referralCode: text("referral_code").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const stakes = pgTable("stakes", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
-  cdpStakeId: text("cdp_stake_id"),
-  cdpValidatorId: text("cdp_validator_id"),
-  transactionHash: text("transaction_hash"),
+  transactionHash: text("transaction_hash").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const rewards = pgTable("rewards", {
   id: serial("id").primaryKey(),
-  stakeId: integer("stake_id").notNull(),
+  stakeId: integer("stake_id").references(() => stakes.id).notNull(),
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
-  transactionHash: text("transaction_hash"),
-  cdpRewardId: text("cdp_reward_id"),
+  transactionHash: text("transaction_hash").unique(),
   claimedAt: timestamp("claimed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const referralRewards = pgTable("referral_rewards", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").references(() => users.id).notNull(),
+  referredId: integer("referred_id").references(() => users.id).notNull(),
+  rewardId: integer("reward_id").references(() => rewards.id).notNull(),
+  amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  type: text("type").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // stake, unstake, claim_reward, referral_reward
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
-  transactionHash: text("transaction_hash"),
-  cdpTransactionId: text("cdp_transaction_id"),
+  transactionHash: text("transaction_hash").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const stakingSettings = pgTable("staking_settings", {
-  id: serial("id").primaryKey(),
-  coinSymbol: text("coin_symbol").notNull(),
-  displayedApy: decimal("displayed_apy", { precision: 4, scale: 2 }).notNull(),
-  actualApy: decimal("actual_apy", { precision: 4, scale: 2 }).notNull(),
-  minStakeAmount: decimal("min_stake_amount", { precision: 36, scale: 18 }).notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  updatedBy: integer("updated_by"),
-});
-
-// Relations definitions after tables
-export const userRelations = relations(users, ({ many, one }) => ({
-  stakes: many(stakes),
-  transactions: many(transactions),
-  referredBy: one(users, {
-    fields: [users.referrerId],
-    references: [users.id],
-  }),
-}));
-
-export const stakesRelations = relations(stakes, ({ one, many }) => ({
-  user: one(users, {
-    fields: [stakes.userId],
-    references: [users.id],
-  }),
-  rewards: many(rewards),
-}));
-
-export const rewardsRelations = relations(rewards, ({ one }) => ({
-  stake: one(stakes, {
-    fields: [rewards.stakeId],
-    references: [stakes.id],
-  }),
-}));
-
-export const transactionsRelations = relations(transactions, ({ one }) => ({
-  user: one(users, {
-    fields: [transactions.userId],
-    references: [users.id],
-  }),
-}));
-
-export const stakingSettingsRelations = relations(stakingSettings, ({ one }) => ({
-  updatedByUser: one(users, {
-    fields: [stakingSettings.updatedBy],
-    references: [users.id],
-  }),
-}));
-
-// Schema validations
+// Schema types with email validation
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -116,31 +69,12 @@ export const selectRewardSchema = createSelectSchema(rewards);
 export type InsertReward = typeof rewards.$inferInsert;
 export type SelectReward = typeof rewards.$inferSelect;
 
+export const insertReferralRewardSchema = createInsertSchema(referralRewards);
+export const selectReferralRewardSchema = createSelectSchema(referralRewards);
+export type InsertReferralReward = typeof referralRewards.$inferInsert;
+export type SelectReferralReward = typeof referralRewards.$inferSelect;
+
 export const insertTransactionSchema = createInsertSchema(transactions);
 export const selectTransactionSchema = createSelectSchema(transactions);
 export type InsertTransaction = typeof transactions.$inferInsert;
 export type SelectTransaction = typeof transactions.$inferSelect;
-
-export const insertStakingSettingsSchema = createInsertSchema(stakingSettings);
-export const selectStakingSettingsSchema = createSelectSchema(stakingSettings);
-export type InsertStakingSettings = typeof stakingSettings.$inferInsert;
-export type SelectStakingSettings = typeof stakingSettings.$inferSelect;
-
-export const activityLogs = pgTable("activity_logs", {
-  id: serial("id").primaryKey(),
-  type: text("type").notNull(), 
-  subtype: text("subtype").notNull(), 
-  userId: integer("user_id"),
-  data: text("data"), 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const activityMetrics = pgTable("activity_metrics", {
-  id: serial("id").primaryKey(),
-  date: timestamp("date").notNull(),
-  totalValueLocked: decimal("total_value_locked", { precision: 36, scale: 18 }).notNull(),
-  userCount: integer("user_count").notNull(),
-  activeStakes: integer("active_stakes").notNull(),
-  adminRewards: decimal("admin_rewards", { precision: 36, scale: 18 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
