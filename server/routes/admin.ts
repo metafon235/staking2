@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
 import { z } from 'zod';
+import { db } from '@db';
+import { users, stakes, stakingSettings } from '@db/schema';
+import { eq, sum, count } from 'drizzle-orm';
 
 const router = Router();
 
@@ -78,6 +81,48 @@ router.get('/session', async (req, res) => {
   }
 });
 
+// Get system overview for admin dashboard
+router.get('/overview', async (req, res) => {
+  try {
+    // Get total users count
+    const userCount = await db.select({ count: count() }).from(users);
+
+    // Get total staked amount
+    const totalStaked = await db.select({ 
+      sum: sum(stakes.amount) 
+    }).from(stakes).where(eq(stakes.status, 'active'));
+
+    // Get total transactions count
+    const transactionCount = await db.select({ count: count() }).from(stakes);
+
+    // Get staking settings
+    const config = await db.select().from(stakingSettings);
+
+    // Mock system health data (this should be replaced with real monitoring)
+    const systemHealth = {
+      cdpApiStatus: 'operational',
+      databaseStatus: 'healthy',
+      lastSync: new Date().toISOString()
+    };
+
+    res.json({
+      users: userCount[0].count ?? 0,
+      totalStaked: parseFloat(totalStaked[0].sum ?? '0'),
+      transactions: transactionCount[0].count ?? 0,
+      stakingConfig: config.map(cfg => ({
+        coinSymbol: cfg.coinSymbol,
+        displayedApy: parseFloat(cfg.displayedApy.toString()),
+        actualApy: parseFloat(cfg.actualApy.toString()),
+        minStakeAmount: cfg.minStakeAmount.toString()
+      })),
+      systemHealth
+    });
+  } catch (error) {
+    console.error('Error fetching admin overview:', error);
+    res.status(500).json({ message: "Failed to fetch overview data" });
+  }
+});
+
 router.post('/logout', (req, res) => {
   console.log('Admin logout request');
   if (req.session) {
@@ -90,6 +135,29 @@ router.post('/logout', (req, res) => {
     });
   } else {
     res.json({ message: "Admin logout successful" });
+  }
+});
+
+// Update staking settings
+router.put('/settings/staking/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const { displayedApy, actualApy, minStakeAmount } = req.body;
+
+    await db.update(stakingSettings)
+      .set({
+        displayedApy: displayedApy.toString(),
+        actualApy: actualApy.toString(),
+        minStakeAmount: minStakeAmount.toString(),
+        updatedAt: new Date(),
+        updatedBy: req.session?.adminId
+      })
+      .where(eq(stakingSettings.coinSymbol, symbol));
+
+    res.json({ message: "Settings updated successfully" });
+  } catch (error) {
+    console.error('Error updating staking settings:', error);
+    res.status(500).json({ message: "Failed to update settings" });
   }
 });
 
