@@ -26,13 +26,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: session, isLoading } = useQuery<AdminSession>({
     queryKey: ['/api/admin/session'],
     queryFn: async () => {
+      console.log('Checking admin session...');
       const response = await fetch('/api/admin/session', {
         credentials: 'include'
       });
+
       if (!response.ok) {
+        console.error('Session check failed:', response.status);
         throw new Error('Session check failed');
       }
-      return response.json();
+
+      const data = await response.json();
+      console.log('Admin session data:', data);
+      return data;
     },
     retry: false,
     refetchOnWindowFocus: true,
@@ -48,6 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (!session?.user?.isAdmin) {
+    console.log('No admin session found, redirecting to login');
     setLocation('/admin/login');
     return null;
   }

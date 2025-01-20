@@ -30,7 +30,9 @@ export default function AdminAuth() {
 
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      console.log('Admin login success:', data);
+
       // Invalidate and refetch admin session
       await queryClient.invalidateQueries({ queryKey: ['/api/admin/session'] });
 
@@ -39,12 +41,11 @@ export default function AdminAuth() {
         description: "Sie werden zum Admin-Dashboard weitergeleitet."
       });
 
-      // Force a small delay to ensure the session is properly set
-      setTimeout(() => {
-        setLocation("/admin/dashboard");
-      }, 500);
+      // Navigate to dashboard
+      setLocation("/admin/dashboard");
     },
     onError: (error) => {
+      console.error('Admin login error:', error);
       toast({
         variant: "destructive",
         title: "Login fehlgeschlagen",
@@ -55,6 +56,7 @@ export default function AdminAuth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Attempting admin login with:', email);
     adminLoginMutation.mutate({ email, password });
   };
 
