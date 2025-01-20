@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
-import { eq, count, avg, sql, sum, and, gt } from "drizzle-orm";
+import { eq, count, avg, sql, sum, and, gt, desc } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
 
@@ -689,99 +689,107 @@ export function registerRoutes(app: Express): Server {
 
   async function recordRewardTransaction(userId: number, reward: number) {
     if (reward > 0) {
-      // Check if we already have a reward transaction in the last minute
-      const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
+      try {
+        // Check if we already have a reward transaction in the last minute
+        const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
 
-      const recentReward = await db.query.transactions.findFirst({
-        where: (transactions, { and, eq, gt }) => and(
-          eq(transactions.userId, userId),
-          eq(transactions.type, 'reward'),
-          gt(transactions.createdAt, lastMinute)
-        ),
-        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-      });
-
-      // Only create new reward transaction if none exists in the last minute
-      if (!recentReward) {
-        const [transaction] = await db.insert(transactions)
-          .values({
-            userId,
-            type: 'reward',
-            amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
-            status: 'completed',
-            createdAt: new Date()
-          })
-          .returning();
-
-        // Get total rewards for user
-        const totalRewardsResult = await db.select({
-          total: sql<string>`sum(amount)::numeric`
-        })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.userId, userId),
-              eq(transactions.type, 'reward')
-            )
-          );
-
-        const totalRewards = parseFloat(totalRewardsResult[0]?.total || '0');
-
-        // Check for decimal place milestones
-        const previousTotal = totalRewards - reward;
-        const previousLog10 = Math.floor(Math.log10(previousTotal));
-        const currentLog10 = Math.floor(Math.log10(totalRewards));
-
-        // If we've reached a new decimal place
-        if (currentLog10 > previousLog10 && totalRewards >= 0.1) {
-          await NotificationService.createNotification({
-            userId,
-            type: 'reward_milestone',
-            title: 'Reward Milestone Reached! 🎉',
-            message: `Congratulations! Your total rewards have reached ${totalRewards.toFixed(1)} ETH!`,
-            data: JSON.stringify({ totalRewards }),
-            read: false
-          });
-        }
-
-        // Calculate and record referral rewards
-        const user = await db.query.users.findFirst({
-          where: eq(users.id, userId),
-          columns: {
-            referrerId: true,
-            username: true
-          }
+        const recentReward = await db.query.transactions.findFirst({
+          where: (transactions, { and, eq, gt }) => and(
+            eq(transactions.userId, userId),
+            eq(transactions.type, 'reward'),
+            gt(transactions.createdAt, lastMinute)
+          ),
+          orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
         });
 
-        if (user?.referrerId) {
-          const referralReward = reward * 0.01; // 1% referral reward
-          await db.insert(transactions)
+        // Only create new reward transaction if none exists in the last minute
+        if (!recentReward) {
+          const [transaction] = await db.insert(transactions)
             .values({
-              userId: user.referrerId,
-              type: 'referral_reward',
-              amount: referralReward.toFixed(9),
+              userId,
+              type: 'reward',
+              amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
               status: 'completed',
               createdAt: new Date()
-            });
+            })
+            .returning();
 
-          await db.insert(referralRewards)
-            .values({
-              id: undefined, // Let the database auto-generate this
-              referrerId: user.referrerId,
-              referredId: userId,
-              rewardId: transaction.id,
-              amount: referralReward.toString(),
-              createdAt: new Date()
-            });
+          // Get user information for referral processing
+          const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: {
+              referrerId: true,
+              username: true
+            }
+          });
 
-          // Create notification for referral reward
-          await NotificationService.createReferralNotification(
-            user.referrerId,
-            user.username,
-            'referral_reward',
-            referralReward
-          );
+          if (user?.referrerId) {
+            // Calculate referral reward (1% of the staking reward)
+            const referralReward = reward * 0.01;
+
+            // Record referral reward transaction
+            const [referralTransaction] = await db.insert(transactions)
+              .values({
+                userId: user.referrerId,
+                type: 'referral_reward',
+                amount: referralReward.toFixed(9),
+                status: 'completed',
+                createdAt: new Date()
+              })
+              .returning();
+
+            // Record in referral_rewards table for better tracking
+            await db.insert(referralRewards)
+              .values({
+                referrerId: user.referrerId,
+                referredId: userId,
+                rewardId: transaction.id,
+                amount: referralReward.toString(),
+                createdAt: new Date()
+              });
+
+            // Create notification for referral reward
+            await NotificationService.createReferralNotification(
+              user.referrerId,
+              user.username,
+              'referral_reward',
+              referralReward
+            );
+
+            // Calculate total rewards to check for milestone
+            const totalRewardsResult = await db.select({
+              total: sql<string>`sum(amount)::numeric`
+            })
+              .from(transactions)
+              .where(
+                and(
+                  eq(transactions.userId, user.referrerId),
+                  eq(transactions.type, 'referral_reward')
+                )
+              );
+
+            const totalReferralRewards = parseFloat(totalRewardsResult[0]?.total || '0');
+
+            // Check for decimal place milestones in referral rewards
+            const previousTotal = totalReferralRewards - referralReward;
+            const previousLog10 = Math.floor(Math.log10(previousTotal));
+            const currentLog10 = Math.floor(Math.log10(totalReferralRewards));
+
+            // If we've reached a new decimal place in referral rewards
+            if (currentLog10 > previousLog10 && totalReferralRewards >= 0.001) {
+              await NotificationService.createNotification({
+                userId: user.referrerId,
+                type: 'referral_milestone',
+                title: 'Referral Milestone erreicht! 🎉',
+                message: `Glückwunsch! Ihre Referral-Rewards haben ${totalReferralRewards.toFixed(3)} ETH erreicht!`,
+                data: JSON.stringify({ totalReferralRewards }),
+                read: false
+              });
+            }
+          }
         }
+      } catch (error) {
+        console.error('Error recording reward transaction:', error);
       }
     }
   }
@@ -928,6 +936,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
+      // Get user's basic info
       const user = await db.query.users.findFirst({
         where: eq(users.id, req.user.id),
         columns: {
@@ -936,16 +945,20 @@ export function registerRoutes(app: Express): Server {
         }
       });
 
-      // Get referral statistics
-      const referrals = await db.select({
-        count: count(),
-      })
+      // Get referral statistics with more detail
+      const referredUsers = await db
+        .select({
+          count: count(),
+        })
         .from(users)
         .where(eq(users.referrerId, req.user.id));
 
-      const referralRewardsSum = await db.select({
-        total: sql<string>`sum(amount)::numeric`
-      })
+      // Get both pending and completed referral rewards
+      const referralRewardsSum = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(CASE WHEN status = 'completed' THEN amount::numeric ELSE 0 END), 0)`,
+          pending: sql<string>`COALESCE(SUM(CASE WHEN status = 'pending' THEN amount::numeric ELSE 0 END), 0)`
+        })
         .from(transactions)
         .where(
           and(
@@ -954,13 +967,34 @@ export function registerRoutes(app: Express): Server {
           )
         );
 
-      const totalReferrals = parseInt(referrals[0].count.toString());
+      // Get detailed referral activity
+      const referralActivity = await db
+        .select({
+          referred_id: users.id,
+          username: users.username,
+          joined_at: users.createdAt,
+          total_rewards: sql<string>`COALESCE(SUM(t.amount::numeric), 0)`
+        })
+        .from(users)
+        .leftJoin(
+          transactions,
+          and(
+            eq(transactions.userId, users.id),
+            eq(transactions.type, 'reward')
+          )
+        )
+        .where(eq(users.referrerId, req.user.id))
+        .groupBy(users.id, users.username, users.createdAt)
+        .orderBy(desc(users.createdAt));
+
+      const totalReferrals = parseInt(referredUsers[0].count.toString());
       const totalRewards = parseFloat(referralRewardsSum[0]?.total || '0');
+      const pendingRewards = parseFloat(referralRewardsSum[0]?.pending || '0');
 
       // Generate referral code if not exists
       let referralCode = user?.referralCode;
       if (!referralCode) {
-                referralCode = await generateReferralCode();
+        referralCode = await generateReferralCode();
         await db.update(users)
           .set({ referralCode })
           .where(eq(users.id, req.user.id));
@@ -971,36 +1005,18 @@ export function registerRoutes(app: Express): Server {
         referralCode,
         referralStats: {
           totalReferrals,
-          totalRewards
+          totalRewards,
+          pendingRewards,
+          referralActivity: referralActivity.map(activity => ({
+            username: activity.username,
+            joinedAt: activity.joined_at,
+            generatedRewards: parseFloat(activity.total_rewards.toString())
+          }))
         }
       });
     } catch (error) {
       console.error('Error fetching settings:', error);
       res.status(500).json({ error: 'Failed to fetch settings' });
-    }
-  });
-
-  app.post('/api/settings/wallet', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const { walletAddress } = req.body;
-
-      if (!walletAddress) {
-        return res.status(400).json({ error: 'Wallet address is required' });
-      }
-
-      // Update user's wallet address
-      await db.update(users)
-        .set({ walletAddress })
-        .where(eq(users.id, req.user.id));
-
-      res.json({ message: 'Wallet address updated successfully' });
-    } catch (error) {
-      console.error('Error updating wallet address:', error);
-      res.status(500).json({ error: 'Failed to update wallet address' });
     }
   });
 
