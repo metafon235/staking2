@@ -29,6 +29,14 @@ export default function Navigation() {
     }
   };
 
+  // Helper function to check if a menu item is active
+  const isMenuItemActive = (href: string) => {
+    if (href === "/app") {
+      return location === "/app";
+    }
+    return location.startsWith(href + "/") || location === href;
+  };
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -54,7 +62,7 @@ export default function Navigation() {
           <nav className="flex-1 space-y-2 p-4">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location === item.href || location.startsWith(`${item.href}/`);
+              const isActive = isMenuItemActive(item.href);
 
               return (
                 <Link 
@@ -92,7 +100,7 @@ export default function Navigation() {
         <div className="grid h-full grid-cols-5">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location === item.href || location.startsWith(`${item.href}/`);
+            const isActive = isMenuItemActive(item.href);
 
             return (
               <Link 
