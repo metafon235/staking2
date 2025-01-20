@@ -525,17 +525,19 @@ export function registerRoutes(app: Express): Server {
     const yearlyRate = 0.03; // 3% APY
     const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
 
+    // Calculate rewards with high precision
+    const reward = stakedAmount * minutelyRate * minutesElapsed;
+
     if (forTransaction) {
-      const reward = stakedAmount * minutelyRate; // Calculate one minute's reward
-      // Record transaction if it's a meaningful reward
-      if (reward >= 0.00000001) { // Threshold at 8 decimals
-        await recordRewardTransaction(userId, reward);
+      // For minute-by-minute rewards, calculate just the last minute's reward
+      const oneMinuteReward = stakedAmount * minutelyRate;
+      if (oneMinuteReward >= 0.000000001) { // Ensure meaningful rewards (9 decimals)
+        await recordRewardTransaction(userId, oneMinuteReward);
       }
-      return reward;
-    } else {
-      // For total rewards calculation (withdrawal, display), calculate accumulated rewards
-      return stakedAmount * minutelyRate * minutesElapsed;
+      return oneMinuteReward;
     }
+
+    return reward;
   }
 
   // Generate a unique referral code
@@ -564,50 +566,49 @@ export function registerRoutes(app: Express): Server {
   }
 
   async function recordRewardTransaction(userId: number, reward: number) {
-    if (reward > 0) {
-      // Check if we already have a reward transaction in the last minute
-      const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
+    if (reward <= 0) return;
 
-      const recentReward = await db.query.transactions.findFirst({
-        where: (transactions, { and, eq, gt }) => and(
-          eq(transactions.userId, userId),
-          eq(transactions.type, 'reward'),
-          gt(transactions.createdAt, lastMinute)
-        ),
-        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-      });
+    // Check if we already have a reward transaction in the last minute
+    const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
 
-      // Only create new reward transaction if none exists in the last minute
-      if (!recentReward) {
-        const [transaction] = await db.insert(transactions)
-          .values({
-            userId,
-            type: 'reward',
-            amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
-            status: 'completed',
-            createdAt: new Date()
-          })
-          .returning();
+    const recentReward = await db.query.transactions.findFirst({
+      where: (transactions, { and, eq, gt }) => and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'reward'),
+        gt(transactions.createdAt, lastMinute)
+      ),
+      orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+    });
 
-        // Calculate and record referral rewards
-        const user = await db.query.users.findFirst({
-          where: eq(users.id, userId),
-          columns: {
-            referrerId: true
-          }
+    // Only create new reward transaction if none exists in the last minute
+    if (!recentReward) {
+      await db.insert(transactions)
+        .values({
+          userId,
+          type: 'reward',
+          amount: reward.toFixed(9), // Store reward with 9 decimal precision
+          status: 'completed',
+          createdAt: new Date()
         });
 
-        if (user?.referrerId) {
-          const referralReward = reward * 0.01; // 1% referral reward
-          await db.insert(transactions)
-            .values({
-              userId: user.referrerId,
-              type: 'referral_reward',
-              amount: referralReward.toFixed(9),
-              status: 'completed',
-              createdAt: new Date()
-            });
+      // Calculate and record referral rewards
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: {
+          referrerId: true
         }
+      });
+
+      if (user?.referrerId) {
+        const referralReward = reward * 0.01; // 1% referral reward
+        await db.insert(transactions)
+          .values({
+            userId: user.referrerId,
+            type: 'referral_reward',
+            amount: referralReward.toFixed(9),
+            status: 'completed',
+            createdAt: new Date()
+          });
       }
     }
   }
@@ -931,7 +932,7 @@ export function registerRoutes(app: Express): Server {
               stakeId: data.stake_id,
               amount: data.amount,
               cdpRewardId: data.reward_id,
-              createdAt: newDate()
+              createdAt: new Date()
             })
             .returning();
 
@@ -967,7 +968,45 @@ export function registerRoutes(app: Express): Server {
     process.exit(1);
   });
 
-  //Important:This part should be after all routes are registered.
+  // Add after the last route handler, before the return httpServer statement
+  async function generateRewardsForAllActiveStakes() {
+    try {
+      console.log('Generating rewards for all active stakes...');
+
+      // Get all active stakes
+      const activeStakes = await db.query.stakes.findMany({
+        where: eq(stakes.status, 'active'),
+        with: {
+          user: {
+            columns: {
+              id: true
+            }
+          }
+        }
+      });
+
+      // Process rewards for each stake
+      for (const stake of activeStakes) {
+        const stakeAmount = parseFloat(stake.amount.toString());
+        if (stakeAmount >= 0.01) { // Only process meaningful stakes
+          await calculateRewardsForTimestamp(
+            stake.user.id,
+            stakeAmount,
+            stake.createdAt.getTime(),
+            Date.now(),
+            true // Generate transaction for the last minute
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error generating rewards:', error);
+    }
+  }
+
+  // Set up the reward generation interval
+  let rewardsGenerationInterval: NodeJS.Timeout | null = null;
+
+  // Important: This part should be after all routes are registered
   if (!rewardsGenerationInterval) {
     rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
   }
@@ -1078,12 +1117,6 @@ async function calculateNetworkRewards(symbol: string) {
   return baseStats ? baseStats.rewards + (Math.random() * 1000) : 0;
 }
 
-let rewardsGenerationInterval: NodeJS.Timeout | null = null;
-
-async function generateRewardsForAllActiveStakes() {
-  // Mock function for reward generation
-  console.log('Generating rewards for all active stakes...');
-}
 
 const masterWallet = {
   initialize: async () => {
