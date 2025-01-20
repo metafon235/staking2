@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, AlertCircle, Copy, Link as LinkIcon, Check, X } from "lucide-react";
+import { Loader2, AlertCircle, Copy, Link as LinkIcon, Check, X, Users, Gift } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { validateEthereumAddress } from "@/lib/validation";
 
@@ -129,21 +129,98 @@ export default function Settings() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-white">Settings</h1>
 
+      {/* Referral Section - Moved to top for better visibility */}
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-white">Wallet Settings</CardTitle>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Gift className="h-5 w-5 text-purple-400" />
+            Referral Programm
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Stats Grid */}
+          {settings?.referralStats && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-zinc-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-5 w-5 text-purple-400" />
+                  <p className="text-sm text-zinc-400">Vermittelte Nutzer</p>
+                </div>
+                <p className="text-2xl font-bold text-white">
+                  {settings.referralStats.totalReferrals}
+                </p>
+              </div>
+              <div className="bg-zinc-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Gift className="h-5 w-5 text-purple-400" />
+                  <p className="text-sm text-zinc-400">Verdiente Rewards</p>
+                </div>
+                <p className="text-2xl font-bold text-purple-400">
+                  {settings.referralStats.totalRewards > 0 
+                    ? `${settings.referralStats.totalRewards.toFixed(9)} ETH`
+                    : '0.000000000 ETH'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Referral Link */}
+          <div className="space-y-2">
+            <label className="text-sm text-zinc-400 flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              Ihr Referral-Link
+            </label>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={settings?.referralCode 
+                  ? `${window.location.origin}/auth?ref=${settings.referralCode}`
+                  : 'Wird geladen...'
+                }
+                className="bg-zinc-800 border-zinc-700 text-white font-mono text-sm"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopyReferralLink}
+                className="shrink-0 hover:bg-purple-600/20 hover:text-purple-400"
+                disabled={!settings?.referralCode}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-zinc-500">
+              Teilen Sie diesen Link und verdienen Sie 1% der Staking-Rewards Ihrer vermittelten Nutzer!
+            </p>
+          </div>
+
+          {/* Referral Info */}
+          <Alert className="bg-purple-900/20 border-purple-900/50">
+            <Gift className="h-4 w-4 text-purple-400" />
+            <AlertDescription className="text-purple-400">
+              Wenn Ihre vermittelten Nutzer ETH staken, erhalten Sie automatisch 1% ihrer Staking-Rewards!
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Wallet Settings */}
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white">Wallet Einstellungen</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm text-zinc-400">
-                Funding/Withdrawal Wallet Address
+                Einzahlungs-/Auszahlungs-Wallet Adresse
               </label>
               <div className="relative">
                 <Input
                   value={walletAddress}
                   onChange={handleAddressChange}
-                  placeholder="Enter your ETH wallet address"
+                  placeholder="Geben Sie Ihre ETH Wallet-Adresse ein"
                   className={`bg-zinc-800 border-zinc-700 text-white pr-10 ${
                     walletAddress && (addressValidation.isValid ? 'border-green-500' : 'border-red-500')
                   }`}
@@ -162,14 +239,15 @@ export default function Settings() {
                 <p className="text-sm text-red-500">{addressValidation.error}</p>
               )}
               <p className="text-xs text-zinc-500">
-                This wallet will be used for depositing stakes and receiving withdrawals
+                Diese Wallet wird für Einzahlungen und Auszahlungen verwendet
               </p>
             </div>
 
             <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Important: Make sure to provide a valid Ethereum wallet address. Once set, this address will be used for all transactions.
+                Wichtig: Stellen Sie sicher, dass Sie eine gültige Ethereum-Wallet-Adresse angeben. 
+                Diese Adresse wird für alle Transaktionen verwendet.
               </AlertDescription>
             </Alert>
 
@@ -178,64 +256,9 @@ export default function Settings() {
               className="w-full bg-purple-600 hover:bg-purple-700"
               disabled={updateMutation.isPending || !addressValidation.isValid}
             >
-              {updateMutation.isPending ? "Updating..." : "Save Changes"}
+              {updateMutation.isPending ? "Wird aktualisiert..." : "Änderungen speichern"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
-
-      {/* Referral Section */}
-      <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-white">Referral Program</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm text-zinc-400">Your Referral Link</label>
-            <div className="flex gap-2">
-              <Input
-                readOnly
-                value={settings?.referralCode ? `${window.location.origin}/auth?ref=${settings.referralCode}` : 'Loading...'}
-                className="bg-zinc-800 border-zinc-700 text-white font-mono text-sm"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyReferralLink}
-                className="shrink-0"
-                disabled={!settings?.referralCode}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-zinc-500">
-              Share this link and earn 1% of the staking rewards generated by your referrals!
-            </p>
-          </div>
-
-          {settings?.referralStats && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <p className="text-sm text-zinc-400">Total Referrals</p>
-                <p className="text-2xl font-bold text-white">
-                  {settings.referralStats.totalReferrals}
-                </p>
-              </div>
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <p className="text-sm text-zinc-400">Earned Rewards</p>
-                <p className="text-2xl font-bold text-purple-400">
-                  {settings.referralStats.totalRewards.toFixed(9)} ETH
-                </p>
-              </div>
-            </div>
-          )}
-
-          <Alert className="bg-purple-900/20 border-purple-900/50">
-            <LinkIcon className="h-4 w-4 text-purple-400" />
-            <AlertDescription className="text-purple-400">
-              When your referrals stake their ETH, you'll automatically earn 1% of their staking rewards!
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
     </div>
