@@ -8,6 +8,21 @@ import { Loader2, AlertCircle, Copy, Link as LinkIcon, Check, X, Users, Gift } f
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { validateEthereumAddress } from "@/lib/validation";
 
+interface UserSettings {
+  walletAddress?: string;
+  referralCode?: string;
+  referralStats?: {
+    totalReferrals: number;
+    totalRewards: number;
+    pendingRewards: number;
+    referralActivity: Array<{
+      username: string;
+      joinedAt: string;
+      generatedRewards: number;
+    }>;
+  };
+}
+
 async function updateWalletAddress(walletAddress: string) {
   const response = await fetch('/api/settings/wallet', {
     method: 'POST',
@@ -15,6 +30,7 @@ async function updateWalletAddress(walletAddress: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ walletAddress }),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -26,20 +42,13 @@ async function updateWalletAddress(walletAddress: string) {
 }
 
 async function fetchUserSettings() {
-  const response = await fetch('/api/settings');
+  const response = await fetch('/api/settings', {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch settings');
   }
   return response.json();
-}
-
-interface UserSettings {
-  walletAddress?: string;
-  referralCode?: string;
-  referralStats?: {
-    totalReferrals: number;
-    totalRewards: number;
-  };
 }
 
 export default function Settings() {
@@ -47,7 +56,7 @@ export default function Settings() {
   const [addressValidation, setAddressValidation] = useState<{ isValid: boolean; error?: string }>({ isValid: true });
   const { toast } = useToast();
 
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+  const { data: settings, isLoading: isLoadingSettings } = useQuery<UserSettings>({
     queryKey: ['/api/settings'],
     queryFn: fetchUserSettings,
   });
@@ -125,6 +134,10 @@ export default function Settings() {
     );
   }
 
+  const referralLink = settings?.referralCode 
+    ? `${window.location.origin}/auth?ref=${settings.referralCode}`
+    : null;
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-white">Settings</h1>
@@ -139,31 +152,29 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Stats Grid */}
-          {settings?.referralStats && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="h-5 w-5 text-purple-400" />
-                  <p className="text-sm text-zinc-400">Vermittelte Nutzer</p>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {settings.referralStats.totalReferrals}
-                </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-zinc-800/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-5 w-5 text-purple-400" />
+                <p className="text-sm text-zinc-400">Vermittelte Nutzer</p>
               </div>
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Gift className="h-5 w-5 text-purple-400" />
-                  <p className="text-sm text-zinc-400">Verdiente Rewards</p>
-                </div>
-                <p className="text-2xl font-bold text-purple-400">
-                  {settings.referralStats.totalRewards > 0 
-                    ? `${settings.referralStats.totalRewards.toFixed(9)} ETH`
-                    : '0.000000000 ETH'
-                  }
-                </p>
-              </div>
+              <p className="text-2xl font-bold text-white">
+                {settings?.referralStats?.totalReferrals || 0}
+              </p>
             </div>
-          )}
+            <div className="bg-zinc-800/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Gift className="h-5 w-5 text-purple-400" />
+                <p className="text-sm text-zinc-400">Verdiente Rewards</p>
+              </div>
+              <p className="text-2xl font-bold text-purple-400">
+                {settings?.referralStats?.totalRewards 
+                  ? `${settings.referralStats.totalRewards.toFixed(9)} ETH`
+                  : '0.000000000 ETH'
+                }
+              </p>
+            </div>
+          </div>
 
           {/* Referral Link */}
           <div className="space-y-2">
@@ -174,10 +185,7 @@ export default function Settings() {
             <div className="flex gap-2">
               <Input
                 readOnly
-                value={settings?.referralCode 
-                  ? `${window.location.origin}/auth?ref=${settings.referralCode}`
-                  : 'Wird geladen...'
-                }
+                value={referralLink || 'Wird geladen...'}
                 className="bg-zinc-800 border-zinc-700 text-white font-mono text-sm"
               />
               <Button
@@ -185,7 +193,7 @@ export default function Settings() {
                 size="icon"
                 onClick={handleCopyReferralLink}
                 className="shrink-0 hover:bg-purple-600/20 hover:text-purple-400"
-                disabled={!settings?.referralCode}
+                disabled={!referralLink}
               >
                 <Copy className="h-4 w-4" />
               </Button>
@@ -194,6 +202,31 @@ export default function Settings() {
               Teilen Sie diesen Link und verdienen Sie 1% der Staking-Rewards Ihrer vermittelten Nutzer!
             </p>
           </div>
+
+          {/* Referral Activity */}
+          {settings?.referralStats?.referralActivity && settings.referralStats.referralActivity.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-zinc-400">Vermittelte Nutzer</h3>
+              <div className="space-y-2">
+                {settings.referralStats.referralActivity.map((activity) => (
+                  <div key={activity.username} className="bg-zinc-800/50 rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">{activity.username}</span>
+                      <span className="text-purple-400 text-sm">
+                        {activity.generatedRewards > 0
+                          ? `${activity.generatedRewards.toFixed(9)} ETH`
+                          : '0.000000000 ETH'
+                        }
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-500">
+                      Beigetreten: {new Date(activity.joinedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Referral Info */}
           <Alert className="bg-purple-900/20 border-purple-900/50">
