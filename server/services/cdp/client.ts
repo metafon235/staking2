@@ -21,9 +21,17 @@ class CDPClient {
   constructor(config: CDPConfig) {
     this.config = config;
 
+    // Update base URL to match Coinbase Cloud staking API
     const baseURL = config.environment === 'production' 
       ? 'https://api.coinbase.com/v2/cloud/staking'
       : 'https://api-sandbox.coinbase.com/v2/cloud/staking';
+
+    console.log('Initializing CDP client with:', {
+      environment: config.environment,
+      baseURL,
+      apiKeyPresent: !!config.apiKey,
+      apiSecretPresent: !!config.apiSecret
+    });
 
     this.client = axios.create({
       baseURL,
@@ -40,7 +48,10 @@ class CDPClient {
       const path = config.url || '';
       const body = config.data ? JSON.stringify(config.data) : '';
 
-      const signature = this.sign(`${timestamp}${method}${path}${body}`);
+      const message = `${timestamp}${method}${path}${body}`;
+      console.log('Signing CDP request:', { timestamp, method, path, bodyLength: body.length });
+
+      const signature = this.sign(message);
 
       config.headers['CB-ACCESS-SIGN'] = signature;
       config.headers['CB-ACCESS-TIMESTAMP'] = timestamp;
@@ -63,17 +74,19 @@ class CDPClient {
 
       console.error('CDP API Error:', {
         status: response?.status,
+        statusText: response?.statusText,
         data: response?.data,
         headers: response?.headers,
         config: {
           method: axiosError.config?.method,
           url: axiosError.config?.url,
+          baseURL: axiosError.config?.baseURL,
           headers: axiosError.config?.headers,
         }
       });
 
       if (response?.data) {
-        throw new Error(`CDP API Error: ${response.data.message}`);
+        throw new Error(`CDP API Error: ${response.data.message || response.statusText}`);
       }
 
       throw new Error(`CDP API Error: ${axiosError.message}`);

@@ -3,11 +3,12 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
-import { stakes, rewards, transactions } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { stakes, rewards, transactions, users } from "@db/schema";
+import { eq, and, count, sql } from "drizzle-orm";
 import { cdpConfig } from "../config/cdp.config";
 import crypto from 'crypto';
 import { cdpClient } from './services/cdp/client';
+import { masterWallet } from './services/cdp/master-wallet';
 
 // Webhook event validation
 // This function is now replaced by cdpClient.verifyWebhookSignature
@@ -52,15 +53,39 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // Try to get real network stats first
+      const realStats = await masterWallet.getNetworkStats();
+
+      if (realStats) {
+        // Use real data
+        const stats = {
+          current: {
+            tvl: realStats.totalStaked,
+            validators: realStats.activeValidators,
+            avgStake: realStats.totalStaked / realStats.activeValidators,
+            rewards: realStats.networkRewards
+          },
+          history: await generateHistoricalData(symbol, BASE_STATS[symbol as keyof typeof BASE_STATS]),
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Update cache
+        statsCache.set(symbol, {
+          data: stats,
+          timestamp: Date.now()
+        });
+
+        return res.json(stats);
+      }
+
+      // Fallback to mock data if real data not available
       const now = Date.now();
       const cached = statsCache.get(symbol);
 
-      // Return cached data if it's less than 1 minute old
       if (cached && (now - cached.timestamp) < 60000) {
         return res.json(cached.data);
       }
 
-      // Get fresh data
       const baseStats = BASE_STATS[symbol as keyof typeof BASE_STATS];
       const current = await getCurrentNetworkStats(symbol);
       const history = await generateHistoricalData(symbol, baseStats);
@@ -71,7 +96,6 @@ export function registerRoutes(app: Express): Server {
         lastUpdated: new Date().toISOString()
       };
 
-      // Update cache
       statsCache.set(symbol, {
         data: stats,
         timestamp: now
@@ -187,23 +211,8 @@ export function registerRoutes(app: Express): Server {
 
       const { amount } = validationResult.data;
 
-      // Create stake in database
-      const [newStake] = await db.insert(stakes)
-        .values({
-          userId: req.user.id,
-          amount: amount,
-          status: 'active',
-        })
-        .returning();
-
-      // Record the transaction
-      await db.insert(transactions)
-        .values({
-          userId: req.user.id,
-          type: 'stake',
-          amount: amount,
-          status: 'completed',
-        });
+      // Add stake through master wallet
+      const newStake = await masterWallet.addUserStake(req.user.id, amount);
 
       res.json(newStake);
     } catch (error) {
@@ -933,23 +942,24 @@ export function registerRoutes(app: Express): Server {
             .values({
               stakeId: data.stake_id,
               amount: data.amount,
-              cdpRewardId: data.reward_id,createdAt: new Date()
+              cdpRewardId: data.reward_id,
+              createdAt: new Date()
             })
             .returning();
 
-        // Record reward transaction
-        await db.insert(transactions)
-          .values({
-            userId: data.user_id,
-            type: 'reward',
-            amount: data.amount,
-            status: 'completed',
-            cdpTransactionId: data.transaction_id,
-            createdAt: new Date()
-          });
+          // Record reward transaction
+          await db.insert(transactions)
+            .values({
+              userId: data.user_id,
+              type: 'reward',
+              amount: data.amount,
+              status: 'completed',
+              cdpTransactionId: data.transaction_id,
+              createdAt: new Date()
+            });
 
-        console.log('Reward recorded:', { reward });
-        break;
+          console.log('Reward recorded:', { reward });
+          break;
 
         default:
           console.warn('Unhandled CDP webhook event type:', event_type);
@@ -961,6 +971,12 @@ export function registerRoutes(app: Express): Server {
       console.error('CDP webhook processing error:', error);
       res.status(500).json({ error: 'Webhook processing failed' });
     }
+  });
+
+  // Initialize master wallet when server starts
+  masterWallet.initialize().catch(error => {
+    console.error('Failed to initialize master wallet:', error);
+    process.exit(1);
   });
 
   //Important:This part should be after all routes are registered.
