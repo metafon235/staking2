@@ -62,12 +62,22 @@ export default function AdminActivity() {
     );
   }
 
+  const formatEth = (value: string | number) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return `${num.toFixed(6)} ETH`;
+  };
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">Activity & Analytics</h1>
 
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Performance Metrics</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Performance Metrics</h2>
+          <p className="text-sm text-muted-foreground">
+            Last updated: {metrics?.current.lastUpdated && format(new Date(metrics.current.lastUpdated), 'HH:mm:ss')}
+          </p>
+        </div>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select period" />
@@ -85,7 +95,9 @@ export default function AdminActivity() {
         <Card>
           <CardHeader>
             <CardTitle>Total Value Locked (TVL)</CardTitle>
-            <CardDescription>Historical TVL in ETH</CardDescription>
+            <CardDescription>
+              Current: {formatEth(metrics?.current.totalValueLocked || '0')}
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -103,7 +115,7 @@ export default function AdminActivity() {
                 />
                 <YAxis />
                 <Tooltip 
-                  formatter={(value: string) => parseFloat(value).toFixed(4) + ' ETH'}
+                  formatter={(value: string) => formatEth(value)}
                   labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
                 />
                 <Area 
@@ -123,6 +135,8 @@ export default function AdminActivity() {
             <CardTitle>Admin Rewards</CardTitle>
             <CardDescription>
               Based on {metrics?.current.apyDifference}% APY difference
+              <br />
+              Today's rewards: {formatEth(metrics?.current.adminRewards || 0)}
               <br />
               <span className="text-xs text-muted-foreground">
                 Updates automatically every minute
@@ -145,7 +159,7 @@ export default function AdminActivity() {
                 />
                 <YAxis />
                 <Tooltip 
-                  formatter={(value: string) => parseFloat(value).toFixed(6) + ' ETH'}
+                  formatter={(value: string) => formatEth(value)}
                   labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
                 />
                 <Area 
@@ -163,7 +177,9 @@ export default function AdminActivity() {
         <Card>
           <CardHeader>
             <CardTitle>User Growth</CardTitle>
-            <CardDescription>Total registered users over time</CardDescription>
+            <CardDescription>
+              Current users: {metrics?.current.userCount || 0}
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -192,7 +208,9 @@ export default function AdminActivity() {
         <Card>
           <CardHeader>
             <CardTitle>Active Stakes</CardTitle>
-            <CardDescription>Number of active stakes over time</CardDescription>
+            <CardDescription>
+              Current active stakes: {metrics?.current.activeStakes || 0}
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
