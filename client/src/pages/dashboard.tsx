@@ -4,6 +4,7 @@ import StakingChart from "@/components/staking/StakingChart";
 import { useQuery } from "@tanstack/react-query";
 import { getStakingData } from "@/lib/web3";
 import { Skeleton } from "@/components/ui/skeleton";
+import NewsWidget from "@/components/news/NewsWidget";
 
 export default function Dashboard() {
   const { data: stakingData, isLoading } = useQuery({
@@ -55,6 +56,11 @@ export default function Dashboard() {
 
       <div className="grid gap-6">
         <StakingCard />
+      </div>
+
+      {/* News Widget Section */}
+      <div className="mt-6">
+        <NewsWidget />
       </div>
     </div>
   );

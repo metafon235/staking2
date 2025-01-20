@@ -4,6 +4,7 @@ import CoinCard from "@/components/coins/CoinCard";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
 import { Link, useLocation } from "wouter";
+import NewsWidget from "@/components/news/NewsWidget";
 
 export default function Home() {
   const { user } = useUser();
@@ -90,6 +91,11 @@ export default function Home() {
               Start with just 0.01 ETH and earn rewards proportional to your stake.
             </p>
           </Card>
+        </div>
+
+        {/* News Section */}
+        <div className="mt-24">
+          <NewsWidget />
         </div>
 
         {/* Bottom CTA Section */}

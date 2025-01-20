@@ -150,9 +150,96 @@ async function generateRewardsForAllActiveStakes() {
 }
 
 
+// Add before registerRoutes function
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const newsCache = {
+  data: null as any[] | null,
+  timestamp: 0
+};
+
+// Mock news data for fallback
+const FALLBACK_NEWS = [
+  {
+    title: "Ethereum Staking Continues to Grow",
+    description: "The total amount of ETH staked continues to rise as more validators join the network.",
+    url: "https://ethereum.org",
+    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
+    published_at: new Date().toISOString()
+  },
+  {
+    title: "ETH 2.0 Development Update",
+    description: "Latest progress on Ethereum network upgrades and improvements.",
+    url: "https://ethereum.org",
+    thumb_2x: "https://ethereum.org/static/ethereum-logo.png",
+    published_at: new Date().toISOString()
+  }
+];
+
+async function fetchCryptoNews() {
+  const now = Date.now();
+
+  // Return cached data if it's still fresh
+  if (newsCache.data && (now - newsCache.timestamp) < CACHE_DURATION) {
+    return newsCache.data;
+  }
+
+  try {
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=1&interval=daily',
+      {
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('Failed to fetch from CoinGecko, using fallback data');
+      return FALLBACK_NEWS;
+    }
+
+    // Transform market data into news-like format
+    const marketData = await response.json();
+    const priceChange = ((marketData.prices[1][1] - marketData.prices[0][1]) / marketData.prices[0][1]) * 100;
+
+    const news = [
+      {
+        title: `Ethereum ${priceChange >= 0 ? 'Rises' : 'Drops'} ${Math.abs(priceChange).toFixed(2)}% in 24h`,
+        description: `Current ETH price movements and market analysis show ${priceChange >= 0 ? 'positive' : 'negative'} momentum.`,
+        url: "https://www.coingecko.com/en/coins/ethereum",
+        thumb_2x: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+        published_at: new Date().toISOString()
+      },
+      ...FALLBACK_NEWS
+    ];
+
+    // Cache the results
+    newsCache.data = news;
+    newsCache.timestamp = now;
+
+    return news;
+  } catch (error) {
+    console.error('Error fetching crypto news:', error);
+    // Return fallback data if API fails
+    return FALLBACK_NEWS;
+  }
+}
+
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
+
+  // Add new route for news
+  app.get('/api/news', async (_req, res) => {
+    try {
+      const news = await fetchCryptoNews();
+      res.json(news);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+      // Always return some data to prevent frontend errors
+      res.json(FALLBACK_NEWS);
+    }
+  });
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
@@ -936,38 +1023,26 @@ export function registerRoutes(app: Express): Server {
       const participationRate = 95 + (Math.random() * 3); // 95-98%
       const validatorEffectiveness = 96 + (Math.random() * 2); // 96-98%
 
-      // Prepare response data
-      const analyticsData = {
-        performance: {
-          roi,
-          apy: 3.00, // Current fixed APY
-          totalRewards: currentRewards,
-          rewardsHistory
+      res.json({
+        portfolio: {
+          totalStaked,
+          currentRewards,
+          totalValue,
+          roi
+        },
+        history: {
+          rewards: rewardsHistory,
+          prices: priceHistory,
+          validators: validatorHistory
         },
         network: {
-          validatorEffectiveness,
-          networkHealth,
+          health: networkHealth,
           participationRate,
-          validatorHistory
-        },
-        portfolio: {
-          totalValue,
-          profitLoss: currentRewards,
-          stakingPositions: [
-            {
-              coin: 'ETH',
-              amount: totalStaked,
-              value: totalValue,
-              apy: 3.00
-            }
-          ],
-          priceHistory
+          validatorEffectiveness
         }
-      };
-
-      res.json(analyticsData);
+      });
     } catch (error) {
-      console.error('Error fetching analytics data:', error);
+      console.error('Error fetching analytics:', error);
       res.status(500).json({ error: 'Failed to fetch analytics data' });
     }
   });
