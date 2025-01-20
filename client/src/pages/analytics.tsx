@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
@@ -9,39 +9,31 @@ import { getEthPrice, getEthStats } from "@/lib/binance";
 import MarketStatsChart from "@/components/market/MarketStatsChart";
 
 interface AnalyticsData {
-  performance: {
+  portfolio: {
+    totalStaked: number;
+    currentRewards: number;
+    totalValue: number;
     roi: number;
-    apy: number;
-    totalRewards: number;
-    rewardsHistory: Array<{
+  };
+  history: {
+    rewards: Array<{
       timestamp: number;
       value: number;
     }>;
-  };
-  network: {
-    validatorEffectiveness: number;
-    networkHealth: number;
-    participationRate: number;
-    validatorHistory: Array<{
+    prices: Array<{
+      timestamp: number;
+      price: number;
+    }>;
+    validators: Array<{
       timestamp: number;
       activeValidators: number;
       effectiveness: number;
     }>;
   };
-  portfolio: {
-    totalValue: number;
-    profitLoss: number;
-    ethPrice: number;
-    priceHistory: Array<{
-      timestamp: number;
-      price: number;
-    }>;
-    stakingPositions: Array<{
-      coin: string;
-      amount: number;
-      value: number;
-      apy: number;
-    }>;
+  network: {
+    health: number;
+    participationRate: number;
+    validatorEffectiveness: number;
   };
 }
 
@@ -63,13 +55,13 @@ export default function Analytics() {
   const { data: liveEthPrice } = useQuery({
     queryKey: ['binanceEthPrice'],
     queryFn: getEthPrice,
-    refetchInterval: 30000, //This line was updated
+    refetchInterval: 30000,
   });
 
   const { data: ethStats } = useQuery({
     queryKey: ['binanceEthStats'],
     queryFn: getEthStats,
-    staleTime: Infinity, // Prevents background refetches
+    staleTime: Infinity,
   });
 
   if (isLoadingAnalytics) {
@@ -87,12 +79,6 @@ export default function Analytics() {
       </div>
     );
   }
-
-  const ethPrice = liveEthPrice ?? analytics?.portfolio?.ethPrice ?? 0;
-  const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * ethPrice;
-  const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * ethPrice;
-
-  const priceHistory = analytics?.portfolio?.priceHistory || [];
 
   return (
     <div className="space-y-6">
@@ -113,7 +99,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics.performance.roi.toFixed(6)}%
+                  {analytics.portfolio.roi.toFixed(6)}%
                 </p>
               </CardContent>
             </Card>
@@ -124,7 +110,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  {analytics.performance.apy.toFixed(2)}%
+                  3.00%
                 </p>
               </CardContent>
             </Card>
@@ -135,7 +121,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-blue-500">
-                  {analytics.performance.totalRewards.toFixed(6)} ETH
+                  {analytics.portfolio.currentRewards.toFixed(6)} ETH
                 </p>
               </CardContent>
             </Card>
@@ -150,7 +136,7 @@ export default function Analytics() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.performance.rewardsHistory.map(point => ({
+                  <LineChart data={analytics.history.rewards.map(point => ({
                     ...point,
                     date: format(point.timestamp, 'MMM dd'),
                     rewards: point.value
@@ -186,7 +172,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  {analytics.network.networkHealth.toFixed(2)}%
+                  {analytics.network.health.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -210,7 +196,7 @@ export default function Analytics() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.network.validatorHistory.map(point => ({
+                  <LineChart data={analytics.history.validators.map(point => ({
                     ...point,
                     date: format(point.timestamp, 'MMM dd')
                   }))}>
@@ -235,30 +221,24 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics?.portfolio?.totalValue?.toFixed(6) || '0.000000'} ETH
+                  {analytics.portfolio.totalValue.toFixed(6)} ETH
                 </p>
                 <p className="text-lg text-zinc-400">
-                  ${totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${(analytics.portfolio.totalValue * (liveEthPrice || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-white">Profit/Loss</CardTitle>
+                <CardTitle className="text-white">Total Staked</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className={`text-3xl font-bold ${
-                  (analytics?.portfolio?.profitLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  {(analytics?.portfolio?.profitLoss || 0) >= 0 ? '+' : ''}
-                  {analytics?.portfolio?.profitLoss?.toFixed(6) || '0.000000'} ETH
+                <p className="text-3xl font-bold text-purple-500">
+                  {analytics.portfolio.totalStaked.toFixed(6)} ETH
                 </p>
-                <p className={`text-lg ${
-                  profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {profitLossUSD >= 0 ? '+' : ''}
-                  ${Math.abs(profitLossUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                <p className="text-lg text-zinc-400">
+                  ${(analytics.portfolio.totalStaked * (liveEthPrice || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </p>
               </CardContent>
             </Card>
@@ -269,7 +249,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  ${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0.00'}
+                  ${liveEthPrice ? liveEthPrice.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0.00'}
                 </p>
                 <p className="text-sm text-zinc-400">
                   {liveEthPrice ? 'Updates every 30 seconds' : 'Fetching price...'}
@@ -288,34 +268,6 @@ export default function Analytics() {
               weightedAvgPrice={ethStats.weightedAvgPrice}
             />
           )}
-
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white">Staking Positions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {analytics.portfolio.stakingPositions.map((position, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-zinc-800">
-                    <div>
-                      <p className="text-white font-medium">{position.coin}</p>
-                      <p className="text-sm text-zinc-400">
-                        {position.amount.toFixed(6)} {position.coin}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-medium">
-                        {position.value.toFixed(2)} ETH
-                      </p>
-                      <p className="text-sm text-green-500">
-                        {position.apy.toFixed(2)}% APY
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
