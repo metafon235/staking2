@@ -1,14 +1,17 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
-import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import NetworkStatsChart from "@/components/network/NetworkStatsChart";
+import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { stakeETH } from "@/lib/web3";
 
 interface NetworkStats {
   current: {
@@ -40,13 +43,46 @@ export default function CoinDetail() {
   const [stakeAmount, setStakeAmount] = useState("");
   const { user } = useUser();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch settings to check if wallet is set up
+  const { data: settings } = useQuery({
+    queryKey: ['/api/settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/settings');
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      return response.json();
+    }
+  });
 
   const { data: networkStats, isLoading: isLoadingStats } = useQuery({
     queryKey: [`/api/network-stats/${symbol}`],
     queryFn: () => fetchNetworkStats(symbol || ''),
     enabled: !!symbol,
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 0 // Always consider data stale to force refresh
+    refetchInterval: 60000,
+    staleTime: 0
+  });
+
+  const stakeMutation = useMutation({
+    mutationFn: () => stakeETH(parseFloat(stakeAmount)),
+    onSuccess: () => {
+      toast({
+        title: "Staking Successful",
+        description: `Successfully staked ${stakeAmount} ETH. Your rewards will start accumulating.`
+      });
+      setStakeAmount("");
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/network-stats/eth'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Staking Failed",
+        description: error.message
+      });
+    }
   });
 
   const coinData = COIN_DATA[symbol as keyof typeof COIN_DATA];
@@ -64,13 +100,34 @@ export default function CoinDetail() {
   const Icon = coinData.icon;
   const monthlyReward = parseFloat(stakeAmount || "0") * (coinData.apy / 12 / 100);
   const yearlyReward = parseFloat(stakeAmount || "0") * (coinData.apy / 100);
+  const hasWallet = settings?.walletAddress && settings.walletAddress.length > 0;
 
-  const handleStartStaking = () => {
+  const handleStake = () => {
     if (!user) {
       navigate("/auth");
-    } else {
-      navigate("/dashboard");
+      return;
     }
+
+    if (!hasWallet) {
+      toast({
+        variant: "destructive",
+        title: "Wallet Required",
+        description: "Please set up your wallet address in settings first."
+      });
+      return;
+    }
+
+    const amountNum = parseFloat(stakeAmount);
+    if (!stakeAmount || amountNum < coinData.minStake) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Amount",
+        description: `Minimum stake amount is ${coinData.minStake} ${coinData.symbol}`
+      });
+      return;
+    }
+
+    stakeMutation.mutate();
   };
 
   return (
@@ -106,10 +163,23 @@ export default function CoinDetail() {
 
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-white">Rewards Calculator</CardTitle>
+                <CardTitle className="text-white">Stake {coinData.symbol}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
+                {!hasWallet && (
+                  <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Please set up your funding/withdrawal wallet address in{" "}
+                      <a href="/app/settings" className="underline hover:text-yellow-400">
+                        Settings
+                      </a>{" "}
+                      to enable staking.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-2">
                   <label className="text-sm text-zinc-400 mb-2 block">
                     Amount to stake ({coinData.symbol})
                   </label>
@@ -121,6 +191,7 @@ export default function CoinDetail() {
                     step="0.01"
                     placeholder={`Min. ${coinData.minStake} ${coinData.symbol}`}
                     className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                    disabled={!hasWallet || stakeMutation.isPending}
                   />
                 </div>
 
@@ -141,10 +212,22 @@ export default function CoinDetail() {
 
                 <Button
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                  onClick={handleStartStaking}
-                  disabled={!coinData.enabled}
+                  onClick={handleStake}
+                  disabled={
+                    !coinData.enabled ||
+                    stakeMutation.isPending ||
+                    !hasWallet ||
+                    !stakeAmount ||
+                    parseFloat(stakeAmount) < parseFloat(coinData.minStake)
+                  }
                 >
-                  {coinData.enabled ? "Start Staking" : "Coming Soon"}
+                  {!hasWallet
+                    ? "Set Up Wallet First"
+                    : stakeMutation.isPending
+                    ? "Staking..."
+                    : coinData.enabled
+                    ? "Start Staking"
+                    : "Coming Soon"}
                 </Button>
               </CardContent>
             </Card>
