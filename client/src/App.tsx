@@ -9,6 +9,8 @@ import Home from "@/pages/home";
 import CoinDetail from "@/pages/coin-detail";
 import Portfolio from "@/pages/portfolio";
 import Settings from "@/pages/settings";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminLayout from "@/components/layouts/AdminLayout";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
@@ -62,6 +64,11 @@ function Router() {
       </Route>
       <Route path="/app/settings">
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Settings /></AppLayout>}
+      </Route>
+
+      {/* Admin routes */}
+      <Route path="/admin">
+        {() => !user ? <Redirect to="/auth" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
       </Route>
 
       {/* Fallback */}
