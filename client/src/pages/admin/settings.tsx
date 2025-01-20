@@ -16,6 +16,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
+interface AdminSettings {
+  masterWalletAddress: string;
+  updatedAt: string | null;
+  updatedBy: number | null;
+}
+
 const walletSchema = z.object({
   walletAddress: z.string()
     .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format")
@@ -29,11 +35,11 @@ export default function AdminSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading } = useQuery<AdminSettings>({
     queryKey: ['/api/admin/settings'],
   });
 
-  const { mutate: updateWallet, isLoading: isUpdating } = useMutation({
+  const { mutate: updateWallet, isPending: isUpdating } = useMutation({
     mutationFn: async (data: WalletFormData) => {
       const response = await fetch('/api/admin/settings/wallet', {
         method: 'POST',
@@ -43,8 +49,7 @@ export default function AdminSettings() {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
+        throw new Error(await response.text());
       }
 
       return response.json();
@@ -68,8 +73,11 @@ export default function AdminSettings() {
   const form = useForm<WalletFormData>({
     resolver: zodResolver(walletSchema),
     defaultValues: {
-      walletAddress: settings?.masterWalletAddress || '',
+      walletAddress: '',
     },
+    values: settings ? {
+      walletAddress: settings.masterWalletAddress,
+    } : undefined,
   });
 
   if (isLoading) {
