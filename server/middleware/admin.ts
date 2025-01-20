@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { db } from '@db';
-import { users } from '@db/schema';
-import { eq } from 'drizzle-orm';
+
+// Mock admin data
+const MOCK_ADMIN = {
+  id: 1,
+  email: 'admin@example.com',
+  isAdmin: true
+};
 
 declare global {
   namespace Express {
@@ -9,14 +13,8 @@ declare global {
       id: number;
       email: string;
       isAdmin: boolean;
-      password: string;
-      walletAddress: string | null;
-      referrerId: number | null;
-      referralCode: string | null;
-      createdAt: Date;
     }
 
-    // Extend Session type
     interface Session {
       adminId?: number;
       isAdminSession?: boolean;
@@ -26,21 +24,18 @@ declare global {
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   try {
+    // Check if there's an active admin session
     if (!req.session?.adminId || !req.session?.isAdminSession) {
       return res.status(401).json({ error: 'No active admin session' });
     }
 
-    const admin = await db.query.users.findFirst({
-      where: eq(users.id, req.session.adminId)
-    });
-
-    if (!admin || !admin.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
+    // In mock mode, we just check if the session ID matches our mock admin
+    if (req.session.adminId === MOCK_ADMIN.id) {
+      req.user = MOCK_ADMIN;
+      return next();
     }
 
-    // Attach admin user to request
-    req.user = admin;
-    next();
+    return res.status(403).json({ error: 'Admin access required' });
   } catch (error) {
     console.error('Admin middleware error:', error);
     res.status(500).json({ error: 'Internal server error' });

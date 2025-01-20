@@ -1,39 +1,18 @@
-import type { Express, Request, Response } from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
-import { db } from "@db";
-import { z } from "zod";
-import { stakes, rewards, transactions, users } from "@db/schema";
-import { eq, and, count, sql } from "drizzle-orm";
-import { cdpConfig } from "../config/cdp.config";
-import crypto from 'crypto';
-import { cdpClient } from './services/cdp/client';
-import { masterWallet } from './services/cdp/master-wallet';
 import adminRoutes from './routes/admin';
-
-// Webhook event validation
-// This function is now replaced by cdpClient.verifyWebhookSignature
-// function validateWebhookSignature(req: Request): boolean {
-//   const signature = req.headers['x-webhook-signature'];
-//   if (!signature || typeof signature !== 'string') return false;
-//
-//   const payload = JSON.stringify(req.body);
-//   const expectedSignature = crypto
-//     .createHmac('sha256', cdpConfig.webhookSecret)
-//     .update(payload)
-//     .digest('hex');
-//
-//   return crypto.timingSafeEqual(
-//     Buffer.from(signature),
-//     Buffer.from(expectedSignature)
-//   );
-// }
+import { z } from 'zod';
+import { db } from '@db';
+import { stakes, rewards, transactions, users } from '@db/schema';
+import { eq, and, count, sql } from 'drizzle-orm';
 
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
 
-  // Register admin routes
+  // Register admin routes - make sure this comes before other routes
+  // Important: Do NOT apply any middleware here
   app.use('/api/admin', adminRoutes);
 
   // Add new route for news
@@ -933,7 +912,8 @@ export function registerRoutes(app: Express): Server {
           // Update stake status
           await db.update(stakes)
             .set({
-              status: data.status.toLowerCase(),              updatedAt: new Date()
+              status: data.status.toLowerCase(),
+              updatedAt: new Date()
             })
             .where(eq(stakes.cdpStakeId, data.stake_id));
           break;
@@ -991,8 +971,7 @@ export function registerRoutes(app: Express): Server {
   return httpServer;
 }
 
-//Add BASE_STATS, statsCache, rewardsGenerationInterval, CACHE_DURATION, newsCache, FALLBACK_NEWS, fetchCryptoNews, generateHistoricalData, getCurrentNetworkStats, generateRewardsForAllActiveStakes  here.  These were omitted for brevity in the provided edited code but are necessary for the original code to function correctly.
-
+// Mock data and helper functions
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const newsCache = {
   data: null as any[] | null,

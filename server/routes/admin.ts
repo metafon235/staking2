@@ -1,51 +1,33 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
-import { db } from '@db';
-import { users, stakes, transactions, stakingSettings } from '@db/schema';
+//import { db } from '@db'; // Removed
+//import { users, stakes, transactions, stakingSettings } from '@db/schema'; // Removed
 import { desc, sql, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+//import { scrypt, randomBytes, timingSafeEqual } from "crypto"; // Removed
+//import { promisify } from "util"; // Removed
 
 const router = Router();
-const scryptAsync = promisify(scrypt);
+//const scryptAsync = promisify(scrypt); // Removed
 
-// Admin login endpoint - no middleware here
+// Mock admin credentials
+const MOCK_ADMIN = {
+  id: 1,
+  email: 'admin@example.com',
+  password: 'admin123',
+  isAdmin: true
+};
+
+// Public routes (no middleware)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const admin = await db.query.users.findFirst({
-      where: eq(users.email, email)
-    });
-
-    if (!admin || !admin.isAdmin) {
-      return res.status(401).json({ message: "Invalid admin credentials" });
-    }
-
-    try {
-      const [hashedPassword, salt] = admin.password.split(".");
-      if (!hashedPassword || !salt) {
-        console.error('Invalid password format stored');
-        return res.status(500).json({ message: "Internal server error" });
-      }
-
-      const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-      const suppliedPasswordBuf = (await scryptAsync(
-        password,
-        salt,
-        64
-      )) as Buffer;
-
-      const isMatch = timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
-
-      if (!isMatch) {
-        return res.status(401).json({ message: "Invalid admin credentials" });
-      }
-
-      // Set admin user in session with specific flag
+    // Check against mock admin credentials
+    if (email === MOCK_ADMIN.email && password === MOCK_ADMIN.password) {
+      // Set admin session
       if (req.session) {
-        req.session.adminId = admin.id;
+        req.session.adminId = MOCK_ADMIN.id;
         req.session.isAdminSession = true;
         await new Promise<void>((resolve, reject) => {
           req.session.save((err) => {
@@ -58,14 +40,13 @@ router.post('/login', async (req, res) => {
       res.json({
         message: "Admin login successful",
         user: {
-          id: admin.id,
-          email: admin.email,
-          isAdmin: admin.isAdmin
+          id: MOCK_ADMIN.id,
+          email: MOCK_ADMIN.email,
+          isAdmin: MOCK_ADMIN.isAdmin
         }
       });
-    } catch (error) {
-      console.error('Password verification error:', error);
-      return res.status(500).json({ message: "Internal server error" });
+    } else {
+      res.status(401).json({ message: "Invalid admin credentials" });
     }
   } catch (error) {
     console.error('Admin login error:', error);
@@ -73,26 +54,21 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Check admin session status
+// Protected routes below this point
+router.use(requireAdmin);
+
 router.get('/session', async (req, res) => {
   try {
     if (!req.session?.adminId || !req.session?.isAdminSession) {
       return res.status(401).json({ message: "No active admin session" });
     }
 
-    const admin = await db.query.users.findFirst({
-      where: eq(users.id, req.session.adminId)
-    });
-
-    if (!admin || !admin.isAdmin) {
-      return res.status(401).json({ message: "Invalid admin session" });
-    }
-
+    // Return mock admin data
     res.json({
       user: {
-        id: admin.id,
-        email: admin.email,
-        isAdmin: admin.isAdmin
+        id: MOCK_ADMIN.id,
+        email: MOCK_ADMIN.email,
+        isAdmin: MOCK_ADMIN.isAdmin
       }
     });
   } catch (error) {
@@ -116,83 +92,77 @@ router.post('/logout', (req, res) => {
   }
 });
 
-// Protect all other admin routes
-router.use(requireAdmin);
+// Mock overview data
+const MOCK_OVERVIEW = {
+  users: 150,
+  totalStaked: 1250.75,
+  transactions: 450,
+  stakingConfig: [
+    {
+      id: 1,
+      coinSymbol: 'ETH',
+      displayedApy: '4.50',
+      actualApy: '4.20',
+      minStakeAmount: '0.1',
+      updatedAt: new Date(),
+    }
+  ],
+  systemHealth: {
+    cdpApiStatus: 'operational',
+    databaseStatus: 'healthy',
+    lastSync: new Date().toISOString()
+  }
+};
 
 // Get system overview
 router.get('/overview', async (_req, res) => {
-  try {
-    const [
-      userCount,
-      totalStaked,
-      totalTransactions,
-      stakingConfig
-    ] = await Promise.all([
-      // Get total users
-      db.select({ count: sql<number>`count(*)` }).from(users),
-      // Get total staked amount
-      db.select({ 
-        total: sql<string>`sum(amount)::numeric` 
-      }).from(stakes),
-      // Get total transactions
-      db.select({ count: sql<number>`count(*)` }).from(transactions),
-      // Get staking settings
-      db.query.stakingSettings.findMany()
-    ]);
-
-    res.json({
-      users: parseInt(userCount[0].count.toString()),
-      totalStaked: parseFloat(totalStaked[0]?.total || '0'),
-      transactions: parseInt(totalTransactions[0].count.toString()),
-      stakingConfig,
-      systemHealth: {
-        cdpApiStatus: 'operational',
-        databaseStatus: 'healthy',
-        lastSync: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching admin overview:', error);
-    res.status(500).json({ error: 'Failed to fetch overview data' });
-  }
+  res.json(MOCK_OVERVIEW);
 });
+
+// Mock users data
+const MOCK_USERS = Array.from({ length: 10 }, (_, i) => ({
+  id: i + 1,
+  email: `user${i + 1}@example.com`,
+  walletAddress: `0x${(Math.random() * 1e50).toString(16)}`,
+  referralCode: `REF${i + 1}`,
+  isAdmin: false,
+  createdAt: new Date(Date.now() - Math.random() * 10000000000),
+  stakes: Array.from({ length: Math.floor(Math.random() * 3) }, (_, j) => ({
+    id: j + 1,
+    amount: (Math.random() * 10).toFixed(2),
+    status: 'active',
+    createdAt: new Date(Date.now() - Math.random() * 5000000000)
+  }))
+}));
 
 // Get all users with their stakes
 router.get('/users', async (_req, res) => {
-  try {
-    const userList = await db.query.users.findMany({
-      orderBy: desc(users.createdAt)
-    });
-
-    // Get stakes for each user
-    const usersWithStakes = await Promise.all(
-      userList.map(async (user) => {
-        const userStakes = await db.query.stakes.findMany({
-          where: sql`user_id = ${user.id}`
-        });
-        return {
-          ...user,
-          stakes: userStakes
-        };
-      })
-    );
-
-    res.json(usersWithStakes);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
+  res.json(MOCK_USERS);
 });
+
+// Mock staking settings
+const MOCK_STAKING_SETTINGS = [
+  {
+    id: 1,
+    coinSymbol: 'ETH',
+    displayedApy: '4.50',
+    actualApy: '4.20',
+    minStakeAmount: '0.1',
+    updatedAt: new Date()
+  },
+  {
+    id: 2,
+    coinSymbol: 'SOL',
+    displayedApy: '6.50',
+    actualApy: '6.20',
+    minStakeAmount: '1.0',
+    updatedAt: new Date()
+  }
+];
 
 // Get staking settings
 router.get('/settings/staking', async (_req, res) => {
-  try {
-    const settings = await db.query.stakingSettings.findMany();
-    res.json(settings);
-  } catch (error) {
-    console.error('Error fetching staking settings:', error);
-    res.status(500).json({ error: 'Failed to fetch staking settings' });
-  }
+  res.json(MOCK_STAKING_SETTINGS);
 });
 
 // Update staking settings schema
@@ -214,25 +184,20 @@ router.put('/settings/staking/:coinSymbol', async (req, res) => {
       });
     }
 
-    const { coinSymbol, displayedApy, actualApy, minStakeAmount } = validation.data;
+    const { coinSymbol } = req.params;
+    const settingIndex = MOCK_STAKING_SETTINGS.findIndex(s => s.coinSymbol === coinSymbol);
 
-    const [updated] = await db
-      .update(stakingSettings)
-      .set({
-        displayedApy: displayedApy.toString(),
-        actualApy: actualApy.toString(),
-        minStakeAmount,
-        updatedAt: new Date(),
-        updatedBy: req.user?.id
-      })
-      .where(sql`coin_symbol = ${coinSymbol}`)
-      .returning();
-
-    if (!updated) {
+    if (settingIndex === -1) {
       return res.status(404).json({ error: 'Staking settings not found' });
     }
 
-    res.json(updated);
+    MOCK_STAKING_SETTINGS[settingIndex] = {
+      ...MOCK_STAKING_SETTINGS[settingIndex],
+      ...validation.data,
+      updatedAt: new Date()
+    };
+
+    res.json(MOCK_STAKING_SETTINGS[settingIndex]);
   } catch (error) {
     console.error('Error updating staking settings:', error);
     res.status(500).json({ error: 'Failed to update staking settings' });
