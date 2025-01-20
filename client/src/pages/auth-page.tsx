@@ -47,18 +47,19 @@ export default function AuthPage() {
         return;
       }
 
-      // Invalidate user query to force a refresh
+      // First invalidate and wait for the new data
       await queryClient.invalidateQueries({ queryKey: ['user'] });
-
-      toast({
-        title: isLogin ? "Login Successful" : "Registration Successful",
-        description: "Welcome to the Staking Platform"
-      });
-
-      // Check user status and navigate
       const user = await queryClient.fetchQuery({ queryKey: ['user'] });
+
       if (user) {
+        // Only show success message and navigate if we have the user data
+        toast({
+          title: isLogin ? "Login Successful" : "Registration Successful",
+          description: "Welcome to the Staking Platform"
+        });
         navigate("/");
+      } else {
+        throw new Error("Failed to fetch user data");
       }
     } catch (error: any) {
       toast({
