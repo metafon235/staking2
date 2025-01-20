@@ -9,7 +9,14 @@ declare global {
       id: number;
       email: string;
       isAdmin: boolean;
+      password: string;
+      walletAddress: string | null;
+      referrerId: number | null;
+      referralCode: string | null;
+      createdAt: Date;
     }
+
+    // Extend Session type
     interface Session {
       adminId?: number;
       isAdminSession?: boolean;

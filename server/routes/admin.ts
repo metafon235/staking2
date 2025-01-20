@@ -23,41 +23,50 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: "Invalid admin credentials" });
     }
 
-    // Verify password
-    const [hashedPassword, salt] = admin.password.split(".");
-    const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-    const suppliedPasswordBuf = (await scryptAsync(
-      password,
-      salt,
-      64
-    )) as Buffer;
-
-    const isMatch = timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid admin credentials" });
-    }
-
-    // Set admin user in session with specific flag
-    if (req.session) {
-      req.session.adminId = admin.id;
-      req.session.isAdminSession = true;
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) reject(err);
-          resolve();
-        });
-      });
-    }
-
-    res.json({
-      message: "Admin login successful",
-      user: {
-        id: admin.id,
-        email: admin.email,
-        isAdmin: admin.isAdmin
+    try {
+      const [hashedPassword, salt] = admin.password.split(".");
+      if (!hashedPassword || !salt) {
+        console.error('Invalid password format stored');
+        return res.status(500).json({ message: "Internal server error" });
       }
-    });
+
+      const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+      const suppliedPasswordBuf = (await scryptAsync(
+        password,
+        salt,
+        64
+      )) as Buffer;
+
+      const isMatch = timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+
+      if (!isMatch) {
+        return res.status(401).json({ message: "Invalid admin credentials" });
+      }
+
+      // Set admin user in session with specific flag
+      if (req.session) {
+        req.session.adminId = admin.id;
+        req.session.isAdminSession = true;
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) reject(err);
+            resolve();
+          });
+        });
+      }
+
+      res.json({
+        message: "Admin login successful",
+        user: {
+          id: admin.id,
+          email: admin.email,
+          isAdmin: admin.isAdmin
+        }
+      });
+    } catch (error) {
+      console.error('Password verification error:', error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   } catch (error) {
     console.error('Admin login error:', error);
     res.status(500).json({ message: "Internal server error" });
