@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
 import { z } from 'zod';
 import { db } from '@db';
-import { users, stakes, stakingSettings } from '@db/schema';
-import { eq, sum, count } from 'drizzle-orm';
+import { users, stakes, stakingSettings, transactions } from '@db/schema';
+import { eq, sum, count, and, gt } from 'drizzle-orm';
 
 const router = Router();
 
@@ -97,8 +97,28 @@ router.get('/overview', async (req, res) => {
     // Get total transactions count
     const transactionCount = await db.select({ count: count() }).from(stakes);
 
-    // Calculate monthly and yearly earnings based on APY difference
     const totalStakedAmount = parseFloat(totalStaked[0].sum ?? '0');
+
+    // Calculate accumulated admin rewards (total rewards from APY difference)
+    const activeStakes = await db.query.stakes.findMany({
+      where: eq(stakes.status, 'active'),
+      orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+    });
+
+    let totalAdminRewards = 0;
+    const now = Date.now();
+
+    for (const stake of activeStakes) {
+      const stakeTimeMs = now - stake.createdAt.getTime();
+      const yearsStaked = stakeTimeMs / (365 * 24 * 60 * 60 * 1000);
+      const stakeAmount = parseFloat(stake.amount.toString());
+
+      // Calculate admin's portion of rewards (0.57% APY)
+      const adminRewards = stakeAmount * (APY_DIFFERENCE / 100) * yearsStaked;
+      totalAdminRewards += adminRewards;
+    }
+
+    // Calculate monthly and yearly projected earnings based on current TVL
     const monthlyEarnings = (totalStakedAmount * (APY_DIFFERENCE / 100)) / 12;
     const yearlyEarnings = totalStakedAmount * (APY_DIFFERENCE / 100);
 
@@ -122,8 +142,11 @@ router.get('/overview', async (req, res) => {
         actualApy: ACTUAL_APY,
         minStakeAmount: '0.01'
       }],
-      monthlyEarnings,
-      yearlyEarnings,
+      adminRewards: {
+        current: parseFloat(totalAdminRewards.toFixed(9)), // Current accumulated admin rewards
+        monthly: parseFloat(monthlyEarnings.toFixed(9)),   // Projected monthly earnings
+        yearly: parseFloat(yearlyEarnings.toFixed(9))      // Projected yearly earnings
+      },
       systemHealth
     });
   } catch (error) {

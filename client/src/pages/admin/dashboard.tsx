@@ -32,110 +32,16 @@ interface SystemOverview {
     actualApy: number;
     minStakeAmount: string;
   }>;
+  adminRewards: {
+    current: number;
+    monthly: number;
+    yearly: number;
+  };
   systemHealth: {
     cdpApiStatus: string;
     databaseStatus: string;
     lastSync: string;
   };
-}
-
-function calculateMonthlyEarnings(totalStaked: number, apyDiff: number): number {
-  // Convert APY difference to monthly rate
-  const monthlyRate = apyDiff / 100 / 12;
-  return totalStaked * monthlyRate;
-}
-
-function calculateYearlyEarnings(totalStaked: number, apyDiff: number): number {
-  // Calculate yearly earnings from APY difference
-  return totalStaked * (apyDiff / 100);
-}
-
-function StakingSettingsDialog({ config, onClose }: { 
-  config: SystemOverview['stakingConfig'][0];
-  onClose: () => void;
-}) {
-  const [displayedApy, setDisplayedApy] = useState(config.displayedApy.toString());
-  const [actualApy, setActualApy] = useState(config.actualApy.toString());
-  const [minStake, setMinStake] = useState(config.minStakeAmount);
-  const { toast } = useToast();
-
-  const handleSave = async () => {
-    try {
-      const response = await fetch(`/api/admin/settings/staking/${config.coinSymbol}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          coinSymbol: config.coinSymbol,
-          displayedApy: parseFloat(displayedApy),
-          actualApy: parseFloat(actualApy),
-          minStakeAmount: minStake
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update settings');
-      }
-
-      toast({
-        title: "Settings Updated",
-        description: "The staking settings have been updated successfully."
-      });
-
-      onClose();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update staking settings."
-      });
-    }
-  };
-
-  return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Edit {config.coinSymbol} Staking Settings</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4 py-4">
-        <div className="space-y-2">
-          <Label>Displayed APY (%)</Label>
-          <Input 
-            type="number" 
-            step="0.01" 
-            value={displayedApy}
-            onChange={(e) => setDisplayedApy(e.target.value)}
-          />
-          <p className="text-sm text-muted-foreground">
-            The APY shown to users
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Label>Actual APY (%)</Label>
-          <Input 
-            type="number" 
-            step="0.01" 
-            value={actualApy}
-            onChange={(e) => setActualApy(e.target.value)}
-          />
-          <p className="text-sm text-muted-foreground">
-            The actual APY earned through CDP staking
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Label>Minimum Stake Amount</Label>
-          <Input 
-            type="number" 
-            step="0.01" 
-            value={minStake}
-            onChange={(e) => setMinStake(e.target.value)}
-          />
-        </div>
-        <Button onClick={handleSave} className="w-full">
-          Save Changes
-        </Button>
-      </div>
-    </DialogContent>
-  );
 }
 
 export default function AdminDashboard() {
@@ -154,8 +60,6 @@ export default function AdminDashboard() {
   // Calculate admin earnings for ETH staking
   const ethConfig = overview?.stakingConfig.find(config => config.coinSymbol === 'ETH');
   const apyDiff = ethConfig ? (ethConfig.actualApy - ethConfig.displayedApy) : 0;
-  const monthlyEarnings = overview?.totalStaked ? calculateMonthlyEarnings(overview.totalStaked, apyDiff) : 0;
-  const yearlyEarnings = overview?.totalStaked ? calculateYearlyEarnings(overview.totalStaked, apyDiff) : 0;
 
   return (
     <div className="container mx-auto py-6">
@@ -235,34 +139,49 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <h2 className="text-2xl font-bold mb-4">Platform Earnings</h2>
+      <h2 className="text-2xl font-bold mb-4">Admin Rewards & Platform Earnings</h2>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Earnings</CardTitle>
+            <CardTitle className="text-sm font-medium">Current Admin Rewards</CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {monthlyEarnings.toFixed(4)} ETH
+              {overview?.adminRewards.current.toFixed(6)} ETH
             </div>
             <p className="text-xs text-muted-foreground">
-              Based on {apyDiff.toFixed(2)}% APY difference
+              Accumulated from {apyDiff.toFixed(2)}% APY difference
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projected Yearly Earnings</CardTitle>
+            <CardTitle className="text-sm font-medium">Monthly Platform Earnings</CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {yearlyEarnings.toFixed(4)} ETH
+              {overview?.adminRewards.monthly.toFixed(6)} ETH
             </div>
             <p className="text-xs text-muted-foreground">
-              Annualized platform earnings
+              Based on current TVL and {apyDiff.toFixed(2)}% difference
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Yearly Platform Earnings</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {overview?.adminRewards.yearly.toFixed(6)} ETH
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Projected annual earnings at current TVL
             </p>
           </CardContent>
         </Card>
@@ -280,7 +199,55 @@ export default function AdminDashboard() {
                     <Settings className="h-4 w-4" />
                   </Button>
                 </DialogTrigger>
-                <StakingSettingsDialog config={config} onClose={() => window.location.reload()} />
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit {config.coinSymbol} Staking Settings</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Displayed APY (%)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        value={config.displayedApy}
+                        readOnly
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Fixed at {config.displayedApy}% for users
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Actual APY (%)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        value={config.actualApy}
+                        readOnly
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Fixed at {config.actualApy}% for admin earnings
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>APY Difference</Label>
+                      <div className="text-lg font-bold text-green-600">
+                        +{(config.actualApy - config.displayedApy).toFixed(2)}%
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Platform profit margin
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Minimum Stake</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        value={config.minStakeAmount}
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                </DialogContent>
               </Dialog>
             </CardHeader>
             <CardContent>
@@ -299,8 +266,8 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Profit Margin</span>
-                  <span className="text-sm font-medium">
-                    {(config.actualApy - config.displayedApy).toFixed(2)}%
+                  <span className="text-sm font-medium text-green-600">
+                    +{(config.actualApy - config.displayedApy).toFixed(2)}%
                   </span>
                 </div>
               </div>
