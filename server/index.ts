@@ -53,15 +53,15 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
+const startServer = async (port: number) => {
   try {
     const server = registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      console.error('Error:', err);
       res.status(status).json({ message });
+      throw err;
     });
 
     if (app.get("env") === "development") {
@@ -70,12 +70,33 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
-    const PORT = 5000;
-    server.listen(PORT, "0.0.0.0", () => {
-      log(`Server started successfully on port ${PORT}`);
+    return new Promise((resolve, reject) => {
+      server.listen(port, "0.0.0.0")
+        .once('listening', () => {
+          log(`Server started successfully on port ${port}`);
+          resolve(server);
+        })
+        .once('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            log(`Port ${port} is in use, trying next port`);
+            resolve(startServer(port + 1));
+          } else {
+            reject(err);
+          }
+        });
     });
   } catch (error) {
-    console.error('Fatal error:', error);
+    log(`Failed to start server: ${error}`);
+    throw error;
+  }
+};
+
+(async () => {
+  try {
+    const initialPort = 5000;
+    await startServer(initialPort);
+  } catch (error) {
+    log(`Fatal error starting server: ${error}`);
     process.exit(1);
   }
 })();
