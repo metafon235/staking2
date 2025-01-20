@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  email: text("email").unique().notNull(),
+  username: text("username").unique().notNull(),
   password: text("password").notNull(),
   walletAddress: text("wallet_address"),
   referrerId: integer("referrer_id").references(() => users.id),
@@ -50,9 +50,9 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Schema types with email validation
+// Schema types with username validation
 export const insertUserSchema = createInsertSchema(users, {
-  email: z.string().email("Invalid email address"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 export const selectUserSchema = createSelectSchema(users);

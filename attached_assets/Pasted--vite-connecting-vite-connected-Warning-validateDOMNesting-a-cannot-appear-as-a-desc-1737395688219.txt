@@ -1,0 +1,35 @@
+[vite] connecting...
+[vite] connected.
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:337:18
+    at CoinCard (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/components/coins/CoinCard.tsx:19:36)
+    at a
+    at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:337:18
+    at div
+    at div
+    at div
+    at Home (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/pages/home.tsx?t=1737395494373:26:20)
+    at Route (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:323:16)
+    at Switch (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:379:17)
+    at Router (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/App.tsx?t=1737395494373&v=0b0VZgPIzB0WNkUnzohwq:59:31)
+    at QueryClientProvider (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=df680165:2805:3)
+    at App
+at a
+at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:337:18
+at CoinCard (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/components/coins/CoinCard.tsx:19:36)
+at a
+at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:337:18
+at div
+at div
+at div
+at Home (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/pages/home.tsx?t=1737395494373:26:20)
+at Route (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:323:16)
+at Switch (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df680165:379:17)
+at Router (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/src/App.tsx?t=1737395494373&amp;v=0b0VZgPIzB0WNkUnzohwq:59:31)
+at QueryClientProvider (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=df680165:2805:3)
+at App
+at t.value (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://c52ed25f-c23d-4132-b319-737c21542e56-00-37lws922toyd6.picard.repl.co/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

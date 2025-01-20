@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
-import { Link } from "wouter";
+import { useLocation, NavigateFunction } from "wouter";
 
 export default function Home() {
   const { user } = useUser();
+  const [, navigate] = useLocation() as [null, NavigateFunction];
 
   return (
     <div className="min-h-screen bg-black">
@@ -24,52 +25,52 @@ export default function Home() {
           {/* CTA Section */}
           {!user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link href="/auth">
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg">
-                  Start Staking Now
-                </Button>
-              </Link>
-              <Link href="/auth">
-                <Button variant="outline" className="border-purple-600 text-purple-400 hover:bg-purple-600/10 px-8 py-6 text-lg">
-                  Login to Dashboard
-                </Button>
-              </Link>
+              <Button 
+                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg"
+                onClick={() => navigate("/auth")}
+              >
+                Start Staking Now
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-purple-600 text-purple-400 hover:bg-purple-600/10 px-8 py-6 text-lg"
+                onClick={() => navigate("/auth")}
+              >
+                Login to Dashboard
+              </Button>
             </div>
           )}
         </div>
 
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/coins/eth">
-            <CoinCard
-              name="Ethereum"
-              symbol="ETH"
-              apy={3.00}
-              minStake="0.01"
-              icon={SiEthereum}
-              enabled={true}
-            />
-          </Link>
-          <Link href="/coins/dot">
-            <CoinCard
-              name="Polkadot"
-              symbol="DOT"
-              apy={12.00}
-              minStake="5.00"
-              icon={SiPolkadot}
-              enabled={false}
-            />
-          </Link>
-          <Link href="/coins/sol">
-            <CoinCard
-              name="Solana"
-              symbol="SOL"
-              apy={6.50}
-              minStake="1.00"
-              icon={SiSolana}
-              enabled={false}
-            />
-          </Link>
+          <CoinCard
+            name="Ethereum"
+            symbol="ETH"
+            apy={3.00}
+            minStake="0.01"
+            icon={SiEthereum}
+            enabled={true}
+            onClick={() => navigate("/coins/eth")}
+          />
+          <CoinCard
+            name="Polkadot"
+            symbol="DOT"
+            apy={12.00}
+            minStake="5.00"
+            icon={SiPolkadot}
+            enabled={false}
+            onClick={() => navigate("/coins/dot")}
+          />
+          <CoinCard
+            name="Solana"
+            symbol="SOL"
+            apy={6.50}
+            minStake="1.00"
+            icon={SiSolana}
+            enabled={false}
+            onClick={() => navigate("/coins/sol")}
+          />
         </div>
 
         {/* Features Section */}
@@ -104,13 +105,12 @@ export default function Home() {
               <p className="text-lg text-zinc-300 mb-8 max-w-2xl mx-auto">
                 Join thousands of investors already earning passive income through our staking platform.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/auth">
-                  <Button className="bg-white hover:bg-zinc-100 text-purple-600 px-8 py-6 text-lg">
-                    Create Free Account
-                  </Button>
-                </Link>
-              </div>
+              <Button 
+                className="bg-white hover:bg-zinc-100 text-purple-600 px-8 py-6 text-lg"
+                onClick={() => navigate("/auth")}
+              >
+                Create Free Account
+              </Button>
             </Card>
           </div>
         )}
