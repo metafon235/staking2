@@ -39,13 +39,13 @@ export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "porygon-supremacy",
-    resave: true, // Changed to true to ensure session is saved
-    saveUninitialized: true, // Changed to true to ensure new sessions are saved
+    resave: true,
+    saveUninitialized: true,
     store: new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     }),
     cookie: {
-      maxAge: 86400000, // 24 hours
+      maxAge: 86400000,
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
@@ -66,11 +66,9 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
-          const [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, email))
-            .limit(1);
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, email)
+          });
 
           if (!user) {
             return done(null, false, { message: "Incorrect email." });
@@ -87,25 +85,23 @@ export function setupAuth(app: Express) {
     )
   );
 
-  passport.serializeUser((user, done) => {
+  passport.serializeUser((user: Express.User, done) => {
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, id))
-        .limit(1);
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, id)
+      });
 
       if (!user) {
         return done(null, false);
       }
 
-      return done(null, user);
+      done(null, user);
     } catch (err) {
-      return done(err);
+      done(err);
     }
   });
 
@@ -121,11 +117,9 @@ export function setupAuth(app: Express) {
       const { email, password } = result.data;
 
       // Check if user already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
+      const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, email)
+      });
 
       if (existingUser) {
         return res.status(400).send("Email already exists");
@@ -140,6 +134,7 @@ export function setupAuth(app: Express) {
         .values({
           email,
           password: hashedPassword,
+          isAdmin: false // ensure new users are not admins by default
         })
         .returning();
 
@@ -156,7 +151,7 @@ export function setupAuth(app: Express) {
           }
           return res.json({
             message: "Registration successful",
-            user: { id: newUser.id, email: newUser.email }
+            user: { id: newUser.id, email: newUser.email, isAdmin: newUser.isAdmin }
           });
         });
       });
@@ -194,7 +189,7 @@ export function setupAuth(app: Express) {
           }
           return res.json({
             message: "Login successful",
-            user: { id: user.id, email: user.email }
+            user: { id: user.id, email: user.email, isAdmin: user.isAdmin }
           });
         });
       });
