@@ -35,7 +35,7 @@ export default function AuthPage() {
       const result = await (isLogin ? login : register)({ 
         email, 
         password,
-        referralCode: !isLogin ? referralCode : undefined // Only send referralCode during registration
+        referralCode: !isLogin ? referralCode : undefined
       });
 
       if (!result.ok) {
@@ -57,7 +57,7 @@ export default function AuthPage() {
           title: isLogin ? "Login Successful" : "Registration Successful",
           description: "Welcome to the Staking Platform"
         });
-        navigate("/");
+        navigate("/app");
       } else {
         throw new Error("Failed to fetch user data");
       }

@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,8 +14,40 @@ import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
 import Analytics from "@/pages/analytics";
 
+// Protected route wrapper component
+function ProtectedRoute({ component: Component, ...rest }: { component: React.ComponentType<any> }) {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+
+  return <Component {...rest} />;
+}
+
+// App layout with navigation for authenticated users
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen bg-black">
+      <Navigation />
+      <main className="flex-1 p-6 lg:pl-72">
+        {children}
+      </main>
+      <div className="h-16 lg:hidden" />
+    </div>
+  );
+}
+
 function Router() {
-  const { user, isLoading, error } = useUser();
+  const { user, isLoading } = useUser();
 
   if (isLoading) {
     return (
@@ -25,35 +57,35 @@ function Router() {
     );
   }
 
-  // Non-authenticated routes for non-logged in users
-  if (!user) {
-    return (
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/auth" component={AuthPage} />
-        <Route path="/coins/:symbol" component={CoinDetail} />
-        <Route component={NotFound} />
-      </Switch>
-    );
-  }
-
-  // Authenticated routes for logged in users
   return (
-    <div className="flex min-h-screen bg-black">
-      <Navigation />
-      <main className="flex-1 p-6 lg:pl-72">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/portfolio" component={Portfolio} />
-          <Route path="/coins/:symbol" component={CoinDetail} />
-          <Route path="/analytics" component={Analytics} />
-          <Route path="/settings" component={Settings} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      {/* Add padding bottom for mobile navigation */}
-      <div className="h-16 lg:hidden" />
-    </div>
+    <Switch>
+      {/* Public routes */}
+      <Route path="/" component={Home} />
+      <Route path="/auth" component={AuthPage} />
+
+      {/* Protected app routes */}
+      <Route path="/app">
+        {
+          user ? (
+            <AppLayout>
+              <Switch>
+                <Route path="/" component={Dashboard} />
+                <Route path="/portfolio" component={Portfolio} />
+                <Route path="/coins/:symbol" component={CoinDetail} />
+                <Route path="/analytics" component={Analytics} />
+                <Route path="/settings" component={Settings} />
+                <Route component={NotFound} />
+              </Switch>
+            </AppLayout>
+          ) : (
+            <Redirect to="/auth" />
+          )
+        }
+      </Route>
+
+      {/* Fallback */}
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
