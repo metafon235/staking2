@@ -73,9 +73,10 @@ export default function Portfolio() {
     }
   };
 
-  // Calculate totals
-  const totalStaked = portfolio ? portfolio.eth.staked : 0;
-  const totalRewards = portfolio ? portfolio.eth.rewards : 0;
+  // Calculate totals - Fixed the calculation logic
+  const totalStaked = portfolio ? parseFloat(portfolio.eth.staked.toString()) : 0;
+  const totalRewards = portfolio ? parseFloat(portfolio.eth.rewards.toString()) : 0;
+  // Ensure we're adding the numbers after parsing them as floats
   const totalValue = totalStaked + totalRewards;
 
   return (
@@ -99,13 +100,13 @@ export default function Portfolio() {
               <div>
                 <p className="text-sm text-zinc-300">Total Value Staked</p>
                 <p className="text-3xl font-bold text-white">
-                  {totalStaked.toFixed(9)} ETH
+                  {totalStaked.toFixed(6)} ETH
                 </p>
               </div>
               <div>
                 <p className="text-sm text-zinc-300">Total Current Rewards</p>
                 <p className="text-3xl font-bold text-green-400">
-                  {totalRewards.toFixed(9)} ETH
+                  {totalRewards.toFixed(6)} ETH
                 </p>
               </div>
             </div>
@@ -137,19 +138,19 @@ export default function Portfolio() {
                   <div>
                     <p className="text-sm text-zinc-400">Initial Stake</p>
                     <p className="text-2xl font-bold text-white">
-                      {portfolio.eth.staked.toFixed(9)} ETH
+                      {totalStaked.toFixed(6)} ETH
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Generated Rewards</p>
                     <p className="text-2xl font-bold text-green-500">
-                      +{portfolio.eth.rewards.toFixed(9)} ETH
+                      +{totalRewards.toFixed(6)} ETH
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
                     <p className="text-2xl font-bold text-purple-500">
-                      {totalValue.toFixed(9)} ETH
+                      {totalValue.toFixed(6)} ETH
                     </p>
                   </div>
                   <div>
