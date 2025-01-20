@@ -39,8 +39,8 @@ export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "porygon-supremacy",
-    resave: true, // Changed to true to ensure session is saved
-    saveUninitialized: true, // Changed to true to ensure new sessions are saved
+    resave: true,
+    saveUninitialized: true,
     store: new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     }),
@@ -63,17 +63,16 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(
-      { usernameField: 'email' },
-      async (email, password, done) => {
+      async (username, password, done) => {
         try {
           const [user] = await db
             .select()
             .from(users)
-            .where(eq(users.email, email))
+            .where(eq(users.username, username))
             .limit(1);
 
           if (!user) {
-            return done(null, false, { message: "Incorrect email." });
+            return done(null, false, { message: "Incorrect username." });
           }
           const isMatch = await crypto.compare(password, user.password);
           if (!isMatch) {
@@ -118,17 +117,17 @@ export function setupAuth(app: Express) {
           .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
       }
 
-      const { email, password } = result.data;
+      const { username, password } = result.data;
 
       // Check if user already exists
       const [existingUser] = await db
         .select()
         .from(users)
-        .where(eq(users.email, email))
+        .where(eq(users.username, username))
         .limit(1);
 
       if (existingUser) {
-        return res.status(400).send("Email already exists");
+        return res.status(400).send("Username already exists");
       }
 
       // Hash the password
@@ -138,7 +137,7 @@ export function setupAuth(app: Express) {
       const [newUser] = await db
         .insert(users)
         .values({
-          email,
+          username,
           password: hashedPassword,
         })
         .returning();
@@ -156,7 +155,7 @@ export function setupAuth(app: Express) {
           }
           return res.json({
             message: "Registration successful",
-            user: { id: newUser.id, email: newUser.email }
+            user: { id: newUser.id, username: newUser.username }
           });
         });
       });
@@ -194,7 +193,7 @@ export function setupAuth(app: Express) {
           }
           return res.json({
             message: "Login successful",
-            user: { id: user.id, email: user.email }
+            user: { id: user.id, username: user.username }
           });
         });
       });
