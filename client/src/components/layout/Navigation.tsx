@@ -15,7 +15,7 @@ const menuItems = [
 
 export default function Navigation() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { user, logout } = useUser();
 
   if (!user) return null;
@@ -23,7 +23,7 @@ export default function Navigation() {
   const handleLogout = async () => {
     try {
       await logout();
-      setLocation("/");
+      window.location.href = "/";  // Use full page refresh on logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -54,7 +54,7 @@ export default function Navigation() {
           <nav className="flex-1 space-y-2 p-4">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location === item.href;
+              const isActive = location === item.href || location.startsWith(`${item.href}/`);
 
               return (
                 <Link 
@@ -73,7 +73,6 @@ export default function Navigation() {
               );
             })}
 
-            {/* Logout Button - mit gleichem Styling wie die Menüpunkte */}
             <button
               onClick={handleLogout}
               className={cn(
@@ -82,7 +81,7 @@ export default function Navigation() {
               )}
             >
               <LogOut className="h-5 w-5" />
-              {!isCollapsed && <span className="ml-2">Logout</span>}
+              {!isCollapsed && <span>Logout</span>}
             </button>
           </nav>
         </div>
@@ -93,7 +92,7 @@ export default function Navigation() {
         <div className="grid h-full grid-cols-5">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location === item.href;
+            const isActive = location === item.href || location.startsWith(`${item.href}/`);
 
             return (
               <Link 
@@ -112,7 +111,6 @@ export default function Navigation() {
             );
           })}
 
-          {/* Logout Button - Mobile */}
           <button
             onClick={handleLogout}
             className="flex flex-col items-center justify-center space-y-1 text-zinc-400 hover:text-white"

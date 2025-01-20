@@ -14,25 +14,6 @@ import { Loader2 } from "lucide-react";
 import Navigation from "@/components/layout/Navigation";
 import Analytics from "@/pages/analytics";
 
-// Protected route wrapper component
-function ProtectedRoute({ component: Component, ...rest }: { component: React.ComponentType<any> }) {
-  const { user, isLoading } = useUser();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Redirect to="/auth" />;
-  }
-
-  return <Component {...rest} />;
-}
-
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -61,28 +42,46 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
-      <Route path="/auth" component={AuthPage} />
+      <Route path="/auth">
+        {() => user ? <Redirect to="/app" /> : <AuthPage />}
+      </Route>
 
-      {/* Protected app routes - note the explicit paths */}
+      {/* Protected app routes */}
       <Route path="/app">
-        {() => !user ? <Redirect to="/auth" /> : (
-          <AppLayout>
-            <Switch>
-              <Route path="/app" component={Dashboard} />
-              <Route path="/app/portfolio" component={Portfolio} />
-              <Route path="/app/coins/:symbol" component={CoinDetail} />
-              <Route path="/app/analytics" component={Analytics} />
-              <Route path="/app/settings" component={Settings} />
-              <Route path="/app/*">
-                <NotFound />
-              </Route>
-            </Switch>
-          </AppLayout>
-        )}
+        {() => {
+          if (!user) return <Redirect to="/auth" />;
+
+          return (
+            <AppLayout>
+              <Switch>
+                <Route path="/app">
+                  <Dashboard />
+                </Route>
+                <Route path="/app/portfolio">
+                  <Portfolio />
+                </Route>
+                <Route path="/app/coins/:symbol">
+                  <CoinDetail />
+                </Route>
+                <Route path="/app/analytics">
+                  <Analytics />
+                </Route>
+                <Route path="/app/settings">
+                  <Settings />
+                </Route>
+                <Route>
+                  <NotFound />
+                </Route>
+              </Switch>
+            </AppLayout>
+          );
+        }}
       </Route>
 
       {/* Fallback */}
-      <Route path="*" component={NotFound} />
+      <Route>
+        <NotFound />
+      </Route>
     </Switch>
   );
 }
