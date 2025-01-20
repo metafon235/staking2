@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
-import { desc, sql, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const router = Router();
@@ -16,10 +15,13 @@ const MOCK_ADMIN = {
 // Public routes (no middleware)
 router.post('/login', async (req, res) => {
   try {
+    console.log('Admin login attempt:', req.body);
     const { email, password } = req.body;
 
     // Check against mock admin credentials
     if (email === MOCK_ADMIN.email && password === MOCK_ADMIN.password) {
+      console.log('Admin credentials valid, setting session');
+
       // Set admin session
       if (req.session) {
         req.session.adminId = MOCK_ADMIN.id;
@@ -41,6 +43,7 @@ router.post('/login', async (req, res) => {
         }
       });
     } else {
+      console.log('Invalid admin credentials');
       res.status(401).json({ message: "Invalid admin credentials" });
     }
   } catch (error) {
@@ -54,6 +57,7 @@ router.use(requireAdmin);
 
 router.get('/session', async (req, res) => {
   try {
+    console.log('Admin session check:', req.session);
     if (!req.session?.adminId || !req.session?.isAdminSession) {
       return res.status(401).json({ message: "No active admin session" });
     }
@@ -72,120 +76,10 @@ router.get('/session', async (req, res) => {
   }
 });
 
-// Mock overview data
-const MOCK_OVERVIEW = {
-  users: 150,
-  totalStaked: 1250.75,
-  transactions: 450,
-  stakingConfig: [
-    {
-      id: 1,
-      coinSymbol: 'ETH',
-      displayedApy: '4.50',
-      actualApy: '4.20',
-      minStakeAmount: '0.1',
-      updatedAt: new Date(),
-    }
-  ],
-  systemHealth: {
-    cdpApiStatus: 'operational',
-    databaseStatus: 'healthy',
-    lastSync: new Date().toISOString()
-  }
-};
-
-// Get system overview
-router.get('/overview', async (_req, res) => {
-  res.json(MOCK_OVERVIEW);
-});
-
-// Mock users data
-const MOCK_USERS = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  email: `user${i + 1}@example.com`,
-  walletAddress: `0x${(Math.random() * 1e50).toString(16)}`,
-  referralCode: `REF${i + 1}`,
-  isAdmin: false,
-  createdAt: new Date(Date.now() - Math.random() * 10000000000),
-  stakes: Array.from({ length: Math.floor(Math.random() * 3) }, (_, j) => ({
-    id: j + 1,
-    amount: (Math.random() * 10).toFixed(2),
-    status: 'active',
-    createdAt: new Date(Date.now() - Math.random() * 5000000000)
-  }))
-}));
-
-// Get all users with their stakes
-router.get('/users', async (_req, res) => {
-  res.json(MOCK_USERS);
-});
-
-// Mock staking settings
-const MOCK_STAKING_SETTINGS = [
-  {
-    id: 1,
-    coinSymbol: 'ETH',
-    displayedApy: '4.50',
-    actualApy: '4.20',
-    minStakeAmount: '0.1',
-    updatedAt: new Date()
-  },
-  {
-    id: 2,
-    coinSymbol: 'SOL',
-    displayedApy: '6.50',
-    actualApy: '6.20',
-    minStakeAmount: '1.0',
-    updatedAt: new Date()
-  }
-];
-
-// Get staking settings
-router.get('/settings/staking', async (_req, res) => {
-  res.json(MOCK_STAKING_SETTINGS);
-});
-
-// Update staking settings schema
-const updateStakingSettingsSchema = z.object({
-  coinSymbol: z.string(),
-  displayedApy: z.number().min(0).max(100),
-  actualApy: z.number().min(0).max(100),
-  minStakeAmount: z.string()
-});
-
-// Update staking settings
-router.put('/settings/staking/:coinSymbol', async (req, res) => {
-  try {
-    const validation = updateStakingSettingsSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        error: 'Invalid settings data',
-        details: validation.error.issues
-      });
-    }
-
-    const { coinSymbol } = req.params;
-    const settingIndex = MOCK_STAKING_SETTINGS.findIndex(s => s.coinSymbol === coinSymbol);
-
-    if (settingIndex === -1) {
-      return res.status(404).json({ error: 'Staking settings not found' });
-    }
-
-    MOCK_STAKING_SETTINGS[settingIndex] = {
-      ...MOCK_STAKING_SETTINGS[settingIndex],
-      ...validation.data,
-      updatedAt: new Date()
-    };
-
-    res.json(MOCK_STAKING_SETTINGS[settingIndex]);
-  } catch (error) {
-    console.error('Error updating staking settings:', error);
-    res.status(500).json({ error: 'Failed to update staking settings' });
-  }
-});
 
 // Admin logout
 router.post('/logout', (req, res) => {
+  console.log('Admin logout request');
   if (req.session) {
     req.session.destroy((err) => {
       if (err) {
