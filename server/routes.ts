@@ -197,9 +197,27 @@ export function registerRoutes(app: Express): Server {
       }
 
       const { amount } = validationResult.data;
+      const amountNumber = parseFloat(amount);
 
-      // Add stake through master wallet
-      const newStake = await masterWallet.addUserStake(req.user.id, amount);
+      // Insert the stake directly
+      const [newStake] = await db.insert(stakes)
+        .values({
+          userId: req.user.id,
+          amount: amount.toString(),
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+
+      // Start generating rewards immediately for this stake
+      await calculateRewardsForTimestamp(
+        req.user.id,
+        amountNumber,
+        newStake.createdAt.getTime(),
+        Date.now(),
+        true
+      );
 
       res.json(newStake);
     } catch (error) {
@@ -918,8 +936,7 @@ export function registerRoutes(app: Express): Server {
           // Update stake status
           await db.update(stakes)
             .set({
-              status: data.status.toLowerCase(),
-              updatedAt: new Date()
+              status: data.status.toLowerCase(),              updatedAt: new Date()
             })
             .where(eq(stakes.cdpStakeId, data.stake_id));
           break;
