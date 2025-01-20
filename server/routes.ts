@@ -705,6 +705,37 @@ export function registerRoutes(app: Express): Server {
           })
           .returning();
 
+        // Get total rewards for user
+        const totalRewardsResult = await db.select({
+          total: sql<string>`sum(amount)::numeric`
+        })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, userId),
+              eq(transactions.type, 'reward')
+            )
+          );
+
+        const totalRewards = parseFloat(totalRewardsResult[0]?.total || '0');
+
+        // Check for decimal place milestones
+        const previousTotal = totalRewards - reward;
+        const previousLog10 = Math.floor(Math.log10(previousTotal));
+        const currentLog10 = Math.floor(Math.log10(totalRewards));
+
+        // If we've reached a new decimal place
+        if (currentLog10 > previousLog10 && totalRewards >= 0.1) {
+          await NotificationService.createNotification({
+            userId,
+            type: 'reward_milestone',
+            title: 'Reward Milestone Reached! 🎉',
+            message: `Congratulations! Your total rewards have reached ${totalRewards.toFixed(1)} ETH!`,
+            data: JSON.stringify({ totalRewards }),
+            read: false
+          });
+        }
+
         // Calculate and record referral rewards
         const user = await db.query.users.findFirst({
           where: eq(users.id, userId),
