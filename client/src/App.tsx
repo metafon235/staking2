@@ -3,30 +3,20 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
 import AdminAuth from "@/pages/admin/auth";
-import Home from "@/pages/home";
-import CoinDetail from "@/pages/coin-detail";
-import Portfolio from "@/pages/portfolio";
-import Settings from "@/pages/settings";
 import AdminDashboard from "@/pages/admin/dashboard";
-import AdminUsers from "@/pages/admin/users";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
-import Navigation from "@/components/layout/Navigation";
-import Analytics from "@/pages/analytics";
 
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
-      <Navigation />
-      <main className="flex-1 p-6 lg:pl-72">
+      <main className="flex-1 p-6">
         {children}
       </main>
-      <div className="h-16 lg:hidden" />
     </div>
   );
 }
@@ -45,38 +35,18 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/" component={Home} />
-      <Route path="/auth">
-        {() => user ? <Redirect to="/app" /> : <AuthPage />}
-      </Route>
-      <Route path="/coins/:symbol" component={CoinDetail} />
-
-      {/* Protected app routes */}
-      <Route path="/app">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Dashboard /></AppLayout>}
-      </Route>
-      <Route path="/app/portfolio">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Portfolio /></AppLayout>}
-      </Route>
-      <Route path="/app/coins/:symbol">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><CoinDetail /></AppLayout>}
-      </Route>
-      <Route path="/app/analytics">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Analytics /></AppLayout>}
-      </Route>
-      <Route path="/app/settings">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Settings /></AppLayout>}
-      </Route>
+      <Route path="/" component={AuthPage} />
 
       {/* Admin routes */}
       <Route path="/admin/login">
         {() => user?.isAdmin ? <Redirect to="/admin/dashboard" /> : <AdminAuth />}
       </Route>
       <Route path="/admin/dashboard">
-        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminLayout><AdminDashboard /></AdminLayout>}
-      </Route>
-      <Route path="/admin/users">
-        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminLayout><AdminUsers /></AdminLayout>}
+        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : (
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
+        )}
       </Route>
 
       {/* Fallback */}
