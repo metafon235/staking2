@@ -46,6 +46,9 @@ function Router() {
         {() => user ? <Redirect to="/app" /> : <AuthPage />}
       </Route>
 
+      {/* Public coin details route */}
+      <Route path="/coins/:symbol" component={CoinDetail} />
+
       {/* Protected app routes */}
       <Route path="/app">
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Dashboard /></AppLayout>}
@@ -54,7 +57,11 @@ function Router() {
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Portfolio /></AppLayout>}
       </Route>
       <Route path="/app/coins/:symbol">
-        {() => !user ? <Redirect to="/auth" /> : <AppLayout><CoinDetail /></AppLayout>}
+        {({ symbol }) => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <CoinDetail />
+          </AppLayout>
+        )}
       </Route>
       <Route path="/app/analytics">
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Analytics /></AppLayout>}
