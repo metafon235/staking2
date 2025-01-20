@@ -63,28 +63,26 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
 
-      {/* Protected app routes */}
+      {/* Protected app routes - note the explicit paths */}
       <Route path="/app">
-        {
-          user ? (
-            <AppLayout>
-              <Switch>
-                <Route path="/" component={Dashboard} />
-                <Route path="/portfolio" component={Portfolio} />
-                <Route path="/coins/:symbol" component={CoinDetail} />
-                <Route path="/analytics" component={Analytics} />
-                <Route path="/settings" component={Settings} />
-                <Route component={NotFound} />
-              </Switch>
-            </AppLayout>
-          ) : (
-            <Redirect to="/auth" />
-          )
-        }
+        {() => !user ? <Redirect to="/auth" /> : (
+          <AppLayout>
+            <Switch>
+              <Route path="/app" component={Dashboard} />
+              <Route path="/app/portfolio" component={Portfolio} />
+              <Route path="/app/coins/:symbol" component={CoinDetail} />
+              <Route path="/app/analytics" component={Analytics} />
+              <Route path="/app/settings" component={Settings} />
+              <Route path="/app/*">
+                <NotFound />
+              </Route>
+            </Switch>
+          </AppLayout>
+        )}
       </Route>
 
       {/* Fallback */}
-      <Route component={NotFound} />
+      <Route path="*" component={NotFound} />
     </Switch>
   );
 }

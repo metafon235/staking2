@@ -6,11 +6,11 @@ import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 
 const menuItems = [
-  { icon: Home, label: "Dashboard", href: "/" },
-  { icon: Wallet, label: "Portfolio", href: "/portfolio" },
-  { icon: Coins, label: "Coins", href: "/coins/eth" },
-  { icon: LineChart, label: "Analytics", href: "/analytics" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: Home, label: "Dashboard", href: "/app" },
+  { icon: Wallet, label: "Portfolio", href: "/app/portfolio" },
+  { icon: Coins, label: "Coins", href: "/app/coins/eth" },
+  { icon: LineChart, label: "Analytics", href: "/app/analytics" },
+  { icon: Settings, label: "Settings", href: "/app/settings" },
 ];
 
 export default function Navigation() {
