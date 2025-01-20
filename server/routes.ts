@@ -51,7 +51,7 @@ async function calculateNetworkRewards(symbol: string): Promise<number> {
     const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
     const networkRewards = totalStaked * 0.03 * timeInYears;
 
-    return parseFloat(networkRewards.toFixed(8)); 
+    return parseFloat(networkRewards.toFixed(8));
   } catch (error) {
     console.error('Error calculating network rewards:', error);
     return BASE_STATS.eth.rewards;
@@ -62,13 +62,13 @@ async function calculateNetworkRewards(symbol: string): Promise<number> {
 async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STATS[keyof typeof BASE_STATS]) {
   const now = Date.now();
   const data = [];
-  const dailyRewardRate = baseStats.rewards / 30; 
+  const dailyRewardRate = baseStats.rewards / 30;
 
   // Generate data points for the last 30 days
   for (let i = 30; i >= 0; i--) {
     const date = now - (i * 24 * 60 * 60 * 1000);
     // Add some random variation to make the data look realistic
-    const variation = () => 1 + (Math.random() * 0.1 - 0.05); 
+    const variation = () => 1 + (Math.random() * 0.1 - 0.05);
 
     const rewards = symbol.toLowerCase() === 'eth'
       ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
@@ -79,7 +79,7 @@ async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STA
       tvl: baseStats.tvl * variation(),
       validators: Math.floor(baseStats.validators * variation()),
       avgStake: baseStats.avgStake * variation(),
-      rewards: parseFloat(rewards.toFixed(8)) 
+      rewards: parseFloat(rewards.toFixed(8))
     });
   }
 
@@ -124,7 +124,7 @@ async function generateRewardsForAllActiveStakes() {
 
     // Generate rewards for each user's total staked amount
     for (const [userId, stakes] of Object.entries(userStakes)) {
-      const totalStaked = stakes.reduce((sum, stake) => 
+      const totalStaked = stakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
       if (totalStaked >= 0.01) {
@@ -230,21 +230,21 @@ export function registerRoutes(app: Express): Server {
       const earliestStake = userStakes[0]?.createdAt || new Date();
 
       // Calculate current total accumulated rewards
-      const currentRewards = calculateRewardsForTimestamp(
+      const currentRewards = await calculateRewardsForTimestamp(
         req.user.id,
         totalStaked,
         earliestStake.getTime(),
         Date.now(),
-        false // Not for transaction
+        false
       );
 
-      // Calculate the per-minute reward for transaction recording
-      calculateRewardsForTimestamp(
+      // Record a per-minute reward for transaction
+      await calculateRewardsForTimestamp(
         req.user.id,
         totalStaked,
         Date.now() - 60000, // One minute ago
         Date.now(),
-        true // For transaction
+        true
       );
 
       // Calculate monthly rewards based on 3% APY
@@ -257,12 +257,12 @@ export function registerRoutes(app: Express): Server {
 
       // Generate data points every 5 minutes for the last week
       for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += 5 * 60 * 1000) {
-        const rewards = calculateRewardsForTimestamp(
+        const rewards = await calculateRewardsForTimestamp(
           req.user.id,
           totalStaked,
           earliestStake.getTime(),
           timestamp,
-          false // Not for transaction
+          false
         );
         rewardsHistory.push({
           timestamp,
@@ -285,7 +285,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: 'Failed to fetch staking data' });
     }
   });
-
 
   // Initiate staking
   app.post('/api/stakes', async (req, res) => {
@@ -416,7 +415,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       const earliestStake = userStakes[0]?.createdAt || new Date();
-      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(),false);
+      const currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
 
       if (amount > currentRewards) {
         return res.status(400).json({ error: 'Insufficient rewards balance' });
@@ -471,7 +470,7 @@ export function registerRoutes(app: Express): Server {
         sum + parseFloat(stake.amount.toString()), 0);
 
       const earliestStake = userStakes[0].createdAt;
-      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
+      const currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       const totalAmount = totalStaked + currentRewards;
 
       if (totalAmount <= 0) {
@@ -543,7 +542,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       const earliestStake = userStakes[0]?.createdAt || new Date();
-      const currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
+      const currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       const totalAvailable = totalStaked + currentRewards;
 
       if (amount > totalAvailable) {
@@ -623,7 +622,7 @@ export function registerRoutes(app: Express): Server {
     })
   });
 
-  // Calculate rewards based on 3% APY for a specific time period
+  // Fix the reward calculation function
   async function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): Promise<number> {
     // Only generate rewards if stake amount is at least 0.01 ETH
     if (stakedAmount < 0.01) {
@@ -769,7 +768,7 @@ export function registerRoutes(app: Express): Server {
       let currentRewards = 0;
       if (userStakes.length > 0) {
         const earliestStake = userStakes[0].createdAt;
-        currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
+        currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
       const portfolioData = {
@@ -806,19 +805,19 @@ export function registerRoutes(app: Express): Server {
       const referrals = await db.select({
         count: count(),
       })
-      .from(users)
-      .where(eq(users.referrerId, req.user.id));
+        .from(users)
+        .where(eq(users.referrerId, req.user.id));
 
       const referralRewardsSum = await db.select({
         total: sql<string>`sum(amount)::numeric`
       })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.userId, req.user.id),
-          eq(transactions.type, 'referral_reward')
-        )
-      );
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, req.user.id),
+            eq(transactions.type, 'referral_reward')
+          )
+        );
 
       const totalReferrals = parseInt(referrals[0].count.toString());
       const totalRewards = parseFloat(referralRewardsSum[0]?.total || '0');
@@ -890,7 +889,7 @@ export function registerRoutes(app: Express): Server {
       let currentRewards = 0;
       if (userStakes.length > 0) {
         const earliestStake = userStakes[0].createdAt;
-        currentRewards = calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
+        currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
       }
 
       // Calculate ROI
@@ -906,7 +905,7 @@ export function registerRoutes(app: Express): Server {
 
       for (let timestamp = thirtyDaysAgo; timestamp <= now; timestamp += 24 * 60 * 60 * 1000) {
         // Calculate rewards at each point in time
-        const rewards = calculateRewardsForTimestamp(req.user.id, totalStaked, userStakes[0]?.createdAt?.getTime() || timestamp, timestamp, false);
+        const rewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, userStakes[0]?.createdAt?.getTime() || timestamp, timestamp, false);
         rewardsHistory.push({ timestamp, value: rewards });
 
         // Simulate price variations for demo
