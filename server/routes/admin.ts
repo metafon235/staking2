@@ -7,8 +7,8 @@ const router = Router();
 // Mock admin credentials
 const MOCK_ADMIN = {
   id: 1,
-  email: 'admin@example.com',
-  password: 'admin123',
+  email: 'monerominercom@gmail.com',
+  password: 'metafon23',
   isAdmin: true
 };
 
