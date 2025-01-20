@@ -21,7 +21,7 @@ interface NetworkStats {
     rewards: number;
   };
   history: Array<{
-    date: number;
+    timestamp: string; 
     tvl: number;
     validators: number;
     avgStake: number;
@@ -313,7 +313,10 @@ export default function CoinDetail() {
 
             {networkStats && (
               <NetworkStatsChart
-                data={networkStats.history}
+                data={networkStats.history.map(item => ({
+                  ...item,
+                  date: item.timestamp 
+                }))}
                 symbol={coinData.symbol}
               />
             )}
