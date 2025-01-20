@@ -1,14 +1,9 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/admin';
-//import { db } from '@db'; // Removed
-//import { users, stakes, transactions, stakingSettings } from '@db/schema'; // Removed
 import { desc, sql, eq } from 'drizzle-orm';
 import { z } from 'zod';
-//import { scrypt, randomBytes, timingSafeEqual } from "crypto"; // Removed
-//import { promisify } from "util"; // Removed
 
 const router = Router();
-//const scryptAsync = promisify(scrypt); // Removed
 
 // Mock admin credentials
 const MOCK_ADMIN = {
@@ -74,21 +69,6 @@ router.get('/session', async (req, res) => {
   } catch (error) {
     console.error('Admin session check error:', error);
     res.status(500).json({ message: "Session check failed" });
-  }
-});
-
-// Admin logout
-router.post('/logout', (req, res) => {
-  if (req.session) {
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('Admin logout error:', err);
-        return res.status(500).json({ message: "Logout failed" });
-      }
-      res.json({ message: "Admin logout successful" });
-    });
-  } else {
-    res.json({ message: "Admin logout successful" });
   }
 });
 
@@ -178,7 +158,7 @@ router.put('/settings/staking/:coinSymbol', async (req, res) => {
   try {
     const validation = updateStakingSettingsSchema.safeParse(req.body);
     if (!validation.success) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid settings data',
         details: validation.error.issues
       });
@@ -201,6 +181,21 @@ router.put('/settings/staking/:coinSymbol', async (req, res) => {
   } catch (error) {
     console.error('Error updating staking settings:', error);
     res.status(500).json({ error: 'Failed to update staking settings' });
+  }
+});
+
+// Admin logout
+router.post('/logout', (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Admin logout error:', err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Admin logout successful" });
+    });
+  } else {
+    res.json({ message: "Admin logout successful" });
   }
 });
 

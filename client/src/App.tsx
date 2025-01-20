@@ -9,6 +9,8 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
+import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
 
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -35,18 +37,31 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/" component={AuthPage} />
+      <Route path="/" component={Home} />
+      <Route path="/auth">
+        {() => user ? <Redirect to="/dashboard" /> : <AuthPage />}
+      </Route>
+
+      {/* Protected routes */}
+      <Route path="/dashboard">
+        {() => !user ? <Redirect to="/auth" /> : <AppLayout><Dashboard /></AppLayout>}
+      </Route>
 
       {/* Admin routes */}
       <Route path="/admin/login">
         {() => user?.isAdmin ? <Redirect to="/admin/dashboard" /> : <AdminAuth />}
       </Route>
       <Route path="/admin/dashboard">
-        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : (
-          <AdminLayout>
-            <AdminDashboard />
-          </AdminLayout>
-        )}
+        {() => {
+          if (!user?.isAdmin) {
+            return <Redirect to="/admin/login" />;
+          }
+          return (
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          );
+        }}
       </Route>
 
       {/* Fallback */}
