@@ -19,6 +19,8 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
   const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'week'>('hour');
 
   const formattedData = useMemo(() => {
+    if (!data?.length) return [];
+
     const now = Date.now();
     const ranges = {
       hour: 60 * 60 * 1000,
@@ -35,7 +37,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
           timeRange === 'day' ? 'MMM dd HH:mm' : 
           'MMM dd'
         ),
-        rewards: point.rewards.toFixed(9)
+        rewards: Number(point.rewards).toFixed(9)
       }));
   }, [data, timeRange]);
 
@@ -62,7 +64,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
     );
   }
 
-  const handleTimeRangeChange = (value: 'hour' | 'day' | 'week' | string) => {
+  const handleTimeRangeChange = (value: string) => {
     if (value === 'hour' || value === 'day' || value === 'week') {
       setTimeRange(value);
     }
@@ -147,6 +149,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                 fillOpacity={1}
                 fill="url(#rewardsGradient)"
                 strokeWidth={2}
+                isAnimationActive={false} // Disable animations to prevent flickering
               />
             </AreaChart>
           </ResponsiveContainer>

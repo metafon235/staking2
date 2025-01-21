@@ -4,24 +4,26 @@ import StakingChart from "@/components/staking/StakingChart";
 import { useQuery } from "@tanstack/react-query";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { format } from "date-fns";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import type { StakingData } from "@/lib/types";
 
 function DashboardContent() {
   const { data: stakingData, isLoading } = useQuery<StakingData>({
     queryKey: ['/api/staking/data'],
-    refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 25000, // Consider data fresh for 25 seconds
+    refetchInterval: 5000, // Refresh every 5 seconds
+    staleTime: 4000, // Consider data stale after 4 seconds
     retry: false,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    placeholderData: (previousData) => previousData, // Keep previous data while refetching
   });
 
-  const data = stakingData || {
-    totalStaked: 0,
-    rewards: 0,
-    monthlyRewards: 0,
-    rewardsHistory: []
-  };
+  // Memoize the derived data to prevent unnecessary re-renders
+  const data = useMemo(() => ({
+    totalStaked: stakingData?.totalStaked ?? 0,
+    rewards: stakingData?.rewards ?? 0,
+    monthlyRewards: stakingData?.monthlyRewards ?? 0,
+    rewardsHistory: stakingData?.rewardsHistory ?? []
+  }), [stakingData]);
 
   return (
     <div className="min-h-screen bg-black p-6">
@@ -30,7 +32,7 @@ function DashboardContent() {
           <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <span>Updates every 30 seconds</span>
+              <span>Updates every 5 seconds</span>
               <span>•</span>
               <span>Last updated: {format(new Date(), 'HH:mm:ss')}</span>
             </div>
