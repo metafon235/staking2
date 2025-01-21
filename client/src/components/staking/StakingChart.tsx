@@ -62,6 +62,12 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
     );
   }
 
+  const handleTimeRangeChange = (value: 'hour' | 'day' | 'week' | string) => {
+    if (value === 'hour' || value === 'day' || value === 'week') {
+      setTimeRange(value);
+    }
+  };
+
   return (
     <Card className="col-span-3 bg-zinc-900 border-zinc-800">
       <CardHeader>
@@ -75,7 +81,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
           <ToggleGroup 
             type="single" 
             value={timeRange}
-            onValueChange={(value) => value && setTimeRange(value)}
+            onValueChange={handleTimeRangeChange}
             className="bg-zinc-800 border border-zinc-700 rounded-lg"
           >
             <ToggleGroupItem 
