@@ -19,17 +19,20 @@ function DashboardContent() {
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
-    if (!portfolio?.eth) return [];
+    if (!portfolio?.eth || !portfolio.eth.staked || !portfolio.eth.stakedAt) return [];
 
     const points = [];
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
+    const stakedTime = new Date(portfolio.eth.stakedAt).getTime();
 
     // Generate a point every 30 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 30 * 1000) {
-      const timeSinceStakeMs = now - new Date(portfolio.eth.stakedAt).getTime();
-      const yearsElapsed = timeSinceStakeMs / (365 * 24 * 60 * 60 * 1000);
-      const reward = portfolio.eth.staked * 0.03 * yearsElapsed; // 3% APY
+      const elapsedTime = time - stakedTime;
+      if (elapsedTime <= 0) continue;
+
+      const yearsElapsed = elapsedTime / (365 * 24 * 60 * 60 * 1000);
+      const reward = portfolio.eth.staked * (0.03 * yearsElapsed); // 3% APY
 
       points.push({
         timestamp: time,

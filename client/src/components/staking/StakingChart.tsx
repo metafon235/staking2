@@ -32,12 +32,12 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       .filter(point => point.timestamp >= now - ranges[timeRange])
       .map(point => ({
         ...point,
-        time: format(new Date(point.timestamp), 
-          timeRange === 'hour' ? 'HH:mm' : 
+        time: format(point.timestamp, 
+          timeRange === 'hour' ? 'HH:mm:ss' : 
           timeRange === 'day' ? 'MMM dd HH:mm' : 
           'MMM dd'
         ),
-        rewards: Number(point.rewards).toFixed(9)
+        rewards: Number(point.rewards)
       }));
   }, [data, timeRange]);
 
@@ -139,7 +139,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                 }}
                 labelStyle={{ color: "#e4e4e7" }}
                 itemStyle={{ color: "#a78bfa" }}
-                formatter={(value: string) => [`${Number(value).toFixed(9)}`, "ETH"]}
+                formatter={(value: number) => [value.toFixed(9), "ETH"]}
                 labelFormatter={(label) => `Time: ${label}`}
               />
               <Area
