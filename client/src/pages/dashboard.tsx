@@ -4,6 +4,7 @@ import StakingChart from "@/components/staking/StakingChart";
 import { useQuery } from "@tanstack/react-query";
 import { getStakingData } from "@/lib/web3";
 import { Skeleton } from "@/components/ui/skeleton";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export default function Dashboard() {
   const { data: stakingData, isLoading } = useQuery({
@@ -32,9 +33,14 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
-        <p className="text-sm text-zinc-400">
-          Updates every minute • Last updated: {new Date().toLocaleTimeString()}
-        </p>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <span>Updates every minute</span>
+            <span>•</span>
+            <span>Last updated: {new Date().toLocaleTimeString()}</span>
+          </div>
+          <NotificationBell />
+        </div>
       </div>
 
       <div className="grid gap-6">

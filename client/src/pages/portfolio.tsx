@@ -2,14 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SiEthereum, SiSolana } from "react-icons/si";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
 import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
-import NotificationBell from "@/components/layout/NotificationBell";
 import { format } from "date-fns";
 
 interface PortfolioData {
@@ -91,12 +89,10 @@ export default function Portfolio() {
             <span>•</span>
             <span>Last updated: {format(new Date(), 'h:mm:ss a')}</span>
           </div>
-          <NotificationBell />
           <SharePortfolioDialog portfolioRef={portfolioRef} />
         </div>
       </div>
 
-      {/* Content to be included in the snapshot */}
       <div ref={portfolioRef} className="space-y-6 bg-zinc-900 p-6 rounded-lg">
         {/* Total Overview Card */}
         <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
@@ -211,7 +207,6 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* Content excluded from snapshot */}
       <div className="mt-6">
         <div className="grid gap-6">
           {/* ETH Staking Actions */}
