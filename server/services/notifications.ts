@@ -32,6 +32,19 @@ export class NotificationService {
       .returning();
   }
 
+  static async deleteNotification(userId: number, notificationId: number) {
+    return db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.id, notificationId),
+          eq(notifications.userId, userId),
+          eq(notifications.read, true) // Only allow deletion of read notifications
+        )
+      )
+      .returning();
+  }
+
   static async getUserSettings(userId: number) {
     const [settings] = await db
       .select()
@@ -98,7 +111,7 @@ export class NotificationService {
     const settings = await this.getUserSettings(userId);
 
     if (
-      settings?.priceChangeThreshold && 
+      settings?.priceChangeThreshold &&
       Math.abs(percentageChange) < Number(settings.priceChangeThreshold)
     ) {
       return null;

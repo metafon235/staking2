@@ -1190,6 +1190,30 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add delete notification endpoint
+  app.delete('/api/notifications/:id', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const notificationId = parseInt(req.params.id);
+      if (isNaN(notificationId)) {
+        return res.status(400).json({ error: 'Invalid notification ID' });
+      }
+
+      const [deleted] = await NotificationService.deleteNotification(req.user.id, notificationId);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Notification not found or not read' });
+      }
+
+      res.json(deleted);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      res.status(500).json({ error: 'Failed to delete notification' });
+    }
+  });
+
   if (!rewardsGenerationInterval) {
     rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
   }
