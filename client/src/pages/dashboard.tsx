@@ -8,8 +8,8 @@ import { memo, useMemo } from "react";
 import type { StakingData } from "@/lib/types";
 
 function DashboardContent() {
-  const { data: stakingData, isLoading } = useQuery<StakingData>({
-    queryKey: ['/api/staking/data'],
+  const { data: portfolio, isLoading } = useQuery({
+    queryKey: ['/api/portfolio'],
     refetchInterval: 5000, // Refresh every 5 seconds
     staleTime: 4000, // Consider data stale after 4 seconds
     retry: false,
@@ -19,11 +19,11 @@ function DashboardContent() {
 
   // Memoize the derived data to prevent unnecessary re-renders
   const data = useMemo(() => ({
-    totalStaked: stakingData?.totalStaked ?? 0,
-    rewards: stakingData?.rewards ?? 0,
-    monthlyRewards: stakingData?.monthlyRewards ?? 0,
-    rewardsHistory: stakingData?.rewardsHistory ?? []
-  }), [stakingData]);
+    totalStaked: portfolio?.eth?.staked ?? 0,
+    rewards: portfolio?.eth?.rewards ?? 0,
+    monthlyRewards: (portfolio?.eth?.staked ?? 0) * 0.03 / 12, // Calculate monthly rewards based on 3% APY
+    rewardsHistory: portfolio?.rewardsHistory ?? []
+  }), [portfolio]);
 
   return (
     <div className="min-h-screen bg-black p-6">
