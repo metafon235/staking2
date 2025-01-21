@@ -111,6 +111,8 @@ let rewardsGenerationInterval: NodeJS.Timeout | null = null;
 // Add notification generation for rewards
 async function generateRewardsForAllActiveStakes() {
   try {
+    console.log('Starting rewards generation cycle...');
+
     // Get all active stakes with valid users using join
     const activeStakes = await db
       .select({
@@ -123,6 +125,8 @@ async function generateRewardsForAllActiveStakes() {
       .from(stakes)
       .innerJoin(users, eq(users.id, stakes.userId))
       .where(eq(stakes.status, 'active'));
+
+    console.log(`Found ${activeStakes.length} active stakes`);
 
     // Group stakes by user
     const userStakes = activeStakes.reduce((acc, stake) => {
@@ -138,10 +142,14 @@ async function generateRewardsForAllActiveStakes() {
       const totalStaked = stakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
+      console.log(`Processing user ${userId} with total stake: ${totalStaked}`);
+
       if (totalStaked >= 0.01) {
         const yearlyRate = 0.03; // 3% APY
         const minutelyRate = yearlyRate / (365 * 24 * 60);
         const reward = totalStaked * minutelyRate;
+
+        console.log(`Calculated reward for user ${userId}: ${reward}`);
 
         if (reward >= 0.00000001) {
           // Create reward transaction
@@ -154,6 +162,8 @@ async function generateRewardsForAllActiveStakes() {
               createdAt: new Date()
             });
 
+          console.log(`Created reward transaction for user ${userId}`);
+
           // Create notification for the reward
           await db.insert(notifications)
             .values({
@@ -164,12 +174,28 @@ async function generateRewardsForAllActiveStakes() {
               read: false,
               createdAt: new Date()
             });
+
+          console.log(`Created notification for user ${userId}`);
         }
       }
     }
   } catch (error) {
     console.error('Error generating rewards:', error);
   }
+}
+
+// Start rewards generation on server startup
+function startRewardsGeneration() {
+  if (rewardsGenerationInterval) {
+    clearInterval(rewardsGenerationInterval);
+  }
+
+  // Generate rewards every minute
+  rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000);
+  console.log('Rewards generation interval started');
+
+  // Run once immediately
+  generateRewardsForAllActiveStakes();
 }
 
 const insertUserSchema = z.object({
@@ -180,6 +206,9 @@ const insertUserSchema = z.object({
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
+
+  // Start rewards generation when server starts
+  startRewardsGeneration();
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
@@ -913,7 +942,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Update wallet address
-  app.post('/api/settings/wallet', async (req, res) => {
+  app.post('/api/api/settings/wallet', async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
