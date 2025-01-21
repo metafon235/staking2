@@ -58,7 +58,7 @@ export default function NotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className={`relative ${unreadCount > 0 ? 'animate-notification-vibrate' : ''}`}
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
@@ -81,7 +81,7 @@ export default function NotificationBell() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 rounded-lg ${
+                    className={`p-3 rounded-lg cursor-pointer ${
                       notification.read
                         ? 'bg-background'
                         : 'bg-purple-50 dark:bg-purple-950'
