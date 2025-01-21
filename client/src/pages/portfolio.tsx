@@ -8,8 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
 import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
-import RebalancePortfolioDialog from "@/components/portfolio/RebalancePortfolioDialog";
 import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
+import NotificationBell from "@/components/layout/NotificationBell";
+import { format } from "date-fns";
 
 interface PortfolioData {
   eth: {
@@ -84,7 +85,15 @@ export default function Portfolio() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
-        <SharePortfolioDialog portfolioRef={portfolioRef} />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <span>Updates every minute</span>
+            <span>•</span>
+            <span>Last updated: {format(new Date(), 'h:mm:ss a')}</span>
+          </div>
+          <NotificationBell />
+          <SharePortfolioDialog portfolioRef={portfolioRef} />
+        </div>
       </div>
 
       {/* Content to be included in the snapshot */}
