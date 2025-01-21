@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
-import { stakes, rewards, transactions, users } from "@db/schema";
+import { stakes, rewards, transactions, users, notifications } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt, desc } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
@@ -108,6 +108,7 @@ const statsCache = new Map<string, {
 // Active rewards generation interval
 let rewardsGenerationInterval: NodeJS.Timeout | null = null;
 
+// Add notification generation for rewards
 async function generateRewardsForAllActiveStakes() {
   try {
     // Get all active stakes
@@ -135,12 +136,24 @@ async function generateRewardsForAllActiveStakes() {
         const reward = totalStaked * minutelyRate;
 
         if (reward >= 0.00000001) {
+          // Create reward transaction
           await db.insert(transactions)
             .values({
               userId: parseInt(userId),
               type: 'reward',
               amount: reward.toFixed(9),
               status: 'completed',
+              createdAt: new Date()
+            });
+
+          // Create notification for the reward
+          await db.insert(notifications)
+            .values({
+              userId: parseInt(userId),
+              type: 'reward',
+              title: 'New Staking Reward',
+              message: `You earned ${reward.toFixed(9)} ETH from staking`,
+              read: false,
               createdAt: new Date()
             });
         }
