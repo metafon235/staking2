@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
 import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 import RebalancePortfolioDialog from "@/components/portfolio/RebalancePortfolioDialog";
+import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
 
 interface PortfolioData {
   eth: {
@@ -216,7 +217,7 @@ export default function Portfolio() {
                   >
                     {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
                   </Button>
-                  <RebalancePortfolioDialog
+                  <AutoCompoundingDialog
                     currentAllocation={{
                       eth: 100, // Currently only ETH is supported
                       sol: 0,
