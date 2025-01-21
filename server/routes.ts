@@ -936,7 +936,7 @@ export function registerRoutes(app: Express): Server {
         walletAddress: user?.walletAddress || null
       });
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      consoleerror('Error fetching settings:', error);
       res.status(500).json({ error: 'Failed to fetch settings' });
     }
   });
@@ -1098,7 +1098,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Mark notification as read
   app.post('/api/notifications/:id/read', async (req, res) => {
     try {
       if (!req.user) {
@@ -1106,41 +1105,19 @@ export function registerRoutes(app: Express): Server {
       }
 
       const notificationId = parseInt(req.params.id);
-      await NotificationService.markAsRead(req.user.id, notificationId);
-      res.json({ message: 'Notification marked as read' });
+      if (isNaN(notificationId)) {
+        return res.status(400).json({ error: 'Invalid notification ID' });
+      }
+
+      const [updated] = await NotificationService.markAsRead(req.user.id, notificationId);
+      if (!updated) {
+        return res.status(404).json({ error: 'Notification not found' });
+      }
+
+      res.json(updated);
     } catch (error) {
       console.error('Error marking notification as read:', error);
       res.status(500).json({ error: 'Failed to mark notification as read' });
-    }
-  });
-
-  // Get notification settings
-  app.get('/api/notifications/settings', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const settings = await NotificationService.getUserSettings(req.user.id);
-      res.json(settings || {});
-    } catch (error) {
-      console.error('Error fetching notification settings:', error);
-      res.status(500).json({ error: 'Failed to fetch notification settings' });
-    }
-  });
-
-  // Update notification settings
-  app.post('/api/notifications/settings', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const settings = await NotificationService.updateUserSettings(req.user.id, req.body);
-      res.json(settings[0]);
-    } catch (error) {
-      console.error('Error updating notification settings:', error);
-      res.status(500).json({ error: 'Failed to update notification settings' });
     }
   });
 

@@ -12,10 +12,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Notification {
   id: number;
-  type: string;
+  type: 'reward' | 'price_change' | 'system';
   title: string;
   message: string;
   read: boolean;
+  data?: string;
   createdAt: string;
 }
 
@@ -26,7 +27,7 @@ export default function NotificationBell() {
 
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: 30000, // Check every 30 seconds
   });
 
   const markAsRead = useMutation({
@@ -44,8 +45,8 @@ export default function NotificationBell() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to mark notification as read"
+        title: "Fehler",
+        description: "Benachrichtigung konnte nicht als gelesen markiert werden"
       });
     }
   });
@@ -58,33 +59,33 @@ export default function NotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className={`relative ${unreadCount > 0 ? 'animate-notification-vibrate' : ''}`}
+          className="relative"
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-purple-600 text-xs text-white flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-xs text-primary-foreground flex items-center justify-center">
               {unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <ScrollArea className="h-80">
+        <ScrollArea className="h-[300px]">
           <div className="p-4">
-            <h4 className="text-sm font-medium mb-4">Notifications</h4>
+            <h4 className="text-sm font-medium mb-4">Benachrichtigungen</h4>
             {notifications.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No notifications
+                Keine Benachrichtigungen vorhanden
               </p>
             ) : (
               <div className="space-y-4">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 rounded-lg cursor-pointer ${
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       notification.read
-                        ? 'bg-background'
-                        : 'bg-purple-50 dark:bg-purple-950'
+                        ? 'bg-muted/50'
+                        : 'bg-primary/10'
                     }`}
                     onClick={() => {
                       if (!notification.read) {
