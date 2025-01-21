@@ -15,21 +15,6 @@ export default function Dashboard() {
     staleTime: 0 // Always consider data stale to force refresh
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
-        <Skeleton className="h-[400px] rounded-lg bg-zinc-800" />
-        <div className="grid gap-6 md:grid-cols-3">
-          <Skeleton className="h-[120px] rounded-lg bg-zinc-800" />
-          <Skeleton className="h-[120px] rounded-lg bg-zinc-800" />
-          <Skeleton className="h-[120px] rounded-lg bg-zinc-800" />
-        </div>
-        <Skeleton className="h-[300px] rounded-lg bg-zinc-800" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -49,6 +34,7 @@ export default function Dashboard() {
           data={stakingData?.rewardsHistory || []}
           totalStaked={stakingData?.totalStaked || 0}
           currentRewards={stakingData?.rewards || 0}
+          isLoading={isLoading}
         />
       </div>
 
@@ -57,11 +43,12 @@ export default function Dashboard() {
           totalStaked={stakingData?.totalStaked || 0}
           rewards={stakingData?.rewards || 0}
           monthlyRewards={stakingData?.monthlyRewards || 0}
+          isLoading={isLoading}
         />
       </div>
 
       <div className="grid gap-6">
-        <StakingCard />
+        <StakingCard isLoading={isLoading} />
       </div>
     </div>
   );

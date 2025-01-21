@@ -2,7 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useState } from "react";
+import { memo, useState, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StakingChartProps {
   data: Array<{
@@ -11,11 +12,12 @@ interface StakingChartProps {
   }>;
   totalStaked: number;
   currentRewards: number;
+  isLoading?: boolean;
 }
 
 type TimeRange = 'hour' | 'day' | 'week';
 
-export default function StakingChart({ data, totalStaked, currentRewards }: StakingChartProps) {
+function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }: StakingChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('hour');
 
   const getTimeFormat = (range: TimeRange) => {
@@ -42,11 +44,35 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
     return data.filter(point => point.timestamp >= now - ranges[range]);
   };
 
-  const formattedData = filterDataByTimeRange(timeRange).map(point => ({
-    ...point,
-    time: format(new Date(point.timestamp), getTimeFormat(timeRange)),
-    rewards: point.rewards.toFixed(9)
-  }));
+  const formattedData = useMemo(() => 
+    filterDataByTimeRange(timeRange).map(point => ({
+      ...point,
+      time: format(new Date(point.timestamp), getTimeFormat(timeRange)),
+      rewards: point.rewards.toFixed(9)
+    })), [data, timeRange]);
+
+  if (isLoading) {
+    return (
+      <Card className="col-span-3 bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <Skeleton className="h-6 w-48 bg-zinc-800" />
+              <Skeleton className="h-4 w-64 mt-2 bg-zinc-800" />
+            </div>
+            <Skeleton className="h-8 w-32 bg-zinc-800" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full mt-4 bg-zinc-800" />
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <Skeleton className="h-20 bg-zinc-800" />
+            <Skeleton className="h-20 bg-zinc-800" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="col-span-3 bg-zinc-900 border-zinc-800">
@@ -145,3 +171,6 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
     </Card>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(StakingChartComponent);
