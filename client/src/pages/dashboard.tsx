@@ -25,9 +25,9 @@ function DashboardContent() {
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
 
-    // Generate a point every minute
-    for (let time = startTime; time <= now; time += 60 * 1000) {
-      const timeSinceStakeMs = time - portfolio.eth.stakedAt;
+    // Generate a point every 30 seconds for smoother visualization
+    for (let time = startTime; time <= now; time += 30 * 1000) {
+      const timeSinceStakeMs = now - new Date(portfolio.eth.stakedAt).getTime();
       const yearsElapsed = timeSinceStakeMs / (365 * 24 * 60 * 60 * 1000);
       const reward = portfolio.eth.staked * 0.03 * yearsElapsed; // 3% APY
 

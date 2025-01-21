@@ -149,7 +149,9 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                 fillOpacity={1}
                 fill="url(#rewardsGradient)"
                 strokeWidth={2}
-                isAnimationActive={false} // Disable animations to prevent flickering
+                isAnimationActive={true}
+                animationDuration={300}
+                animationBegin={0}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -169,5 +171,4 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
   );
 }
 
-// Memoize the component to prevent unnecessary re-renders
 export default memo(StakingChartComponent);
