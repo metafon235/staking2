@@ -20,7 +20,10 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
 
   // Debug logging
   useEffect(() => {
-    console.log('StakingChart received data:', data);
+    console.log('StakingChart received data length:', data?.length);
+    if (data?.length > 0) {
+      console.log('Sample data point:', data[0]);
+    }
   }, [data]);
 
   const formattedData = useMemo(() => {
@@ -49,7 +52,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    console.log('Formatted chart data:', filtered);
+    console.log('Formatted data points:', filtered.length);
     return filtered;
   }, [data, timeRange]);
 

@@ -19,15 +19,18 @@ function DashboardContent() {
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
-    if (!portfolio?.eth?.staked || !portfolio?.eth?.stakedAt) return [];
+    if (!portfolio?.eth?.staked || !portfolio?.eth?.stakedAt) {
+      console.log('Missing required portfolio data');
+      return [];
+    }
 
     const points = [];
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
     const stakedTime = new Date(portfolio.eth.stakedAt).getTime();
 
-    // Generate a point every 30 seconds for smoother visualization
-    for (let time = startTime; time <= now; time += 30 * 1000) {
+    // Generate a point every 15 seconds for smoother visualization
+    for (let time = startTime; time <= now; time += 15 * 1000) {
       const elapsedTime = time - stakedTime;
       if (elapsedTime <= 0) continue;
 
@@ -40,9 +43,9 @@ function DashboardContent() {
       });
     }
 
-    console.log('Generated points:', points); // Debug log
+    console.log('Generated points:', points.length, 'Sample:', points[0]); // Debug log
     return points;
-  }, [portfolio?.eth]);
+  }, [portfolio?.eth?.staked, portfolio?.eth?.stakedAt]);
 
   // Memoize the derived data to prevent unnecessary re-renders
   const data = useMemo(() => ({
@@ -50,9 +53,9 @@ function DashboardContent() {
     rewards: portfolio?.eth?.rewards ?? 0,
     monthlyRewards: (portfolio?.eth?.staked ?? 0) * 0.03 / 12, // Calculate monthly rewards based on 3% APY
     rewardsHistory
-  }), [portfolio?.eth, rewardsHistory]);
+  }), [portfolio?.eth?.staked, portfolio?.eth?.rewards, rewardsHistory]);
 
-  console.log('Chart data:', data); // Debug log
+  console.log('Chart data:', data.rewardsHistory.length); // Debug log
 
   return (
     <div className="min-h-screen bg-black p-6">
