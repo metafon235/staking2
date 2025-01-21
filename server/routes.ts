@@ -634,11 +634,24 @@ export function registerRoutes(app: Express): Server {
 
   // Calculate rewards for a specific timestamp
   async function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): Promise<number> {
-    // Get all active stakes for the user
+    // Get all active stakes for the user and their last complete withdrawal
+    const lastWithdrawal = await db.query.transactions.findFirst({
+      where: (transactions, { and, eq }) => and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'withdraw_all'),
+        eq(transactions.status, 'completed')
+      ),
+      orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+    });
+
+    // Get all active stakes created after the last withdrawal
     const userStakes = await db.query.stakes.findMany({
-      where: (stakes, { and, eq }) => and(
+      where: (stakes, { and, eq, gt }) => and(
         eq(stakes.userId, userId),
-        eq(stakes.status, 'active')
+        eq(stakes.status, 'active'),
+        lastWithdrawal
+          ? gt(stakes.createdAt, lastWithdrawal.createdAt)
+          : undefined
       )
     });
 
