@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import TransactionHistory from "@/components/transaction/TransactionHistory";
 import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
+import RebalancePortfolioDialog from "@/components/portfolio/RebalancePortfolioDialog";
 
 interface PortfolioData {
   eth: {
@@ -206,14 +207,23 @@ export default function Portfolio() {
           {/* ETH Staking Actions */}
           {portfolio && (
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="pt-6">
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={() => handleWithdrawAll('ETH')}
-                  disabled={isWithdrawing || totalValue <= 0}
-                >
-                  {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
-                </Button>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex gap-4">
+                  <Button 
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => handleWithdrawAll('ETH')}
+                    disabled={isWithdrawing || totalValue <= 0}
+                  >
+                    {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
+                  </Button>
+                  <RebalancePortfolioDialog
+                    currentAllocation={{
+                      eth: 100, // Currently only ETH is supported
+                      sol: 0,
+                      dot: 0
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
           )}

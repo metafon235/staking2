@@ -1079,6 +1079,60 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add new rebalance endpoint
+  app.post('/api/portfolio/rebalance', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { eth, sol, dot } = req.body;
+
+      // Validate allocation percentages
+      if (eth + sol + dot !== 100) {
+        return res.status(400).json({ error: 'Allocation percentages must sum to 100%' });
+      }
+
+      // Get user's current stakes
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      if (totalStaked < 0.01) {
+        return res.status(400).json({ error: 'Minimum stake required: 0.01 ETH' });
+      }
+
+      // For now, we only support ETH, so ensure ETH allocation is 100%
+      if (eth !== 100) {
+        return res.status(400).json({ 
+          error: 'Currently only ETH staking is supported. Please set ETH allocation to 100%' 
+        });
+      }
+
+      // Record rebalancing transaction
+      await db.insert(transactions)
+        .values({
+          userId: req.user.id,
+          type: 'rebalance',
+          amount: totalStaked.toString(),
+          status: 'completed',
+          createdAt: new Date()
+        });
+
+      res.json({
+        message: 'Portfolio rebalanced successfully',
+        newAllocation: { eth, sol, dot }
+      });
+    } catch (error) {
+      console.error('Error rebalancing portfolio:', error);
+      res.status(500).json({ error: 'Failed to rebalance portfolio' });
+    }
+  });
+
   if (!rewardsGenerationInterval) {
     rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
   }
