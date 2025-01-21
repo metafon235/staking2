@@ -209,23 +209,10 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Get user's total staked amount and last withdrawal
-      const lastWithdrawal = await db.query.transactions.findFirst({
-        where: (transactions, { and, eq }) => and(
-          eq(transactions.userId, req.user.id),
-          eq(transactions.type, 'withdraw_all'),
-          eq(transactions.status, 'completed')
-        ),
-        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-      });
-
-      // Get all active stakes created after the last withdrawal
       const userStakes = await db.query.stakes.findMany({
-        where: (stakes, { and, eq, gt }) => and(
+        where: (stakes, { and, eq }) => and(
           eq(stakes.userId, req.user.id),
-          eq(stakes.status, 'active'),
-          lastWithdrawal
-            ? gt(stakes.createdAt, lastWithdrawal.createdAt)
-            : undefined
+          eq(stakes.status, 'active')
         ),
         orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
       });
@@ -233,42 +220,33 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      if (totalStaked < 0.01) {
-        return res.json({
-          totalStaked: 0,
-          rewards: 0,
-          monthlyRewards: 0,
-          rewardsHistory: [],
-          lastUpdated: Date.now()
-        });
-      }
-
       // Calculate current total accumulated rewards
-      const currentRewards = await calculateRewardsForTimestamp(
+      const currentRewards = userStakes.length > 0 ? await calculateRewardsForTimestamp(
         req.user.id,
         totalStaked,
         userStakes[0].createdAt.getTime(),
         Date.now(),
         false
-      );
+      ) : 0;
 
       // Calculate monthly rewards based on current stake
       const monthlyRewards = (totalStaked * 0.03) / 12;
 
-      // Generate rewards history since earliest active stake
+      // Generate rewards history for the last week
       const now = Date.now();
       const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
       const rewardsHistory = [];
 
       // Generate data points every 5 minutes for the last week
       for (let timestamp = oneWeekAgo; timestamp <= now; timestamp += 5 * 60 * 1000) {
-        const rewards = await calculateRewardsForTimestamp(
+        const rewards = userStakes.length > 0 ? await calculateRewardsForTimestamp(
           req.user.id,
           totalStaked,
           userStakes[0].createdAt.getTime(),
           timestamp,
           false
-        );
+        ) : 0;
+
         rewardsHistory.push({
           timestamp,
           rewards: parseFloat(rewards.toFixed(9))
@@ -277,8 +255,8 @@ export function registerRoutes(app: Express): Server {
 
       // Generate response data with appropriate decimal precision
       const stakingData = {
-        totalStaked: parseFloat(totalStaked.toFixed(6)), // 6 decimal places for total staked
-        rewards: parseFloat(currentRewards.toFixed(9)), // 9 decimal places for rewards
+        totalStaked: parseFloat(totalStaked.toFixed(6)),
+        rewards: parseFloat(currentRewards.toFixed(9)),
         monthlyRewards: parseFloat(monthlyRewards.toFixed(9)),
         rewardsHistory,
         lastUpdated: Date.now()
@@ -638,55 +616,60 @@ export function registerRoutes(app: Express): Server {
 
   // Calculate rewards for a specific timestamp
   async function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): Promise<number> {
-    // Get all active stakes for the user and their last complete withdrawal
-    const lastWithdrawal = await db.query.transactions.findFirst({
-      where: (transactions, { and, eq }) => and(
-        eq(transactions.userId, userId),
-        eq(transactions.type, 'withdraw_all'),
-        eq(transactions.status, 'completed')
-      ),
-      orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-    });
+    try {
+      // Get all active stakes for the user and their last complete withdrawal
+      const lastWithdrawal = await db.query.transactions.findFirst({
+        where: (transactions, { and, eq }) => and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'withdraw_all'),
+          eq(transactions.status, 'completed')
+        ),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+      });
 
-    // Get all active stakes created after the last withdrawal
-    const userStakes = await db.query.stakes.findMany({
-      where: (stakes, { and, eq, gt }) => and(
-        eq(stakes.userId, userId),
-        eq(stakes.status, 'active'),
-        lastWithdrawal
-          ? gt(stakes.createdAt, lastWithdrawal.createdAt)
-          : undefined
-      )
-    });
+      // Get all active stakes created after the last withdrawal
+      const userStakes = await db.query.stakes.findMany({
+        where: (stakes, { and, eq, gt }) => and(
+          eq(stakes.userId, userId),
+          eq(stakes.status, 'active'),
+          lastWithdrawal
+            ? gt(stakes.createdAt, lastWithdrawal.createdAt)
+            : undefined
+        )
+      });
 
-    let totalRewards = 0;
+      let totalRewards = 0;
 
-    // Calculate rewards for each stake individually
-    for (const stake of userStakes) {
-      const stakeStartTime = stake.createdAt.getTime();
-      // Only calculate rewards if the stake was created before the end time
-      if (stakeStartTime <= endTimeMs) {
-        const stakeAmount = parseFloat(stake.amount.toString());
-        if (stakeAmount >= 0.01) { // Only calculate rewards for stakes >= 0.01 ETH
-          const timePassedMs = endTimeMs - stakeStartTime;
-          const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-          const yearlyRate = 0.03; // 3% APY
-          const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
-          totalRewards += stakeRewards;
+      // Calculate rewards for each stake individually
+      for (const stake of userStakes) {
+        const stakeStartTime = stake.createdAt.getTime();
+        // Only calculate rewards if the stake was created before the end time
+        if (stakeStartTime <= endTimeMs) {
+          const stakeAmount = parseFloat(stake.amount.toString());
+          if (stakeAmount >= 0.01) { // Only calculate rewards for stakes >= 0.01 ETH
+            const timePassedMs = endTimeMs - stakeStartTime;
+            const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
+            const yearlyRate = 0.03; // 3% APY
+            const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
+            totalRewards += stakeRewards;
+          }
         }
       }
-    }
 
-    if (forTransaction && totalRewards > 0) {
       // For transaction records, create minute-based snapshots
-      const minutelyReward = totalRewards / (365 * 24 * 60);
-      if (minutelyReward >= 0.00000001) { // Threshold at 8 decimals
-        await recordRewardTransaction(userId, minutelyReward);
+      if (forTransaction && totalRewards > 0) {
+        const minutelyReward = totalRewards / (365 * 24 * 60);
+        if (minutelyReward >= 0.00000001) { // Threshold at 8 decimals
+          await recordRewardTransaction(userId, minutelyReward);
+        }
+        return minutelyReward;
       }
-      return minutelyReward;
-    }
 
-    return totalRewards;
+      return totalRewards;
+    } catch (error) {
+      console.error('Error calculating rewards:', error);
+      return 0;
+    }
   }
 
   async function recordRewardTransaction(userId: number, reward: number) {
