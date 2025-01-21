@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { format, startOfDay, endOfDay, subDays, subWeeks, subMonths } from "date-fns";
+import { format, subDays, subWeeks, subMonths, getISOWeek, getYear } from "date-fns";
+import { de } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 
 interface Transaction {
@@ -28,31 +29,56 @@ function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days
   // Define the start date based on timeRange
   const startDate = {
     days: subDays(now, 7),
-    weeks: subWeeks(now, 8),
+    weeks: subWeeks(now, 12), // Show last 12 weeks
     months: subMonths(now, 6)
   }[timeRange];
 
-  // Define the format based on timeRange
-  const dateFormat = {
-    days: 'MMM d',
-    weeks: 'MMM d',
-    months: 'MMM yyyy'
-  }[timeRange];
+  // Filter transactions after start date
+  const filteredTransactions = transactions
+    .filter(tx => tx.type === 'reward' && 
+                tx.status === 'completed' && 
+                new Date(tx.createdAt) >= startDate);
 
-  // Filter reward transactions and group by period
-  transactions
-    .filter(tx => tx.type === 'reward' && tx.status === 'completed' && new Date(tx.createdAt) >= startDate)
-    .forEach(tx => {
-      const day = format(new Date(tx.createdAt), dateFormat);
-      const amount = parseFloat(tx.amount);
-      rewardsMap.set(day, (rewardsMap.get(day) || 0) + amount);
-    });
+  // Group transactions based on the selected time range
+  filteredTransactions.forEach(tx => {
+    const date = new Date(tx.createdAt);
+    let key: string;
 
-  // Convert map to array and sort by date
+    switch (timeRange) {
+      case 'days':
+        key = format(date, 'dd.MM.');
+        break;
+      case 'weeks':
+        const week = getISOWeek(date);
+        const year = getYear(date);
+        key = `KW ${week.toString().padStart(2, '0')}/${year}`;
+        break;
+      case 'months':
+        key = format(date, 'MMM yyyy', { locale: de });
+        break;
+      default:
+        key = format(date, 'dd.MM.');
+    }
+
+    const amount = parseFloat(tx.amount);
+    rewardsMap.set(key, (rewardsMap.get(key) || 0) + amount);
+  });
+
+  // Convert map to array and sort
   return Array.from(rewardsMap, ([date, amount]) => ({
     date,
     amount: parseFloat(amount.toFixed(9))
-  })).sort((a, b) => a.date.localeCompare(b.date));
+  })).sort((a, b) => {
+    if (timeRange === 'weeks') {
+      // Extract week numbers and years for comparison
+      const [weekA, yearA] = a.date.split(' ')[1].split('/');
+      const [weekB, yearB] = b.date.split(' ')[1].split('/');
+      const compareYear = parseInt(yearA) - parseInt(yearB);
+      if (compareYear !== 0) return compareYear;
+      return parseInt(weekA) - parseInt(weekB);
+    }
+    return a.date.localeCompare(b.date);
+  });
 }
 
 export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
@@ -71,9 +97,6 @@ export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
   if (isLoading) {
     return (
       <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-xl font-medium text-white">Rewards History</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center h-[300px]">
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -95,6 +118,9 @@ export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
                 dataKey="date" 
                 stroke="#9ca3af"
                 fontSize={12}
+                angle={timeRange === 'weeks' ? -45 : 0}
+                textAnchor={timeRange === 'weeks' ? 'end' : 'middle'}
+                height={60}
               />
               <YAxis 
                 stroke="#9ca3af"
