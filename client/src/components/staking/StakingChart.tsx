@@ -21,9 +21,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
   // Debug logging
   useEffect(() => {
     console.log('StakingChart received data length:', data?.length);
-    if (data?.length > 0) {
-      console.log('Sample data point:', data[0]);
-    }
+    console.log('Raw data:', data);
   }, [data]);
 
   const formattedData = useMemo(() => {
@@ -39,8 +37,14 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       week: 7 * 24 * 60 * 60 * 1000
     };
 
+    const timeWindow = ranges[timeRange];
+    const startTime = now - timeWindow;
+
     const filtered = data
-      .filter(point => point.timestamp >= now - ranges[timeRange])
+      .filter(point => {
+        const isInRange = point.timestamp >= startTime && point.timestamp <= now;
+        return isInRange;
+      })
       .map(point => ({
         ...point,
         time: format(point.timestamp, 
@@ -52,7 +56,12 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    console.log('Formatted data points:', filtered.length);
+    console.log('Filtered data range:', timeRange);
+    console.log('Start time:', new Date(startTime).toISOString());
+    console.log('End time:', new Date(now).toISOString());
+    console.log('Filtered data points:', filtered.length);
+    console.log('Sample filtered point:', filtered[0]);
+
     return filtered;
   }, [data, timeRange]);
 

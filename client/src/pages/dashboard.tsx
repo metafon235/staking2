@@ -20,7 +20,7 @@ function DashboardContent() {
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
     if (!portfolio?.eth?.staked || !portfolio?.eth?.stakedAt) {
-      console.log('Missing required portfolio data');
+      console.log('Missing required portfolio data:', portfolio?.eth);
       return [];
     }
 
@@ -28,6 +28,10 @@ function DashboardContent() {
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
     const stakedTime = new Date(portfolio.eth.stakedAt).getTime();
+
+    console.log('Generating points from:', new Date(startTime).toISOString());
+    console.log('Current time:', new Date(now).toISOString());
+    console.log('Staked time:', new Date(stakedTime).toISOString());
 
     // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
@@ -43,7 +47,12 @@ function DashboardContent() {
       });
     }
 
-    console.log('Generated points:', points.length, 'Sample:', points[0]); // Debug log
+    console.log('Generated points:', points.length);
+    if (points.length > 0) {
+      console.log('First point:', points[0]);
+      console.log('Last point:', points[points.length - 1]);
+    }
+
     return points;
   }, [portfolio?.eth?.staked, portfolio?.eth?.stakedAt]);
 
@@ -55,7 +64,6 @@ function DashboardContent() {
     rewardsHistory
   }), [portfolio?.eth?.staked, portfolio?.eth?.rewards, rewardsHistory]);
 
-  console.log('Chart data:', data.rewardsHistory.length); // Debug log
 
   return (
     <div className="min-h-screen bg-black p-6">
