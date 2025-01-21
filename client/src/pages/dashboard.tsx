@@ -3,7 +3,6 @@ import StakingStats from "@/components/staking/StakingStats";
 import StakingChart from "@/components/staking/StakingChart";
 import { useQuery } from "@tanstack/react-query";
 import { getStakingData } from "@/lib/web3";
-import { Skeleton } from "@/components/ui/skeleton";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { format } from "date-fns";
 
@@ -11,8 +10,10 @@ export default function Dashboard() {
   const { data: stakingData, isLoading } = useQuery({
     queryKey: ['/api/staking/data'],
     queryFn: getStakingData,
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 0 // Always consider data stale to force refresh
+    refetchInterval: 300000, // Refresh every 5 minutes instead of every minute
+    staleTime: 240000, // Consider data fresh for 4 minutes
+    retry: false,
+    refetchOnWindowFocus: false // Prevent refetching on window focus
   });
 
   return (
@@ -21,9 +22,9 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-zinc-400">
-            <span>Updates every minute</span>
+            <span>Updates every 5 minutes</span>
             <span>•</span>
-            <span>Last updated: {format(new Date(), 'h:mm:ss a')}</span>
+            <span>Last updated: {format(new Date(), 'HH:mm:ss')}</span>
           </div>
           <NotificationBell />
         </div>

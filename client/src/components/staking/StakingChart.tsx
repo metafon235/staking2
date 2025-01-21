@@ -15,25 +15,10 @@ interface StakingChartProps {
   isLoading?: boolean;
 }
 
-type TimeRange = 'hour' | 'day' | 'week';
-
 function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }: StakingChartProps) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('hour');
+  const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'week'>('hour');
 
-  const getTimeFormat = (range: TimeRange) => {
-    switch (range) {
-      case 'hour':
-        return 'HH:mm';
-      case 'day':
-        return 'MMM dd HH:mm';
-      case 'week':
-        return 'MMM dd';
-      default:
-        return 'HH:mm';
-    }
-  };
-
-  const filterDataByTimeRange = (range: TimeRange) => {
+  const formattedData = useMemo(() => {
     const now = Date.now();
     const ranges = {
       hour: 60 * 60 * 1000,
@@ -41,15 +26,18 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       week: 7 * 24 * 60 * 60 * 1000
     };
 
-    return data.filter(point => point.timestamp >= now - ranges[range]);
-  };
-
-  const formattedData = useMemo(() => 
-    filterDataByTimeRange(timeRange).map(point => ({
-      ...point,
-      time: format(new Date(point.timestamp), getTimeFormat(timeRange)),
-      rewards: point.rewards.toFixed(9)
-    })), [data, timeRange]);
+    return data
+      .filter(point => point.timestamp >= now - ranges[timeRange])
+      .map(point => ({
+        ...point,
+        time: format(new Date(point.timestamp), 
+          timeRange === 'hour' ? 'HH:mm' : 
+          timeRange === 'day' ? 'MMM dd HH:mm' : 
+          'MMM dd'
+        ),
+        rewards: point.rewards.toFixed(9)
+      }));
+  }, [data, timeRange]);
 
   if (isLoading) {
     return (
@@ -87,7 +75,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
           <ToggleGroup 
             type="single" 
             value={timeRange}
-            onValueChange={(value: TimeRange) => value && setTimeRange(value)}
+            onValueChange={(value) => value && setTimeRange(value)}
             className="bg-zinc-800 border border-zinc-700 rounded-lg"
           >
             <ToggleGroupItem 
