@@ -17,13 +17,36 @@ function DashboardContent() {
     placeholderData: (previousData) => previousData, // Keep previous data while refetching
   });
 
+  // Generate historical data points for the chart
+  const rewardsHistory = useMemo(() => {
+    if (!portfolio?.eth) return [];
+
+    const points = [];
+    const now = Date.now();
+    const startTime = now - (60 * 60 * 1000); // Last hour
+
+    // Generate a point every minute
+    for (let time = startTime; time <= now; time += 60 * 1000) {
+      const timeSinceStakeMs = time - portfolio.eth.stakedAt;
+      const yearsElapsed = timeSinceStakeMs / (365 * 24 * 60 * 60 * 1000);
+      const reward = portfolio.eth.staked * 0.03 * yearsElapsed; // 3% APY
+
+      points.push({
+        timestamp: time,
+        rewards: reward
+      });
+    }
+
+    return points;
+  }, [portfolio?.eth]);
+
   // Memoize the derived data to prevent unnecessary re-renders
   const data = useMemo(() => ({
     totalStaked: portfolio?.eth?.staked ?? 0,
     rewards: portfolio?.eth?.rewards ?? 0,
     monthlyRewards: (portfolio?.eth?.staked ?? 0) * 0.03 / 12, // Calculate monthly rewards based on 3% APY
-    rewardsHistory: portfolio?.rewardsHistory ?? []
-  }), [portfolio]);
+    rewardsHistory
+  }), [portfolio?.eth, rewardsHistory]);
 
   return (
     <div className="min-h-screen bg-black p-6">
