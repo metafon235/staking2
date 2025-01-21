@@ -60,7 +60,9 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
     console.log('Start time:', new Date(startTime).toISOString());
     console.log('End time:', new Date(now).toISOString());
     console.log('Filtered data points:', filtered.length);
-    console.log('Sample filtered point:', filtered[0]);
+    if (filtered.length > 0) {
+      console.log('Sample filtered point:', filtered[0]);
+    }
 
     return filtered;
   }, [data, timeRange]);

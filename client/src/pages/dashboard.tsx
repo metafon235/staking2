@@ -1,10 +1,10 @@
+import { format } from "date-fns";
+import { memo, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import StakingCard from "@/components/staking/StakingCard";
 import StakingStats from "@/components/staking/StakingStats";
 import StakingChart from "@/components/staking/StakingChart";
-import { useQuery } from "@tanstack/react-query";
 import NotificationBell from "@/components/layout/NotificationBell";
-import { format } from "date-fns";
-import { memo, useMemo } from "react";
 import type { StakingData } from "@/lib/types";
 
 function DashboardContent() {
@@ -19,7 +19,7 @@ function DashboardContent() {
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
-    if (!portfolio?.eth?.staked || !portfolio?.eth?.stakedAt) {
+    if (!portfolio?.eth?.staked) {
       console.log('Missing required portfolio data:', portfolio?.eth);
       return [];
     }
@@ -27,7 +27,7 @@ function DashboardContent() {
     const points = [];
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
-    const stakedTime = new Date(portfolio.eth.stakedAt).getTime();
+    const stakedTime = portfolio.eth.stakedAt ? new Date(portfolio.eth.stakedAt).getTime() : now - (24 * 60 * 60 * 1000);
 
     console.log('Generating points from:', new Date(startTime).toISOString());
     console.log('Current time:', new Date(now).toISOString());
@@ -35,11 +35,13 @@ function DashboardContent() {
 
     // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
-      const elapsedTime = time - stakedTime;
+      const elapsedTime = (time - stakedTime) / 1000; // Convert to seconds
       if (elapsedTime <= 0) continue;
 
-      const yearsElapsed = elapsedTime / (365 * 24 * 60 * 60 * 1000);
-      const reward = portfolio.eth.staked * (0.03 * yearsElapsed); // 3% APY
+      // Calculate rewards based on 3% APY
+      // (staked amount * APY * elapsed time in years)
+      const yearsElapsed = elapsedTime / (365 * 24 * 60 * 60);
+      const reward = portfolio.eth.staked * (0.03 * yearsElapsed);
 
       points.push({
         timestamp: time,
@@ -61,9 +63,7 @@ function DashboardContent() {
     totalStaked: portfolio?.eth?.staked ?? 0,
     rewards: portfolio?.eth?.rewards ?? 0,
     monthlyRewards: (portfolio?.eth?.staked ?? 0) * 0.03 / 12, // Calculate monthly rewards based on 3% APY
-    rewardsHistory
-  }), [portfolio?.eth?.staked, portfolio?.eth?.rewards, rewardsHistory]);
-
+  }), [portfolio?.eth?.staked, portfolio?.eth?.rewards]);
 
   return (
     <div className="min-h-screen bg-black p-6">
@@ -82,7 +82,7 @@ function DashboardContent() {
 
         <div className="grid gap-6">
           <StakingChart 
-            data={data.rewardsHistory}
+            data={rewardsHistory}
             totalStaked={data.totalStaked}
             currentRewards={data.rewards}
             isLoading={isLoading}
