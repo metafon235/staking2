@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { memo, useState, useMemo } from "react";
+import { memo, useState, useMemo, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StakingChartProps {
@@ -18,8 +18,16 @@ interface StakingChartProps {
 function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }: StakingChartProps) {
   const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'week'>('hour');
 
+  // Debug logging
+  useEffect(() => {
+    console.log('StakingChart received data:', data);
+  }, [data]);
+
   const formattedData = useMemo(() => {
-    if (!data?.length) return [];
+    if (!data?.length) {
+      console.log('No data available for chart');
+      return [];
+    }
 
     const now = Date.now();
     const ranges = {
@@ -28,7 +36,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       week: 7 * 24 * 60 * 60 * 1000
     };
 
-    return data
+    const filtered = data
       .filter(point => point.timestamp >= now - ranges[timeRange])
       .map(point => ({
         ...point,
@@ -39,7 +47,10 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
         ),
         rewards: Number(point.rewards)
       }))
-      .sort((a, b) => a.timestamp - b.timestamp); // Ensure data is sorted by timestamp
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    console.log('Formatted chart data:', filtered);
+    return filtered;
   }, [data, timeRange]);
 
   if (isLoading) {
@@ -65,12 +76,6 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
     );
   }
 
-  const handleTimeRangeChange = (value: string) => {
-    if (value === 'hour' || value === 'day' || value === 'week') {
-      setTimeRange(value);
-    }
-  };
-
   return (
     <Card className="col-span-3 bg-zinc-900 border-zinc-800">
       <CardHeader>
@@ -84,7 +89,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
           <ToggleGroup 
             type="single" 
             value={timeRange}
-            onValueChange={handleTimeRangeChange}
+            onValueChange={(value: 'hour' | 'day' | 'week') => value && setTimeRange(value)}
             className="bg-zinc-800 border border-zinc-700 rounded-lg"
           >
             <ToggleGroupItem 
@@ -110,56 +115,62 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       </CardHeader>
       <CardContent>
         <div className="h-[300px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart 
-              data={formattedData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="time"
-                stroke="#71717a"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#71717a"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={value => value.toFixed(9)}
-                domain={['auto', 'auto']}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#18181b",
-                  border: "1px solid #3f3f46",
-                  borderRadius: "6px",
-                }}
-                labelStyle={{ color: "#e4e4e7" }}
-                itemStyle={{ color: "#a78bfa" }}
-                formatter={(value: number) => [value.toFixed(9), "ETH"]}
-                labelFormatter={(label) => `Time: ${label}`}
-              />
-              <Area
-                type="monotone"
-                dataKey="rewards"
-                stroke="#8b5cf6"
-                fillOpacity={1}
-                fill="url(#rewardsGradient)"
-                strokeWidth={2}
-                isAnimationActive={true}
-                animationDuration={300}
-                animationBegin={0}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {formattedData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart 
+                data={formattedData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="time"
+                  stroke="#71717a"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="#71717a"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={value => value.toFixed(9)}
+                  domain={['auto', 'auto']}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#18181b",
+                    border: "1px solid #3f3f46",
+                    borderRadius: "6px",
+                  }}
+                  labelStyle={{ color: "#e4e4e7" }}
+                  itemStyle={{ color: "#a78bfa" }}
+                  formatter={(value: number) => [value.toFixed(9), "ETH"]}
+                  labelFormatter={(label) => `Time: ${label}`}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="rewards"
+                  stroke="#8b5cf6"
+                  fillOpacity={1}
+                  fill="url(#rewardsGradient)"
+                  strokeWidth={2}
+                  isAnimationActive={true}
+                  animationDuration={300}
+                  animationBegin={0}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-zinc-400">
+              No reward data available for the selected time range
+            </div>
+          )}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div className="bg-zinc-800 p-4 rounded-lg">

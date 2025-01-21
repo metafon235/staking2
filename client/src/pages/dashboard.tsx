@@ -19,7 +19,7 @@ function DashboardContent() {
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
-    if (!portfolio?.eth || !portfolio.eth.staked || !portfolio.eth.stakedAt) return [];
+    if (!portfolio?.eth?.staked || !portfolio?.eth?.stakedAt) return [];
 
     const points = [];
     const now = Date.now();
@@ -40,6 +40,7 @@ function DashboardContent() {
       });
     }
 
+    console.log('Generated points:', points); // Debug log
     return points;
   }, [portfolio?.eth]);
 
@@ -50,6 +51,8 @@ function DashboardContent() {
     monthlyRewards: (portfolio?.eth?.staked ?? 0) * 0.03 / 12, // Calculate monthly rewards based on 3% APY
     rewardsHistory
   }), [portfolio?.eth, rewardsHistory]);
+
+  console.log('Chart data:', data); // Debug log
 
   return (
     <div className="min-h-screen bg-black p-6">
