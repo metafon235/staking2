@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, X } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,46 +32,30 @@ export default function NotificationBell() {
 
   const markAsRead = useMutation({
     mutationFn: async (id: number) => {
+      // First mark as read
       const res = await fetch(`/api/notifications/${id}/read`, {
         method: 'POST',
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to mark notification as read');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Fehler",
-        description: "Benachrichtigung konnte nicht als gelesen markiert werden"
-      });
-    }
-  });
 
-  const deleteNotification = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await fetch(`/api/notifications/${id}`, {
+      // Then delete it
+      const deleteRes = await fetch(`/api/notifications/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Failed to delete notification');
-      return res.json();
+      if (!deleteRes.ok) throw new Error('Failed to delete notification');
+
+      return deleteRes.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      toast({
-        title: "Erfolg",
-        description: "Benachrichtigung wurde gelöscht"
-      });
     },
     onError: () => {
       toast({
         variant: "destructive",
         title: "Fehler",
-        description: "Benachrichtigung konnte nicht gelöscht werden"
+        description: "Benachrichtigung konnte nicht verarbeitet werden"
       });
     }
   });
@@ -107,39 +91,26 @@ export default function NotificationBell() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors relative group ${
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       notification.read
                         ? 'bg-muted/50'
                         : 'bg-primary/10'
                     }`}
+                    onClick={() => {
+                      if (!notification.read) {
+                        markAsRead.mutate(notification.id);
+                      }
+                    }}
                   >
-                    <div
-                      onClick={() => {
-                        if (!notification.read) {
-                          markAsRead.mutate(notification.id);
-                        }
-                      }}
-                    >
-                      <h5 className="text-sm font-medium mb-1">
-                        {notification.title}
-                      </h5>
-                      <p className="text-sm text-muted-foreground">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(notification.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    {notification.read && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => deleteNotification.mutate(notification.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <h5 className="text-sm font-medium mb-1">
+                      {notification.title}
+                    </h5>
+                    <p className="text-sm text-muted-foreground">
+                      {notification.message}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>
