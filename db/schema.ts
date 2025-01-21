@@ -14,18 +14,6 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Add notification settings table
-export const notificationSettings = pgTable("notification_settings", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  rewardThreshold: decimal("reward_threshold", { precision: 36, scale: 18 }), // Minimum reward amount to notify
-  priceChangeThreshold: decimal("price_change_threshold", { precision: 5, scale: 2 }), // Percentage change to trigger notification
-  emailNotifications: boolean("email_notifications").default(true),
-  browserNotifications: boolean("browser_notifications").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique().notNull(),
@@ -40,6 +28,17 @@ export const stakes = pgTable("stakes", {
   amount: decimal("amount", { precision: 36, scale: 18 }).notNull(),
   status: text("status").notNull().default("pending"),
   transactionHash: text("transaction_hash").unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const notificationSettings = pgTable("notification_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rewardThreshold: decimal("reward_threshold", { precision: 36, scale: 18 }), // Minimum reward amount to notify
+  priceChangeThreshold: decimal("price_change_threshold", { precision: 5, scale: 2 }), // Percentage change to trigger notification
+  emailNotifications: boolean("email_notifications").default(true),
+  browserNotifications: boolean("browser_notifications").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

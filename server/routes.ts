@@ -111,10 +111,18 @@ let rewardsGenerationInterval: NodeJS.Timeout | null = null;
 // Add notification generation for rewards
 async function generateRewardsForAllActiveStakes() {
   try {
-    // Get all active stakes
-    const activeStakes = await db.query.stakes.findMany({
-      where: eq(stakes.status, 'active'),
-    });
+    // Get all active stakes with valid users using join
+    const activeStakes = await db
+      .select({
+        stakeId: stakes.id,
+        userId: stakes.userId,
+        amount: stakes.amount,
+        createdAt: stakes.createdAt,
+        username: users.username
+      })
+      .from(stakes)
+      .innerJoin(users, eq(users.id, stakes.userId))
+      .where(eq(stakes.status, 'active'));
 
     // Group stakes by user
     const userStakes = activeStakes.reduce((acc, stake) => {
@@ -925,7 +933,7 @@ export function registerRoutes(app: Express): Server {
       res.json({ message: 'Wallet address updated successfully' });
     } catch (error) {
       console.error('Error updating wallet address:', error);
-      res.status(500).json({ error: 'Failed to update wallet address' });
+      res.status(500).json({ error: 'Failed to update walletaddress' });
     }
   });
 
