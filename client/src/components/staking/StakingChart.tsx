@@ -38,7 +38,8 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
           'MMM dd'
         ),
         rewards: Number(point.rewards)
-      }));
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp); // Ensure data is sorted by timestamp
   }, [data, timeRange]);
 
   if (isLoading) {
@@ -110,7 +111,10 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       <CardContent>
         <div className="h-[300px] mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={formattedData}>
+            <AreaChart 
+              data={formattedData}
+              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
@@ -129,7 +133,8 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={value => Number(value).toFixed(9)}
+                tickFormatter={value => value.toFixed(9)}
+                domain={['auto', 'auto']}
               />
               <Tooltip
                 contentStyle={{
