@@ -1,16 +1,41 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StakingStatsProps {
   totalStaked: number;
   rewards: number;
   monthlyRewards: number;
+  isLoading?: boolean;
 }
 
 export default function StakingStats({
   totalStaked,
   rewards,
-  monthlyRewards
+  monthlyRewards,
+  isLoading
 }: StakingStatsProps) {
+  if (isLoading) {
+    return (
+      <>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <Skeleton className="h-20 bg-zinc-800" />
+          </CardContent>
+        </Card>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <Skeleton className="h-20 bg-zinc-800" />
+          </CardContent>
+        </Card>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <Skeleton className="h-20 bg-zinc-800" />
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
   return (
     <>
       <Card className="bg-zinc-900 border-zinc-800">

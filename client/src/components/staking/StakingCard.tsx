@@ -8,9 +8,14 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { StakingData } from "@/lib/types";
 
-export default function StakingCard() {
+interface StakingCardProps {
+  isLoading?: boolean;
+}
+
+export default function StakingCard({ isLoading }: StakingCardProps) {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -60,6 +65,21 @@ export default function StakingCard() {
   const stakingData = queryClient.getQueryData<StakingData>(['/api/staking/data']);
   const hasWallet = settings?.walletAddress && settings.walletAddress.length > 0;
 
+  if (isLoading) {
+    return (
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white">Stake ETH</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-10 bg-zinc-800" />
+          <Skeleton className="h-32 bg-zinc-800" />
+          <Skeleton className="h-10 bg-zinc-800" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
@@ -101,7 +121,7 @@ export default function StakingCard() {
             </div>
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Monthly Rewards:</span>
-              <span>{stakingData.monthlyRewards.toFixed(9)} ETH</span>
+              <span>{(stakingData.totalStaked * 0.03 / 12).toFixed(9)} ETH</span>
             </div>
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Total Staked:</span>
