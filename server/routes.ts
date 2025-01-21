@@ -634,27 +634,42 @@ export function registerRoutes(app: Express): Server {
 
   // Calculate rewards for a specific timestamp
   async function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): Promise<number> {
-    // Only generate rewards if stake amount is at least 0.01 ETH
-    if (stakedAmount < 0.01) {
-      return 0;
-    }
+    // Get all active stakes for the user
+    const userStakes = await db.query.stakes.findMany({
+      where: (stakes, { and, eq }) => and(
+        eq(stakes.userId, userId),
+        eq(stakes.status, 'active')
+      )
+    });
 
-    const timePassedMs = endTimeMs - startTimeMs;
-    const minutesElapsed = timePassedMs / (60 * 1000); // Convert to minutes
-    const yearlyRate = 0.03; // 3% APY
-    const minutelyRate = yearlyRate / (365 * 24 * 60); // Convert yearly rate to per-minute rate
+    let totalRewards = 0;
 
-    if (forTransaction) {
-      const reward = stakedAmount * minutelyRate; // Calculate one minute's reward
-      // Record transaction if it's a meaningful reward
-      if (reward >= 0.00000001) { // Threshold at 8 decimals
-        await recordRewardTransaction(userId, reward);
+    // Calculate rewards for each stake individually
+    for (const stake of userStakes) {
+      const stakeStartTime = stake.createdAt.getTime();
+      // Only calculate rewards if the stake was created before the end time
+      if (stakeStartTime <= endTimeMs) {
+        const stakeAmount = parseFloat(stake.amount.toString());
+        if (stakeAmount >= 0.01) { // Only calculate rewards for stakes >= 0.01 ETH
+          const timePassedMs = endTimeMs - stakeStartTime;
+          const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
+          const yearlyRate = 0.03; // 3% APY
+          const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
+          totalRewards += stakeRewards;
+        }
       }
-      return reward;
-    } else {
-      // For total rewards calculation (withdrawal, display), calculate accumulated rewards
-      return stakedAmount * minutelyRate * minutesElapsed;
     }
+
+    if (forTransaction && totalRewards > 0) {
+      // For transaction records, create minute-based snapshots
+      const minutelyReward = totalRewards / (365 * 24 * 60);
+      if (minutelyReward >= 0.00000001) { // Threshold at 8 decimals
+        await recordRewardTransaction(userId, minutelyReward);
+      }
+      return minutelyReward;
+    }
+
+    return totalRewards;
   }
 
   async function recordRewardTransaction(userId: number, reward: number) {
@@ -1108,8 +1123,8 @@ export function registerRoutes(app: Express): Server {
 
       // For now, we only support ETH, so ensure ETH allocation is 100%
       if (eth !== 100) {
-        return res.status(400).json({ 
-          error: 'Currently only ETH staking is supported. Please set ETH allocation to 100%' 
+        return res.status(400).json({
+          error: 'Currently only ETH staking is supported. Please set ETH allocation to 100%'
         });
       }
 
