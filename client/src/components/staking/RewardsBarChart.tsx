@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { format, subDays, subWeeks, subMonths, getISOWeek, getYear } from "date-fns";
+import { format, subDays, subWeeks, subMonths, getISOWeek, getYear, startOfWeek, endOfWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 
@@ -48,11 +48,15 @@ function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days
       case 'days':
         key = format(date, 'dd.MM.');
         break;
-      case 'weeks':
+      case 'weeks': {
+        // Get the start and end of the week for better grouping
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Start week on Monday
+        const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
         const week = getISOWeek(date);
         const year = getYear(date);
-        key = `KW ${week.toString().padStart(2, '0')}/${year}`;
+        key = `KW ${week} (${format(weekStart, 'dd.MM.')} - ${format(weekEnd, 'dd.MM.')})`;
         break;
+      }
       case 'months':
         key = format(date, 'MMM yyyy', { locale: de });
         break;
@@ -70,12 +74,10 @@ function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days
     amount: parseFloat(amount.toFixed(9))
   })).sort((a, b) => {
     if (timeRange === 'weeks') {
-      // Extract week numbers and years for comparison
-      const [weekA, yearA] = a.date.split(' ')[1].split('/');
-      const [weekB, yearB] = b.date.split(' ')[1].split('/');
-      const compareYear = parseInt(yearA) - parseInt(yearB);
-      if (compareYear !== 0) return compareYear;
-      return parseInt(weekA) - parseInt(weekB);
+      // Extract week numbers for comparison
+      const weekA = parseInt(a.date.split(' ')[1]);
+      const weekB = parseInt(b.date.split(' ')[1]);
+      return weekA - weekB;
     }
     return a.date.localeCompare(b.date);
   });
@@ -120,7 +122,8 @@ export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
                 fontSize={12}
                 angle={timeRange === 'weeks' ? -45 : 0}
                 textAnchor={timeRange === 'weeks' ? 'end' : 'middle'}
-                height={60}
+                height={70}
+                interval={0}
               />
               <YAxis 
                 stroke="#9ca3af"
