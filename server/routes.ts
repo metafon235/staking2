@@ -109,11 +109,14 @@ const statsCache = new Map<string, {
 let rewardsGenerationInterval: NodeJS.Timeout | null = null;
 
 // Add notification generation for rewards
+const userRewardsCache = new Map<number, number>();
+let lastNotificationTime = new Map<number, number>();
+
+// Replace the generateRewardsForAllActiveStakes function
 async function generateRewardsForAllActiveStakes() {
   try {
     console.log('Starting rewards generation cycle...');
 
-    // Get all active stakes with valid users using join
     const activeStakes = await db
       .select({
         stakeId: stakes.id,
@@ -162,20 +165,32 @@ async function generateRewardsForAllActiveStakes() {
               createdAt: new Date()
             });
 
-          console.log(`Created reward transaction for user ${userId}`);
+          // Add reward to cache
+          const currentReward = userRewardsCache.get(parseInt(userId)) || 0;
+          userRewardsCache.set(parseInt(userId), currentReward + reward);
 
-          // Create notification for the reward
-          await db.insert(notifications)
-            .values({
-              userId: parseInt(userId),
-              type: 'reward',
-              title: 'New Staking Reward',
-              message: `You earned ${reward.toFixed(9)} ETH from staking`,
-              read: false,
-              createdAt: new Date()
-            });
+          // Check if it's time to send a notification (every 15 minutes)
+          const now = Date.now();
+          const lastNotification = lastNotificationTime.get(parseInt(userId)) || 0;
+          if (now - lastNotification >= 15 * 60 * 1000) { // 15 minutes
+            const totalRewards = userRewardsCache.get(parseInt(userId)) || 0;
+            if (totalRewards > 0) {
+              await db.insert(notifications)
+                .values({
+                  userId: parseInt(userId),
+                  type: 'reward',
+                  title: '15-Minuten Staking Rewards Übersicht',
+                  message: `Sie haben in den letzten 15 Minuten ${totalRewards.toFixed(9)} ETH durch Staking verdient`,
+                  read: false,
+                  createdAt: new Date()
+                });
 
-          console.log(`Created notification for user ${userId}`);
+              // Reset cache and update last notification time
+              userRewardsCache.set(parseInt(userId), 0);
+              lastNotificationTime.set(parseInt(userId), now);
+              console.log(`Created summary notification for user ${userId} with total rewards: ${totalRewards}`);
+            }
+          }
         }
       }
     }
@@ -936,7 +951,7 @@ export function registerRoutes(app: Express): Server {
         walletAddress: user?.walletAddress || null
       });
     } catch (error) {
-      consoleerror('Error fetching settings:', error);
+      console.error('Error fetching settings:', error);
       res.status(500).json({ error: 'Failed to fetch settings' });
     }
   });
