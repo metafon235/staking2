@@ -69,33 +69,6 @@ export class NotificationService {
       .returning();
   }
 
-  static async createReferralNotification(
-    referrerId: number,
-    referredUsername: string,
-    type: 'new_referral' | 'referral_reward',
-    amount?: number
-  ) {
-    let title: string;
-    let message: string;
-
-    if (type === 'new_referral') {
-      title = 'Neuer Referral! 🎉';
-      message = `${referredUsername} hat sich über Ihren Referral-Link registriert.`;
-    } else {
-      title = 'Referral Reward erhalten! 💰';
-      message = `Sie haben ${amount?.toFixed(9)} ETH Reward durch die Aktivität von ${referredUsername} erhalten.`;
-    }
-
-    return this.createNotification({
-      userId: referrerId,
-      type: type,
-      title,
-      message,
-      data: JSON.stringify({ referredUsername, amount }),
-      read: false
-    });
-  }
-
   static async createRewardNotification(
     userId: number,
     amount: number,

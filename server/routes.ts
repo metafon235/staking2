@@ -3,11 +3,10 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
-import { stakes, rewards, transactions, users, referralRewards } from "@db/schema";
+import { stakes, rewards, transactions, users } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt, desc } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
-
 
 // Network base statistics
 const BASE_STATS = {
@@ -152,11 +151,9 @@ async function generateRewardsForAllActiveStakes() {
   }
 }
 
-
 const insertUserSchema = z.object({
   username: z.string().min(3).max(20),
-  password: z.string().min(8),
-  referralCode: z.string().optional()
+  password: z.string().min(8)
 });
 
 export function registerRoutes(app: Express): Server {
@@ -582,7 +579,6 @@ export function registerRoutes(app: Express): Server {
         const rewardsToUse = Math.min(currentRewards, remainingAmount);
         remainingAmount -= rewardsToUse;
 
-        // Record rewards withdrawal
         await db.insert(transactions)
           .values({
             userId: req.user.id,
@@ -597,14 +593,13 @@ export function registerRoutes(app: Express): Server {
         // Update the stake amount
         // Note: In a real implementation, you would need to handle unstaking
         // from the actual staking contract
-        const [updatedStake] = await db
+        await db
           .update(stakes)
           .set({
             amount: (totalStaked - remainingAmount).toString(),
             updatedAt: new Date(),
           })
-          .where(eq(stakes.id, userStakes[0].id))
-          .returning();
+          .where(eq(stakes.id, userStakes[0].id));
 
         // Record stake withdrawal
         await db.insert(transactions)
@@ -637,7 +632,7 @@ export function registerRoutes(app: Express): Server {
     })
   });
 
-  // Fix the reward calculation function
+  // Calculate rewards for a specific timestamp
   async function calculateRewardsForTimestamp(userId: number, stakedAmount: number, startTimeMs: number, endTimeMs: number, forTransaction: boolean = false): Promise<number> {
     // Only generate rewards if stake amount is at least 0.01 ETH
     if (stakedAmount < 0.01) {
@@ -662,31 +657,6 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
-  // Generate a unique referral code
-  async function generateReferralCode(): Promise<string> {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code: string;
-    let isUnique = false;
-
-    while (!isUnique) {
-      code = '';
-      for (let i = 0; i < 8; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-
-      const existing = await db.query.users.findFirst({
-        where: eq(users.referralCode, code)
-      });
-
-      if (!existing) {
-        isUnique = true;
-        return code;
-      }
-    }
-
-    throw new Error('Failed to generate unique referral code');
-  }
-
   async function recordRewardTransaction(userId: number, reward: number) {
     if (reward > 0) {
       try {
@@ -704,89 +674,14 @@ export function registerRoutes(app: Express): Server {
 
         // Only create new reward transaction if none exists in the last minute
         if (!recentReward) {
-          const [transaction] = await db.insert(transactions)
+          await db.insert(transactions)
             .values({
               userId,
               type: 'reward',
               amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
               status: 'completed',
               createdAt: new Date()
-            })
-            .returning();
-
-          // Get user information for referral processing
-          const user = await db.query.users.findFirst({
-            where: eq(users.id, userId),
-            columns: {
-              referrerId: true,
-              username: true
-            }
-          });
-
-          if (user?.referrerId) {
-            // Calculate referral reward (1% of the staking reward)
-            const referralReward = reward * 0.01;
-
-            // Record referral reward transaction
-            const [referralTransaction] = await db.insert(transactions)
-              .values({
-                userId: user.referrerId,
-                type: 'referral_reward',
-                amount: referralReward.toFixed(9),
-                status: 'completed',
-                createdAt: new Date()
-              })
-              .returning();
-
-            // Record in referral_rewards table for better tracking
-            await db.insert(referralRewards)
-              .values({
-                referrerId: user.referrerId,
-                referredId: userId,
-                rewardId: transaction.id,
-                amount: referralReward.toString(),
-                createdAt: new Date()
-              });
-
-            // Create notification for referral reward
-            await NotificationService.createReferralNotification(
-              user.referrerId,
-              user.username,
-              'referral_reward',
-              referralReward
-            );
-
-            // Calculate total rewards to check for milestone
-            const totalRewardsResult = await db.select({
-              total: sql<string>`sum(amount)::numeric`
-            })
-              .from(transactions)
-              .where(
-                and(
-                  eq(transactions.userId, user.referrerId),
-                  eq(transactions.type, 'referral_reward')
-                )
-              );
-
-            const totalReferralRewards = parseFloat(totalRewardsResult[0]?.total || '0');
-
-            // Check for decimal place milestones in referral rewards
-            const previousTotal = totalReferralRewards - referralReward;
-            const previousLog10 = Math.floor(Math.log10(previousTotal));
-            const currentLog10 = Math.floor(Math.log10(totalReferralRewards));
-
-            // If we've reached a new decimal place in referral rewards
-            if (currentLog10 > previousLog10 && totalReferralRewards >= 0.001) {
-              await NotificationService.createNotification({
-                userId: user.referrerId,
-                type: 'referral_milestone',
-                title: 'Referral Milestone erreicht! 🎉',
-                message: `Glückwunsch! Ihre Referral-Rewards haben ${totalReferralRewards.toFixed(3)} ETH erreicht!`,
-                data: JSON.stringify({ totalReferralRewards }),
-                read: false
-              });
-            }
-          }
+            });
         }
       } catch (error) {
         console.error('Error recording reward transaction:', error);
@@ -794,7 +689,56 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
-  app.post("/api/register", async (req, res, next) => {
+  // Get settings
+  app.get('/api/settings', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's basic info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.user.id),
+        columns: {
+          walletAddress: true,
+        }
+      });
+
+      res.json({
+        walletAddress: user?.walletAddress || null
+      });
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
+  // Update wallet address
+  app.post('/api/settings/wallet', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { walletAddress } = req.body;
+
+      // Basic Ethereum address validation
+      if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+        return res.status(400).json({ error: 'Invalid Ethereum address' });
+      }
+
+      await db.update(users)
+        .set({ walletAddress })
+        .where(eq(users.id, req.user.id));
+
+      res.json({ message: 'Wallet address updated successfully' });
+    } catch (error) {
+      console.error('Error updating wallet address:', error);
+      res.status(500).json({ error: 'Failed to update wallet address' });
+    }
+  });
+
+  app.post("/api/register", async (req, res) => {
     try {
       const result = insertUserSchema.safeParse(req.body);
       if (!result.success) {
@@ -803,7 +747,7 @@ export function registerRoutes(app: Express): Server {
           .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
       }
 
-      const { username, password, referralCode } = result.data;
+      const { username, password } = result.data;
 
       // Check if user already exists
       const [existingUser] = await db
@@ -816,26 +760,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("Username already exists");
       }
 
-      // If referral code provided, find referrer
-      let referrerId: number | undefined;
-      if (referralCode) {
-        const [referrer] = await db
-          .select()
-          .from(users)
-          .where(eq(users.referralCode, referralCode))
-          .limit(1);
-
-        if (referrer) {
-          referrerId = referrer.id;
-          // Create notification for referrer
-          await NotificationService.createReferralNotification(
-            referrer.id,
-            username,
-            'new_referral'
-          );
-        }
-      }
-
       // Hash the password
       const hashedPassword = await crypto.randomBytes(64).toString('hex');
 
@@ -845,21 +769,19 @@ export function registerRoutes(app: Express): Server {
         .values({
           username,
           password: hashedPassword,
-          referrerId,
-          referralCode: await generateReferralCode(),
         })
         .returning();
 
       // Log the user in after registration
       req.login(newUser, (err) => {
         if (err) {
-          return next(err);
+          return res.status(500).json({error: "Login failed"})
         }
 
         // Save the session explicitly
         req.session.save((err) => {
           if (err) {
-            return next(err);
+            return res.status(500).json({error: "Session save failed"})
           }
           return res.json({
             message: "Registration successful",
@@ -868,9 +790,10 @@ export function registerRoutes(app: Express): Server {
         });
       });
     } catch (error) {
-      next(error);
+      return res.status(500).json({ error: 'Failed to register user' });
     }
   });
+
 
   app.get('/api/transactions', async (req, res) => {
     try {
@@ -941,82 +864,40 @@ export function registerRoutes(app: Express): Server {
         where: eq(users.id, req.user.id),
         columns: {
           walletAddress: true,
-          referralCode: true
         }
       });
 
-      // Get referral statistics with more detail
-      const referredUsers = await db
-        .select({
-          count: count(),
-        })
-        .from(users)
-        .where(eq(users.referrerId, req.user.id));
-
-      // Get both pending and completed referral rewards
-      const referralRewardsSum = await db
-        .select({
-          total: sql<string>`COALESCE(SUM(CASE WHEN status = 'completed' THEN amount::numeric ELSE 0 END), 0)`,
-          pending: sql<string>`COALESCE(SUM(CASE WHEN status = 'pending' THEN amount::numeric ELSE 0 END), 0)`
-        })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.userId, req.user.id),
-            eq(transactions.type, 'referral_reward')
-          )
-        );
-
-      // Get detailed referral activity
-      const referralActivity = await db
-        .select({
-          referred_id: users.id,
-          username: users.username,
-          joined_at: users.createdAt,
-          total_rewards: sql<string>`COALESCE(SUM(${transactions.amount}::numeric), 0)`
-        })
-        .from(users)
-        .leftJoin(
-          transactions,
-          and(
-            eq(transactions.userId, users.id),
-            eq(transactions.type, 'reward')
-          )
-        )
-        .where(eq(users.referrerId, req.user.id))
-        .groupBy(users.id, users.username, users.createdAt)
-        .orderBy(desc(users.createdAt));
-
-      const totalReferrals = parseInt(referredUsers[0].count.toString());
-      const totalRewards = parseFloat(referralRewardsSum[0]?.total || '0');
-      const pendingRewards = parseFloat(referralRewardsSum[0]?.pending || '0');
-
-      // Generate referral code if not exists
-      let referralCode = user?.referralCode;
-      if (!referralCode) {
-        referralCode = await generateReferralCode();
-        await db.update(users)
-          .set({ referralCode })
-          .where(eq(users.id, req.user.id));
-      }
-
       res.json({
-        walletAddress: user?.walletAddress || '',
-        referralCode,
-        referralStats: {
-          totalReferrals,
-          totalRewards,
-          pendingRewards,
-          referralActivity: referralActivity.map(activity => ({
-            username: activity.username,
-            joinedAt: activity.joined_at,
-            generatedRewards: parseFloat(activity.total_rewards.toString())
-          }))
-        }
+        walletAddress: user?.walletAddress || null
       });
     } catch (error) {
       console.error('Error fetching settings:', error);
       res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
+  // Update wallet address
+  app.post('/api/settings/wallet', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const { walletAddress } = req.body;
+
+      // Basic Ethereum address validation
+      if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+        return res.status(400).json({ error: 'Invalid Ethereum address' });
+      }
+
+      await db.update(users)
+        .set({ walletAddress })
+        .where(eq(users.id, req.user.id));
+
+      res.json({ message: 'Wallet address updated successfully' });
+    } catch (error) {
+      console.error('Error updating wallet address:', error);
+      res.status(500).json({ error: 'Failed to update wallet address' });
     }
   });
 
@@ -1117,31 +998,15 @@ export function registerRoutes(app: Express): Server {
 
   // Update auth.ts registration to handle referral codes
   app.post('/api/register', async (req, res) => {
-    const { email, password, referralCode } = req.body;
+    const { email, password } = req.body;
 
     try {
-      let referrerId: number | null = null;
-
-      if (referralCode) {
-        const referrer = await db.query.users.findFirst({
-          where: eq(users.referralCode, referralCode),
-          columns: {
-            id: true
-          }
-        });
-
-        if (referrer) {
-          referrerId = referrer.id;
-        }
-      }
-
       const newReferralCode = await generateReferralCode();
 
       const [user] = await db.insert(users)
         .values({
           email,
           password,
-          referrerId,
           referralCode: newReferralCode
         })
         .returning();
