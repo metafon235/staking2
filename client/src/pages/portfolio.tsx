@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SiEthereum, SiSolana } from "react-icons/si";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -214,7 +215,7 @@ export default function Portfolio() {
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex gap-4">
-                  <Button 
+                  <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     onClick={() => handleWithdrawAll('ETH')}
                     disabled={isWithdrawing || totalValue <= 0}
