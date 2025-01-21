@@ -77,16 +77,18 @@ export default function TransactionHistory() {
     type: tx.type
   }));
 
-  // Calculate summary statistics
+  // Calculate summary statistics for only stake and reward transactions
   const summary = transactions.reduce((acc, tx) => {
-    if (!acc[tx.type]) {
-      acc[tx.type] = {
-        count: 0,
-        total: 0
-      };
+    if (tx.type === 'stake' || tx.type === 'reward') {
+      if (!acc[tx.type]) {
+        acc[tx.type] = {
+          count: 0,
+          total: 0
+        };
+      }
+      acc[tx.type].count++;
+      acc[tx.type].total += parseFloat(tx.amount);
     }
-    acc[tx.type].count++;
-    acc[tx.type].total += parseFloat(tx.amount);
     return acc;
   }, {} as Record<string, { count: number; total: number }>);
 
@@ -108,20 +110,29 @@ export default function TransactionHistory() {
             </TabsList>
 
             <TabsContent value="table" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {Object.entries(summary).map(([type, data]) => (
-                  <Card key={type} className="bg-zinc-800/50">
-                    <CardContent className="pt-6">
-                      <div className="text-sm text-zinc-400">{getTypeLabel(type)}</div>
-                      <div className="text-2xl font-bold text-white">
-                        {data.total.toFixed(6)} ETH
-                      </div>
-                      <div className="text-sm text-zinc-400">
-                        {data.count} transactions
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <Card className="bg-zinc-800/50">
+                  <CardContent className="pt-6">
+                    <div className="text-sm text-zinc-400">Total Stake</div>
+                    <div className="text-2xl font-bold text-white">
+                      {(summary.stake?.total || 0).toFixed(6)} ETH
+                    </div>
+                    <div className="text-sm text-zinc-400">
+                      {summary.stake?.count || 0} transactions
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-zinc-800/50">
+                  <CardContent className="pt-6">
+                    <div className="text-sm text-zinc-400">Total Rewards</div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {(summary.reward?.total || 0).toFixed(6)} ETH
+                    </div>
+                    <div className="text-sm text-zinc-400">
+                      {summary.reward?.count || 0} transactions
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="relative overflow-x-auto">
