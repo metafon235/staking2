@@ -1,8 +1,7 @@
 import StakingCard from "@/components/staking/StakingCard";
 import StakingStats from "@/components/staking/StakingStats";
-import StakingChart from "@/components/StakingChart";
+import StakingChart from "@/components/staking/StakingChart";
 import { useQuery } from "@tanstack/react-query";
-import { getStakingData } from "@/lib/web3";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { format } from "date-fns";
 import { memo } from "react";
@@ -10,11 +9,10 @@ import { memo } from "react";
 function DashboardContent() {
   const { data: stakingData, isLoading } = useQuery({
     queryKey: ['/api/staking/data'],
-    queryFn: getStakingData,
-    refetchInterval: 300000, // Refresh every 5 minutes
-    staleTime: 240000, // Consider data fresh for 4 minutes
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 25000, // Consider data fresh for 25 seconds
     retry: false,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     initialData: {
       totalStaked: 0,
       rewards: 0,
@@ -30,7 +28,7 @@ function DashboardContent() {
           <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <span>Updates every 5 minutes</span>
+              <span>Updates every 30 seconds</span>
               <span>•</span>
               <span>Last updated: {format(new Date(), 'HH:mm:ss')}</span>
             </div>
@@ -64,5 +62,4 @@ function DashboardContent() {
   );
 }
 
-// Memoize the dashboard to prevent unnecessary re-renders
 export default memo(DashboardContent);
