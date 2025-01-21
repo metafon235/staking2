@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, subWeeks, subMonths } from "date-fns";
 import { Loader2 } from "lucide-react";
 
 interface Transaction {
@@ -17,14 +17,33 @@ interface DailyRewards {
   amount: number;
 }
 
-function groupTransactionsByDay(transactions: Transaction[]): DailyRewards[] {
-  const rewardsMap = new Map<string, number>();
+interface RewardsBarChartProps {
+  timeRange: 'days' | 'weeks' | 'months';
+}
 
-  // Filter reward transactions and group by day
+function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days' | 'weeks' | 'months'): DailyRewards[] {
+  const rewardsMap = new Map<string, number>();
+  const now = new Date();
+
+  // Define the start date based on timeRange
+  const startDate = {
+    days: subDays(now, 7),
+    weeks: subWeeks(now, 8),
+    months: subMonths(now, 6)
+  }[timeRange];
+
+  // Define the format based on timeRange
+  const dateFormat = {
+    days: 'MMM d',
+    weeks: 'MMM d',
+    months: 'MMM yyyy'
+  }[timeRange];
+
+  // Filter reward transactions and group by period
   transactions
-    .filter(tx => tx.type === 'reward' && tx.status === 'completed')
+    .filter(tx => tx.type === 'reward' && tx.status === 'completed' && new Date(tx.createdAt) >= startDate)
     .forEach(tx => {
-      const day = format(new Date(tx.createdAt), 'MMM d');
+      const day = format(new Date(tx.createdAt), dateFormat);
       const amount = parseFloat(tx.amount);
       rewardsMap.set(day, (rewardsMap.get(day) || 0) + amount);
     });
@@ -36,7 +55,7 @@ function groupTransactionsByDay(transactions: Transaction[]): DailyRewards[] {
   })).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export default function RewardsBarChart() {
+export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
   const { data: transactions, isLoading } = useQuery({
     queryKey: ['/api/transactions'],
     queryFn: async () => {
@@ -53,7 +72,7 @@ export default function RewardsBarChart() {
     return (
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-xl font-medium text-white">Daily Rewards</CardTitle>
+          <CardTitle className="text-xl font-medium text-white">Rewards History</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center h-[300px]">
@@ -64,17 +83,14 @@ export default function RewardsBarChart() {
     );
   }
 
-  const dailyRewards = groupTransactionsByDay(transactions || []);
+  const rewardsByPeriod = groupTransactionsByPeriod(transactions || [], timeRange);
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader>
-        <CardTitle className="text-xl font-medium text-white">Daily Rewards</CardTitle>
-      </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dailyRewards}>
+            <BarChart data={rewardsByPeriod}>
               <XAxis 
                 dataKey="date" 
                 stroke="#9ca3af"

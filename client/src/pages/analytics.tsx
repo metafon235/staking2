@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
 import { getEthPrice, getEthStats } from "@/lib/binance";
 import MarketStatsChart from "@/components/market/MarketStatsChart";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useState } from "react";
 
 interface AnalyticsData {
   performance: {
@@ -54,6 +56,7 @@ async function fetchAnalyticsData(): Promise<AnalyticsData> {
 }
 
 export default function Analytics() {
+  const [timeRange, setTimeRange] = useState<'days' | 'weeks' | 'months'>('days');
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['/api/analytics'],
     queryFn: fetchAnalyticsData,
@@ -63,13 +66,13 @@ export default function Analytics() {
   const { data: liveEthPrice } = useQuery({
     queryKey: ['binanceEthPrice'],
     queryFn: getEthPrice,
-    refetchInterval: 30000, //This line was updated
+    refetchInterval: 30000,
   });
 
   const { data: ethStats } = useQuery({
     queryKey: ['binanceEthStats'],
     queryFn: getEthStats,
-    staleTime: Infinity, // Prevents background refetches
+    staleTime: Infinity,
   });
 
   if (isLoadingAnalytics) {
@@ -141,7 +144,37 @@ export default function Analytics() {
             </Card>
           </div>
 
-          <RewardsBarChart />
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">All My Rewards</h2>
+              <ToggleGroup
+                type="single"
+                value={timeRange}
+                onValueChange={(value: 'days' | 'weeks' | 'months') => value && setTimeRange(value)}
+                className="bg-zinc-800 border border-zinc-700 rounded-lg"
+              >
+                <ToggleGroupItem
+                  value="days"
+                  className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+                >
+                  Days
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="weeks"
+                  className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+                >
+                  Weeks
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="months"
+                  className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
+                >
+                  Months
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <RewardsBarChart timeRange={timeRange} />
+          </div>
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader>
