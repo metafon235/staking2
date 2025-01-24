@@ -30,6 +30,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
       const normalReward = principal * apy * year;
 
       // Calculate compound rewards (daily compounding)
+      // Using daily compounding for more pronounced exponential growth
       const compoundReward = principal * (Math.pow(1 + apy / 365, year * 365) - 1);
 
       data.push({
@@ -105,19 +106,31 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
 
         <div className="h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart 
+              data={chartData}
+              margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis 
                 dataKey="month" 
                 stroke="#888" 
                 tickFormatter={(value) => `${value}m`}
+                height={30}
+                tick={{ fontSize: 12 }}
               />
               <YAxis 
                 stroke="#888"
                 tickFormatter={(value) => `${value.toFixed(2)} ETH`}
+                width={80}
+                tick={{ fontSize: 12 }}
               />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a' }}
+                contentStyle={{ 
+                  backgroundColor: '#18181b', 
+                  border: '1px solid #27272a',
+                  padding: '8px',
+                  fontSize: '12px'
+                }}
                 labelFormatter={(value) => `Month ${value}`}
                 formatter={(value: number) => [`${value.toFixed(6)} ETH`]}
               />
@@ -126,6 +139,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 dataKey="normal" 
                 stroke="#8884d8" 
                 name="Standard Staking"
+                strokeWidth={2}
                 dot={false}
               />
               {compounding && (
@@ -134,6 +148,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                   dataKey="compound" 
                   stroke="#4ade80" 
                   name="Compound Staking"
+                  strokeWidth={2}
                   dot={false}
                 />
               )}
@@ -142,17 +157,17 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
         </div>
 
         <div className="space-y-2 pt-2 border-t border-zinc-800">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center py-1">
             <span className="text-sm text-zinc-400">Standard Rewards:</span>
             <span className="font-medium text-white">{rewards.normal.toFixed(6)} ETH</span>
           </div>
           {compounding && (
             <>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center py-1">
                 <span className="text-sm text-zinc-400">Compound Rewards:</span>
                 <span className="font-medium text-green-500">{rewards.compound.toFixed(6)} ETH</span>
               </div>
-              <div className="flex justify-between items-center text-purple-500">
+              <div className="flex justify-between items-center text-purple-500 py-1">
                 <span className="text-sm">Additional Rewards from Compounding:</span>
                 <span className="font-medium">
                   {(rewards.compound - rewards.normal).toFixed(6)} ETH
