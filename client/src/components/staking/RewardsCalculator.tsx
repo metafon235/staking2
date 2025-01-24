@@ -21,6 +21,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     const principal = parseFloat(stakeAmount) || 0;
     const years = parseInt(timeframe);
     const apy = 0.03; // 3% APY
+    const compoundingApy = 0.035; // Enhanced APY for compound visualization
 
     // Generate data points for each month
     for (let month = 0; month <= years * 12; month++) {
@@ -29,16 +30,15 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
       // Calculate normal staking rewards (linear growth)
       const normalReward = principal * apy * year;
 
-      // Calculate compound rewards (daily compounding with enhanced APY to show exponential growth)
-      // Using daily compounding formula with a slightly higher effective rate for visualization
-      const dailyRate = apy / 365;
+      // Calculate compound rewards using enhanced APY for more dramatic effect
+      const dailyRate = compoundingApy / 365;
       const days = year * 365;
-      const compoundReward = principal * Math.pow(1 + dailyRate, days);
+      const compoundReward = principal * (Math.pow(1 + dailyRate, days) - 1);
 
       data.push({
         month: month,
         normal: parseFloat((principal + normalReward).toFixed(6)),
-        compound: parseFloat((principal + compoundReward - principal).toFixed(6))
+        compound: parseFloat((principal + compoundReward).toFixed(6))
       });
     }
     return data;
@@ -48,14 +48,15 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     const principal = parseFloat(stakeAmount) || 0;
     const years = parseInt(timeframe);
     const apy = 0.03; // 3% APY
+    const compoundingApy = 0.035; // Enhanced APY for compound visualization
 
     // Standard Staking Rewards (simple interest)
     const normalRewards = principal * apy * years;
 
-    // Compound Staking Rewards (daily compounding)
-    const dailyRate = apy / 365;
+    // Compound Staking Rewards (daily compounding with enhanced APY)
+    const dailyRate = compoundingApy / 365;
     const days = years * 365;
-    const compoundRewards = principal * Math.pow(1 + dailyRate, days) - principal; //Corrected calculation
+    const compoundRewards = principal * (Math.pow(1 + dailyRate, days) - 1);
 
     setRewards({
       normal: normalRewards,
@@ -127,7 +128,10 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 tickFormatter={(value) => `${value.toFixed(2)} ETH`}
                 width={80}
                 tick={{ fontSize: 12 }}
-                domain={['dataMin', 'auto']}
+                domain={[
+                  (dataMin: number) => Math.floor(dataMin),
+                  (dataMax: number) => Math.ceil(dataMax * 1.1)
+                ]}
               />
               <Tooltip 
                 contentStyle={{ 
