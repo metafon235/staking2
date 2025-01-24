@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from "recharts";
 
 interface RewardsCalculatorProps {
   currentStake?: number;
@@ -76,6 +76,11 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     });
   }, [stakeAmount, timeframe, compounding, APY]);
 
+  // Calculate the percentage difference for display
+  const percentageIncrease = rewards.normal > 0 
+    ? ((rewards.compound - rewards.normal) / rewards.normal * 100).toFixed(2)
+    : '0';
+
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
@@ -127,6 +132,12 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
               data={chartData}
               margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
             >
+              <defs>
+                <linearGradient id="compoundGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis 
                 dataKey="month" 
@@ -162,17 +173,27 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 name="Standard Rewards"
                 strokeWidth={2}
                 dot={false}
+                strokeOpacity={0.6}
               />
               {compounding && (
-                <Line 
-                  type="monotone" 
-                  dataKey="compound" 
-                  stroke="#4ade80" 
-                  name="Compound Rewards"
-                  strokeWidth={3}
-                  strokeOpacity={0.8}
-                  dot={false}
-                />
+                <>
+                  <Area
+                    type="monotone"
+                    dataKey="compound"
+                    stroke="#4ade80"
+                    fill="url(#compoundGradient)"
+                    fillOpacity={1}
+                    strokeWidth={0}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="compound" 
+                    stroke="#4ade80" 
+                    name="Compound Rewards"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                </>
               )}
             </LineChart>
           </ResponsiveContainer>
@@ -191,7 +212,9 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-purple-500 whitespace-nowrap">Additional from Compounding:</span>
-                <span className="font-medium text-purple-500 tabular-nums">{(rewards.compound - rewards.normal).toFixed(9)} ETH</span>
+                <span className="font-medium text-purple-500 tabular-nums">
+                  +{(rewards.compound - rewards.normal).toFixed(9)} ETH ({percentageIncrease}% more)
+                </span>
               </div>
             </>
           )}
