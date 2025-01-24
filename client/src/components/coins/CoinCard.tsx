@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type IconType } from "react-icons";
+import { Button } from "@/components/ui/button";
 
 interface CoinCardProps {
   name: string;
@@ -11,7 +12,6 @@ interface CoinCardProps {
   onClick?: () => void;
 }
 
-// Export as default for lazy loading
 export default function CoinCard({ name, symbol, apy, minStake, enabled = true, icon: Icon, onClick }: CoinCardProps) {
   return (
     <Card 
