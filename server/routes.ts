@@ -112,106 +112,235 @@ let rewardsGenerationInterval: NodeJS.Timeout | null = null;
 const userRewardsCache = new Map<number, number>();
 let lastNotificationTime = new Map<number, number>();
 
-// Replace the generateRewardsForAllActiveStakes function
+// Optimierte Rewards-Berechnung Funktion
 async function generateRewardsForAllActiveStakes() {
   try {
-    console.log('Starting rewards generation cycle...');
+    console.log('Starting optimized rewards generation cycle...');
 
+    // Hole alle aktiven Stakes mit Benutzerinformationen in einem Query
     const activeStakes = await db
       .select({
         stakeId: stakes.id,
         userId: stakes.userId,
         amount: stakes.amount,
         createdAt: stakes.createdAt,
-        username: users.username
+        username: users.username,
+        lastNotification: notifications.createdAt
       })
       .from(stakes)
       .innerJoin(users, eq(users.id, stakes.userId))
-      .where(eq(stakes.status, 'active'));
+      .leftJoin(
+        notifications,
+        and(
+          eq(notifications.userId, stakes.userId),
+          eq(notifications.type, 'reward')
+        )
+      )
+      .where(eq(stakes.status, 'active'))
+      .orderBy(desc(notifications.createdAt));
 
     console.log(`Found ${activeStakes.length} active stakes`);
 
-    // Group stakes by user
+    // Gruppiere Stakes nach Benutzer für Batch-Verarbeitung
     const userStakes = activeStakes.reduce((acc, stake) => {
       if (!acc[stake.userId]) {
-        acc[stake.userId] = [];
+        acc[stake.userId] = {
+          stakes: [],
+          lastNotification: stake.lastNotification,
+          totalStaked: 0
+        };
       }
-      acc[stake.userId].push(stake);
+      acc[stake.userId].stakes.push(stake);
+      acc[stake.userId].totalStaked += parseFloat(stake.amount.toString());
       return acc;
-    }, {} as Record<number, typeof activeStakes>);
+    }, {} as Record<number, {
+      stakes: typeof activeStakes,
+      lastNotification: Date | null,
+      totalStaked: number
+    }>);
 
-    // Generate rewards for each user's total staked amount
-    for (const [userId, stakes] of Object.entries(userStakes)) {
-      const totalStaked = stakes.reduce((sum, stake) =>
-        sum + parseFloat(stake.amount.toString()), 0);
+    // Batch-Verarbeitung der Rewards
+    const batchRewards = [];
+    const batchNotifications = [];
+    const now = new Date();
 
-      console.log(`Processing user ${userId} with total stake: ${totalStaked}`);
+    for (const [userId, data] of Object.entries(userStakes)) {
+      const { totalStaked, lastNotification } = data;
 
       if (totalStaked >= 0.01) {
         const yearlyRate = 0.03; // 3% APY
         const minutelyRate = yearlyRate / (365 * 24 * 60);
         const reward = totalStaked * minutelyRate;
 
-        console.log(`Calculated reward for user ${userId}: ${reward}`);
-
         if (reward >= 0.00000001) {
-          // Create reward transaction
-          await db.insert(transactions)
-            .values({
+          // Sammle Rewards für Batch-Insert
+          batchRewards.push({
+            userId: parseInt(userId),
+            type: 'reward',
+            amount: reward.toFixed(9),
+            status: 'completed',
+            createdAt: now
+          });
+
+          // Prüfe ob eine neue Notification erstellt werden soll (alle 15 Minuten)
+          const shouldNotify = !lastNotification ||
+            (now.getTime() - lastNotification.getTime() >= 15 * 60 * 1000);
+
+          if (shouldNotify) {
+            const totalRewards = reward * 15; // Akkumulierte Rewards über 15 Minuten
+            batchNotifications.push({
               userId: parseInt(userId),
               type: 'reward',
-              amount: reward.toFixed(9),
-              status: 'completed',
-              createdAt: new Date()
+              title: '15-Minuten Staking Rewards Übersicht',
+              message: `Sie haben in den letzten 15 Minuten ${totalRewards.toFixed(9)} ETH durch Staking verdient`,
+              read: false,
+              createdAt: now
             });
-
-          // Add reward to cache
-          const currentReward = userRewardsCache.get(parseInt(userId)) || 0;
-          userRewardsCache.set(parseInt(userId), currentReward + reward);
-
-          // Check if it's time to send a notification (every 15 minutes)
-          const now = Date.now();
-          const lastNotification = lastNotificationTime.get(parseInt(userId)) || 0;
-          if (now - lastNotification >= 15 * 60 * 1000) { // 15 minutes
-            const totalRewards = userRewardsCache.get(parseInt(userId)) || 0;
-            if (totalRewards > 0) {
-              await db.insert(notifications)
-                .values({
-                  userId: parseInt(userId),
-                  type: 'reward',
-                  title: '15-Minuten Staking Rewards Übersicht',
-                  message: `Sie haben in den letzten 15 Minuten ${totalRewards.toFixed(9)} ETH durch Staking verdient`,
-                  read: false,
-                  createdAt: new Date()
-                });
-
-              // Reset cache and update last notification time
-              userRewardsCache.set(parseInt(userId), 0);
-              lastNotificationTime.set(parseInt(userId), now);
-              console.log(`Created summary notification for user ${userId} with total rewards: ${totalRewards}`);
-            }
           }
         }
       }
     }
+
+    // Batch-Insert für Rewards
+    if (batchRewards.length > 0) {
+      await db.insert(transactions).values(batchRewards);
+      console.log(`Processed ${batchRewards.length} rewards in batch`);
+    }
+
+    // Batch-Insert für Notifications
+    if (batchNotifications.length > 0) {
+      await db.insert(notifications).values(batchNotifications);
+      console.log(`Created ${batchNotifications.length} notifications in batch`);
+    }
+
   } catch (error) {
     console.error('Error generating rewards:', error);
   }
 }
 
-// Start rewards generation on server startup
-function startRewardsGeneration() {
-  if (rewardsGenerationInterval) {
-    clearInterval(rewardsGenerationInterval);
+// Optimierte Rewards-Berechnung für einen spezifischen Zeitstempel
+async function calculateRewardsForTimestamp(
+  userId: number,
+  stakedAmount: number,
+  startTimeMs: number,
+  endTimeMs: number,
+  forTransaction: boolean = false
+): Promise<number> {
+  try {
+    // Cache-Key für diese Berechnung
+    const cacheKey = `rewards:${userId}:${startTimeMs}:${endTimeMs}`;
+    const cachedResult = await getFromCache(cacheKey);
+
+    if (cachedResult !== null) {
+      return parseFloat(cachedResult);
+    }
+
+    // Optimierte Query für letzte Withdrawal
+    const lastWithdrawal = await db.query.transactions.findFirst({
+      where: (transactions, { and, eq }) => and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'withdraw_all'),
+        eq(transactions.status, 'completed')
+      ),
+      orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+    });
+
+    // Optimierte Query für aktive Stakes
+    const userStakes = await db.query.stakes.findMany({
+      where: (stakes, { and, eq, gt }) => and(
+        eq(stakes.userId, userId),
+        eq(stakes.status, 'active'),
+        lastWithdrawal ? gt(stakes.createdAt, lastWithdrawal.createdAt) : undefined
+      ),
+      orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+    });
+
+    let totalRewards = 0;
+
+    // Effizientere Rewards-Berechnung
+    for (const stake of userStakes) {
+      const stakeStartTime = stake.createdAt.getTime();
+      if (stakeStartTime <= endTimeMs) {
+        const stakeAmount = parseFloat(stake.amount.toString());
+        if (stakeAmount >= 0.01) {
+          const timePassedMs = endTimeMs - stakeStartTime;
+          const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
+          const yearlyRate = 0.03; // 3% APY
+          const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
+          totalRewards += stakeRewards;
+        }
+      }
+    }
+
+    // Cache das Ergebnis für 1 Minute
+    await setInCache(cacheKey, totalRewards.toString(), 60);
+
+    if (forTransaction && totalRewards > 0) {
+      const minutelyReward = totalRewards / (365 * 24 * 60);
+      if (minutelyReward >= 0.00000001) {
+        await recordRewardTransaction(userId, minutelyReward);
+      }
+      return minutelyReward;
+    }
+
+    return totalRewards;
+  } catch (error) {
+    console.error('Error calculating rewards:', error);
+    return 0;
   }
-
-  // Generate rewards every minute
-  rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000);
-  console.log('Rewards generation interval started');
-
-  // Run once immediately
-  generateRewardsForAllActiveStakes();
 }
+
+// Simple In-Memory Cache Implementation
+const cache = new Map<string, { value: string; expires: number }>();
+
+async function getFromCache(key: string): Promise<string | null> {
+  const item = cache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expires) {
+    cache.delete(key);
+    return null;
+  }
+  return item.value;
+}
+
+async function setInCache(key: string, value: string, ttlSeconds: number): Promise<void> {
+  cache.set(key, {
+    value,
+    expires: Date.now() + (ttlSeconds * 1000)
+  });
+}
+
+async function recordRewardTransaction(userId: number, reward: number) {
+    if (reward > 0) {
+      try {
+        // Check if we already have a reward transaction in the last minute
+        const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
+  
+        const recentReward = await db.query.transactions.findFirst({
+          where: (transactions, { and, eq, gt }) => and(
+            eq(transactions.userId, userId),
+            eq(transactions.type, 'reward'),
+            gt(transactions.createdAt, lastMinute)
+          ),
+          orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+        });
+  
+        // Only create new reward transaction if none exists in the last minute
+        if (!recentReward) {
+          await db.insert(transactions)
+            .values({
+              userId,
+              type: 'reward',
+              amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
+              status: 'completed',
+              createdAt: new Date()
+            });
+        }
+      } catch (error) {
+        console.error('Error recording reward transaction:', error);
+      }
+    }
+  }
 
 const insertUserSchema = z.object({
   username: z.string().min(3).max(20),
@@ -223,6 +352,14 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // Start rewards generation when server starts
+  function startRewardsGeneration() {
+    if (rewardsGenerationInterval) {
+      clearInterval(rewardsGenerationInterval);
+    }
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000);
+    console.log('Rewards generation interval started');
+    generateRewardsForAllActiveStakes();
+  }
   startRewardsGeneration();
 
   // Get network statistics for a specific coin
@@ -737,38 +874,6 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
-  async function recordRewardTransaction(userId: number, reward: number) {
-    if (reward > 0) {
-      try {
-        // Check if we already have a reward transaction in the last minute
-        const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
-
-        const recentReward = await db.query.transactions.findFirst({
-          where: (transactions, { and, eq, gt }) => and(
-            eq(transactions.userId, userId),
-            eq(transactions.type, 'reward'),
-            gt(transactions.createdAt, lastMinute)
-          ),
-          orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-        });
-
-        // Only create new reward transaction if none exists in the last minute
-        if (!recentReward) {
-          await db.insert(transactions)
-            .values({
-              userId,
-              type: 'reward',
-              amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
-              status: 'completed',
-              createdAt: new Date()
-            });
-        }
-      } catch (error) {
-        console.error('Error recording reward transaction:', error);
-      }
-    }
-  }
-
   // Get settings
   app.get('/api/settings', async (req, res) => {
     try {
@@ -1220,4 +1325,9 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Placeholder function - needs actual implementation
+async function generateReferralCode(): Promise<string> {
+  return 'REF-XXXXXXX'; // Replace with actual code to generate referral code
 }

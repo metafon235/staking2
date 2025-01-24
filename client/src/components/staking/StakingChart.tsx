@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { memo, useState, useMemo, useEffect } from "react";
+import { memo, useState, useMemo, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StakingChartProps {
@@ -15,20 +15,22 @@ interface StakingChartProps {
   isLoading?: boolean;
 }
 
+// Optimierte Chart-Komponente mit Memoization
 function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }: StakingChartProps) {
   const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'week'>('hour');
 
-  // Debug logging
-  useEffect(() => {
-    console.log('StakingChart received data length:', data?.length);
-    console.log('Raw data:', data);
-  }, [data]);
-
-  const formattedData = useMemo(() => {
-    if (!data?.length) {
-      console.log('No data available for chart');
-      return [];
+  // Memoized Zeitformat-Funktion
+  const getTimeFormat = useCallback((range: 'hour' | 'day' | 'week') => {
+    switch (range) {
+      case 'hour': return 'HH:mm:ss';
+      case 'day': return 'MMM dd HH:mm';
+      case 'week': return 'MMM dd';
     }
+  }, []);
+
+  // Memoized Datenformatierung
+  const formattedData = useMemo(() => {
+    if (!data?.length) return [];
 
     const now = Date.now();
     const ranges = {
@@ -40,32 +42,25 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
     const timeWindow = ranges[timeRange];
     const startTime = now - timeWindow;
 
-    const filtered = data
-      .filter(point => {
-        const isInRange = point.timestamp >= startTime && point.timestamp <= now;
-        return isInRange;
-      })
+    return data
+      .filter(point => point.timestamp >= startTime && point.timestamp <= now)
       .map(point => ({
         ...point,
-        time: format(point.timestamp, 
-          timeRange === 'hour' ? 'HH:mm:ss' : 
-          timeRange === 'day' ? 'MMM dd HH:mm' : 
-          'MMM dd'
-        ),
+        time: format(point.timestamp, getTimeFormat(timeRange)),
         rewards: Number(point.rewards)
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
+  }, [data, timeRange, getTimeFormat]);
 
-    console.log('Filtered data range:', timeRange);
-    console.log('Start time:', new Date(startTime).toISOString());
-    console.log('End time:', new Date(now).toISOString());
-    console.log('Filtered data points:', filtered.length);
-    if (filtered.length > 0) {
-      console.log('Sample filtered point:', filtered[0]);
-    }
-
-    return filtered;
-  }, [data, timeRange]);
+  // Memoized Y-Achsen Domain für bessere Performance
+  const yAxisDomain = useMemo(() => {
+    if (!formattedData.length) return [0, 0];
+    const values = formattedData.map(d => d.rewards);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const padding = (max - min) * 0.1;
+    return [min - padding, max + padding];
+  }, [formattedData]);
 
   if (isLoading) {
     return (
@@ -89,6 +84,16 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       </Card>
     );
   }
+
+  // Memoized Gradient Definition
+  const gradientDef = useMemo(() => (
+    <defs>
+      <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+      </linearGradient>
+    </defs>
+  ), []);
 
   return (
     <Card className="col-span-3 bg-zinc-900 border-zinc-800">
@@ -135,12 +140,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                 data={formattedData}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
-                <defs>
-                  <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+                {gradientDef}
                 <XAxis
                   dataKey="time"
                   stroke="#71717a"
@@ -154,7 +154,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={value => value.toFixed(9)}
-                  domain={['auto', 'auto']}
+                  domain={yAxisDomain}
                 />
                 <Tooltip
                   contentStyle={{
@@ -174,9 +174,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                   fillOpacity={1}
                   fill="url(#rewardsGradient)"
                   strokeWidth={2}
-                  isAnimationActive={true}
-                  animationDuration={300}
-                  animationBegin={0}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -201,4 +199,5 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
   );
 }
 
+// Exportiere memoized Komponente
 export default memo(StakingChartComponent);
