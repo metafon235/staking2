@@ -1,14 +1,46 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, Component, ReactNode } from 'react';
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Lazy load components
+// Lazy load components with explicit imports
 const CoinCard = lazy(() => import('@/components/coins/CoinCard'));
 const RewardsCalculator = lazy(() => import('@/components/staking/RewardsCalculator'));
+
+// Error boundary component
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Card className="p-6 bg-red-900/10 border-red-900/20">
+          <p className="text-red-400">Something went wrong loading this component.</p>
+        </Card>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Skeleton loader for coin cards
 function CoinCardSkeleton() {
@@ -22,39 +54,40 @@ function CoinCardSkeleton() {
   );
 }
 
+// Memoized coin data to prevent unnecessary recalculations
+const coinData = [
+  {
+    name: "Ethereum",
+    symbol: "ETH",
+    apy: 3.00,
+    minStake: "0.01",
+    icon: SiEthereum,
+    enabled: true,
+    route: "/coins/eth"
+  },
+  {
+    name: "Polkadot",
+    symbol: "DOT",
+    apy: 12.00,
+    minStake: "5.00",
+    icon: SiPolkadot,
+    enabled: false,
+    route: "/coins/dot"
+  },
+  {
+    name: "Solana",
+    symbol: "SOL",
+    apy: 6.50,
+    minStake: "1.00",
+    icon: SiSolana,
+    enabled: false,
+    route: "/coins/sol"
+  }
+] as const;
+
 export default function Home() {
   const { user } = useUser();
   const [, navigate] = useLocation();
-
-  const coinData = [
-    {
-      name: "Ethereum",
-      symbol: "ETH",
-      apy: 3.00,
-      minStake: "0.01",
-      icon: SiEthereum,
-      enabled: true,
-      route: "/coins/eth"
-    },
-    {
-      name: "Polkadot",
-      symbol: "DOT",
-      apy: 12.00,
-      minStake: "5.00",
-      icon: SiPolkadot,
-      enabled: false,
-      route: "/coins/dot"
-    },
-    {
-      name: "Solana",
-      symbol: "SOL",
-      apy: 6.50,
-      minStake: "1.00",
-      icon: SiSolana,
-      enabled: false,
-      route: "/coins/sol"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-black">
@@ -92,20 +125,28 @@ export default function Home() {
 
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Suspense fallback={<CoinCardSkeleton />}>
-            {coinData.map((coin) => (
-              <CoinCard
-                key={coin.symbol}
-                name={coin.name}
-                symbol={coin.symbol}
-                apy={coin.apy}
-                minStake={coin.minStake}
-                icon={coin.icon}
-                enabled={coin.enabled}
-                onClick={() => navigate(coin.route)}
-              />
-            ))}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={
+              <>
+                <CoinCardSkeleton />
+                <CoinCardSkeleton />
+                <CoinCardSkeleton />
+              </>
+            }>
+              {coinData.map((coin) => (
+                <CoinCard
+                  key={coin.symbol}
+                  name={coin.name}
+                  symbol={coin.symbol}
+                  apy={coin.apy}
+                  minStake={coin.minStake}
+                  icon={coin.icon}
+                  enabled={coin.enabled}
+                  onClick={() => navigate(coin.route)}
+                />
+              ))}
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
         {/* Features Section */}
@@ -132,13 +173,15 @@ export default function Home() {
 
         {/* Rewards Calculator Section */}
         <div className="mt-24">
-          <Suspense fallback={
-            <Card className="p-6">
-              <Skeleton className="h-48 w-full bg-zinc-800" />
-            </Card>
-          }>
-            <RewardsCalculator currentStake={0.01} />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={
+              <Card className="p-6">
+                <Skeleton className="h-48 w-full bg-zinc-800" />
+              </Card>
+            }>
+              <RewardsCalculator currentStake={0.01} />
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
         {/* Bottom CTA Section */}
