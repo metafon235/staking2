@@ -109,11 +109,11 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
           <Label htmlFor="compound" className="text-sm text-zinc-400">Enable Daily Compounding</Label>
         </div>
 
-        <div className="h-[200px] w-full">
+        <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
               data={chartData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis 
@@ -167,8 +167,16 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
         </div>
 
         <div className="space-y-2 pt-2 border-t border-zinc-800">
+          <div className="flex justify-between items-center py-1">
+            <span className="text-sm text-zinc-400">Standard Rewards:</span>
+            <span className="font-medium text-white">{rewards.normal.toFixed(6)} ETH</span>
+          </div>
           {compounding && (
             <>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-sm text-zinc-400">Compound Rewards:</span>
+                <span className="font-medium text-green-500">{rewards.compound.toFixed(6)} ETH</span>
+              </div>
               <div className="flex justify-between items-center text-purple-500 py-1">
                 <span className="text-sm">Additional from Compounding:</span>
                 <span className="font-medium">
