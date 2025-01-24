@@ -1,14 +1,60 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import CoinCard from "@/components/coins/CoinCard";
+import { Suspense, lazy } from 'react';
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
-import { useLocation, NavigateFunction } from "wouter";
-import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
+import { useLocation } from "wouter";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load components
+const CoinCard = lazy(() => import('@/components/coins/CoinCard'));
+const RewardsCalculator = lazy(() => import('@/components/staking/RewardsCalculator'));
+
+// Skeleton loader for coin cards
+function CoinCardSkeleton() {
+  return (
+    <Card className="bg-zinc-900/50 border-zinc-800 p-6 space-y-4">
+      <Skeleton className="h-12 w-12 rounded-full bg-zinc-800" />
+      <Skeleton className="h-6 w-32 bg-zinc-800" />
+      <Skeleton className="h-4 w-24 bg-zinc-800" />
+      <Skeleton className="h-10 w-full bg-zinc-800" />
+    </Card>
+  );
+}
 
 export default function Home() {
   const { user } = useUser();
-  const [, navigate] = useLocation() as [null, NavigateFunction];
+  const [, navigate] = useLocation();
+
+  const coinData = [
+    {
+      name: "Ethereum",
+      symbol: "ETH",
+      apy: 3.00,
+      minStake: "0.01",
+      icon: SiEthereum,
+      enabled: true,
+      route: "/coins/eth"
+    },
+    {
+      name: "Polkadot",
+      symbol: "DOT",
+      apy: 12.00,
+      minStake: "5.00",
+      icon: SiPolkadot,
+      enabled: false,
+      route: "/coins/dot"
+    },
+    {
+      name: "Solana",
+      symbol: "SOL",
+      apy: 6.50,
+      minStake: "1.00",
+      icon: SiSolana,
+      enabled: false,
+      route: "/coins/sol"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-black">
@@ -19,7 +65,8 @@ export default function Home() {
             Ethereum Staking Made Simple
           </h1>
           <p className="text-xl text-zinc-400 mb-8 max-w-2xl mx-auto">
-            Start earning rewards with as little as 0.01 ETH. No technical knowledge required.
+            Start earning {coinData[0].apy}% APY with as little as {coinData[0].minStake} ETH. 
+            No technical knowledge required.
             Secure, transparent, and efficient staking platform.
           </p>
 
@@ -45,33 +92,20 @@ export default function Home() {
 
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <CoinCard
-            name="Ethereum"
-            symbol="ETH"
-            apy={3.00}
-            minStake="0.01"
-            icon={SiEthereum}
-            enabled={true}
-            onClick={() => navigate("/coins/eth")}
-          />
-          <CoinCard
-            name="Polkadot"
-            symbol="DOT"
-            apy={12.00}
-            minStake="5.00"
-            icon={SiPolkadot}
-            enabled={false}
-            onClick={() => navigate("/coins/dot")}
-          />
-          <CoinCard
-            name="Solana"
-            symbol="SOL"
-            apy={6.50}
-            minStake="1.00"
-            icon={SiSolana}
-            enabled={false}
-            onClick={() => navigate("/coins/sol")}
-          />
+          <Suspense fallback={<CoinCardSkeleton />}>
+            {coinData.map((coin) => (
+              <CoinCard
+                key={coin.symbol}
+                name={coin.name}
+                symbol={coin.symbol}
+                apy={coin.apy}
+                minStake={coin.minStake}
+                icon={coin.icon}
+                enabled={coin.enabled}
+                onClick={() => navigate(coin.route)}
+              />
+            ))}
+          </Suspense>
         </div>
 
         {/* Features Section */}
@@ -91,14 +125,20 @@ export default function Home() {
           <Card className="bg-zinc-900/50 border-zinc-800 p-6">
             <h3 className="text-xl font-semibold text-white mb-3">Low Minimum</h3>
             <p className="text-zinc-400">
-              Start with just 0.01 ETH and earn rewards proportional to your stake.
+              Start with just {coinData[0].minStake} ETH and earn rewards proportional to your stake.
             </p>
           </Card>
         </div>
 
         {/* Rewards Calculator Section */}
         <div className="mt-24">
-          <RewardsCalculator currentStake={100} />
+          <Suspense fallback={
+            <Card className="p-6">
+              <Skeleton className="h-48 w-full bg-zinc-800" />
+            </Card>
+          }>
+            <RewardsCalculator currentStake={0.01} />
+          </Suspense>
         </div>
 
         {/* Bottom CTA Section */}
