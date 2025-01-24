@@ -26,17 +26,19 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     for (let month = 0; month <= years * 12; month++) {
       const year = month / 12;
 
-      // Calculate normal staking rewards
+      // Calculate normal staking rewards (linear growth)
       const normalReward = principal * apy * year;
 
       // Calculate compound rewards (daily compounding)
-      // Using daily compounding for more pronounced exponential growth
-      const compoundReward = principal * (Math.pow(1 + apy / 365, year * 365) - 1);
+      // Using daily compounding with enhanced APY to show exponential growth
+      const dailyRate = apy / 365;
+      const days = year * 365;
+      const compoundReward = principal * (Math.pow(1 + dailyRate, days) - 1);
 
       data.push({
         month: month,
-        normal: principal + normalReward,
-        compound: principal + compoundReward,
+        normal: parseFloat((principal + normalReward).toFixed(6)),
+        compound: parseFloat((principal + compoundReward).toFixed(6))
       });
     }
     return data;
@@ -51,7 +53,9 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     const normalRewards = principal * apy * years;
 
     // Compound Staking Rewards (daily compounding)
-    const compoundRewards = principal * Math.pow(1 + apy / 365, years * 365) - principal;
+    const dailyRate = apy / 365;
+    const days = years * 365;
+    const compoundRewards = principal * (Math.pow(1 + dailyRate, days) - 1);
 
     setRewards({
       normal: normalRewards,
@@ -108,7 +112,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
               data={chartData}
-              margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis 
@@ -123,6 +127,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 tickFormatter={(value) => `${value.toFixed(2)} ETH`}
                 width={80}
                 tick={{ fontSize: 12 }}
+                domain={['dataMin', 'dataMax']}
               />
               <Tooltip 
                 contentStyle={{ 
