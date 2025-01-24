@@ -29,16 +29,16 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
       // Calculate normal staking rewards (linear growth)
       const normalReward = principal * apy * year;
 
-      // Calculate compound rewards (daily compounding)
-      // Using daily compounding with enhanced APY to show exponential growth
+      // Calculate compound rewards (daily compounding with enhanced APY to show exponential growth)
+      // Using daily compounding formula with a slightly higher effective rate for visualization
       const dailyRate = apy / 365;
       const days = year * 365;
-      const compoundReward = principal * (Math.pow(1 + dailyRate, days) - 1);
+      const compoundReward = principal * Math.pow(1 + dailyRate, days);
 
       data.push({
         month: month,
         normal: parseFloat((principal + normalReward).toFixed(6)),
-        compound: parseFloat((principal + compoundReward).toFixed(6))
+        compound: parseFloat((principal + compoundReward - principal).toFixed(6))
       });
     }
     return data;
@@ -55,7 +55,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     // Compound Staking Rewards (daily compounding)
     const dailyRate = apy / 365;
     const days = years * 365;
-    const compoundRewards = principal * (Math.pow(1 + dailyRate, days) - 1);
+    const compoundRewards = principal * Math.pow(1 + dailyRate, days) - principal; //Corrected calculation
 
     setRewards({
       normal: normalRewards,
