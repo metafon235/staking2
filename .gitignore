@@ -22,3 +22,19 @@ build/
 coverage/
 migrations/
 drizzle/
+
+# Crypto specific
+*.pem
+*.key
+wallet-backup/
+.secret
+.mnemonic
+
+# IDE and tools
+.history/
+*.sublime-*
+.vim/
+
+# Logs
+logs/
+*.log
