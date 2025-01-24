@@ -15,7 +15,7 @@ interface StakingChartProps {
   isLoading?: boolean;
 }
 
-// Statische Gradient Definition
+// Static Gradient Definition
 const chartGradient = (
   <defs>
     <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
@@ -28,7 +28,7 @@ const chartGradient = (
 function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }: StakingChartProps) {
   const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'week'>('hour');
 
-  // Memoized Datenformatierung
+  // Memoized data formatting
   const formattedData = useMemo(() => {
     if (!data?.length) return [];
 
@@ -56,7 +56,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [data, timeRange]);
 
-  // Memoized Y-Achsen Domain
+  // Memoized Y-axis domain
   const yAxisDomain = useMemo(() => {
     if (!formattedData.length) return [0, 0];
     const values = formattedData.map(d => d.rewards);
@@ -80,10 +80,6 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[300px] w-full mt-4 bg-zinc-800" />
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <Skeleton className="h-20 bg-zinc-800" />
-            <Skeleton className="h-20 bg-zinc-800" />
-          </div>
         </CardContent>
       </Card>
     );
@@ -177,16 +173,6 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
               No reward data available for the selected time range
             </div>
           )}
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <p className="text-sm text-zinc-400">Current Rewards</p>
-            <p className="text-lg font-semibold text-white">{currentRewards.toFixed(9)} ETH</p>
-          </div>
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <p className="text-sm text-zinc-400">Total Staked</p>
-            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(6)} ETH</p>
-          </div>
         </div>
       </CardContent>
     </Card>
