@@ -2,11 +2,9 @@ import { format } from "date-fns";
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import StakingCard from "@/components/staking/StakingCard";
-import StakingStats from "@/components/staking/StakingStats";
 import StakingChart from "@/components/staking/StakingChart";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
-import type { StakingData } from "@/lib/types";
 
 function DashboardContent() {
   const { data: portfolio, isLoading } = useQuery({
@@ -76,15 +74,6 @@ function DashboardContent() {
             data={rewardsHistory}
             totalStaked={data.totalStaked}
             currentRewards={data.rewards}
-            isLoading={isLoading}
-          />
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <StakingStats 
-            totalStaked={data.totalStaked}
-            rewards={data.rewards}
-            monthlyRewards={data.monthlyRewards}
             isLoading={isLoading}
           />
         </div>
