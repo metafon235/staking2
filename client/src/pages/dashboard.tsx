@@ -5,6 +5,7 @@ import StakingCard from "@/components/staking/StakingCard";
 import StakingStats from "@/components/staking/StakingStats";
 import StakingChart from "@/components/staking/StakingChart";
 import NotificationBell from "@/components/layout/NotificationBell";
+import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
 import type { StakingData } from "@/lib/types";
 
 function DashboardContent() {
@@ -29,10 +30,6 @@ function DashboardContent() {
     const startTime = now - (60 * 60 * 1000); // Last hour
     const stakedTime = portfolio.eth.stakedAt ? new Date(portfolio.eth.stakedAt).getTime() : now - (24 * 60 * 60 * 1000);
 
-    console.log('Generating points from:', new Date(startTime).toISOString());
-    console.log('Current time:', new Date(now).toISOString());
-    console.log('Staked time:', new Date(stakedTime).toISOString());
-
     // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
       const elapsedTime = (time - stakedTime) / 1000; // Convert to seconds
@@ -47,12 +44,6 @@ function DashboardContent() {
         timestamp: time,
         rewards: reward
       });
-    }
-
-    console.log('Generated points:', points.length);
-    if (points.length > 0) {
-      console.log('First point:', points[0]);
-      console.log('Last point:', points[points.length - 1]);
     }
 
     return points;
@@ -98,8 +89,9 @@ function DashboardContent() {
           />
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2">
           <StakingCard isLoading={isLoading} />
+          <RewardsCalculator currentStake={data.totalStaked} />
         </div>
       </div>
     </div>
