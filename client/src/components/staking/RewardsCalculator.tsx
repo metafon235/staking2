@@ -10,7 +10,7 @@ interface RewardsCalculatorProps {
   currentStake?: number;
 }
 
-function RewardsCalculatorComponent({ currentStake = 0 }: RewardsCalculatorProps) {
+export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) {
   const [stakeAmount, setStakeAmount] = useState(currentStake.toString());
   const [timeframe, setTimeframe] = useState("1");  // years
   const [compounding, setCompounding] = useState(false);
@@ -190,6 +190,3 @@ function RewardsCalculatorComponent({ currentStake = 0 }: RewardsCalculatorProps
     </Card>
   );
 }
-
-// Export the component as default for proper lazy loading
-export default RewardsCalculatorComponent;
