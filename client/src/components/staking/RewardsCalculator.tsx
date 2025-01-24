@@ -127,7 +127,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 tickFormatter={(value) => `${value.toFixed(2)} ETH`}
                 width={80}
                 tick={{ fontSize: 12 }}
-                domain={['dataMin', 'dataMax']}
+                domain={['dataMin', 'auto']}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -153,7 +153,8 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                   dataKey="compound" 
                   stroke="#4ade80" 
                   name="Compound Staking"
-                  strokeWidth={2}
+                  strokeWidth={3}
+                  strokeOpacity={0.8}
                   dot={false}
                 />
               )}
