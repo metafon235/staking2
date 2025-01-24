@@ -16,53 +16,56 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
   const [compounding, setCompounding] = useState(false);
   const [rewards, setRewards] = useState({ normal: 0, compound: 0 });
 
+  const APY = 0.03; // 3% APY
+
   const chartData = useMemo(() => {
     const data = [];
     const principal = parseFloat(stakeAmount) || 0;
     const years = parseInt(timeframe);
-    const apy = 0.03; // 3% APY
-    const compoundingApy = 0.035; // Enhanced APY for compound visualization
+    const DAYS_PER_YEAR = 365;
+    const POINTS_PER_YEAR = 12; // Monthly data points for smoother visualization
 
-    // Generate data points for each month
-    for (let month = 0; month <= years * 12; month++) {
-      const year = month / 12;
+    // Generate monthly data points
+    for (let month = 0; month <= years * POINTS_PER_YEAR; month++) {
+      const year = month / POINTS_PER_YEAR;
 
       // Calculate normal staking rewards (linear growth)
-      const normalReward = principal * apy * year;
+      const normalReward = principal * APY * year;
 
-      // Calculate compound rewards using enhanced APY for more dramatic effect
-      const dailyRate = compoundingApy / 365;
-      const days = year * 365;
+      // Calculate compound rewards (daily compounding)
+      // Formula: P * (1 + r/n)^(n*t)
+      const dailyRate = APY / DAYS_PER_YEAR;
+      const days = year * DAYS_PER_YEAR;
       const compoundReward = principal * (Math.pow(1 + dailyRate, days) - 1);
 
       data.push({
         month: month,
-        normal: parseFloat(normalReward.toFixed(6)),
-        compound: parseFloat(compoundReward.toFixed(6))
+        normal: parseFloat(normalReward.toFixed(9)),
+        compound: parseFloat(compoundReward.toFixed(9))
       });
     }
     return data;
-  }, [stakeAmount, timeframe]);
+  }, [stakeAmount, timeframe, APY]);
 
   useEffect(() => {
     const principal = parseFloat(stakeAmount) || 0;
     const years = parseInt(timeframe);
-    const apy = 0.03; // 3% APY
-    const compoundingApy = 0.035; // Enhanced APY for compound visualization
+    const DAYS_PER_YEAR = 365;
 
     // Standard Staking Rewards (simple interest)
-    const normalRewards = principal * apy * years;
+    const normalRewards = principal * APY * years;
 
-    // Compound Staking Rewards (daily compounding with enhanced APY)
-    const dailyRate = compoundingApy / 365;
-    const days = years * 365;
+    // Compound Staking Rewards (daily compounding)
+    // Formula: P * (1 + r/n)^(n*t)
+    const dailyRate = APY / DAYS_PER_YEAR;
+    const days = years * DAYS_PER_YEAR;
     const compoundRewards = principal * (Math.pow(1 + dailyRate, days) - 1);
 
     setRewards({
       normal: normalRewards,
       compound: compoundRewards
     });
-  }, [stakeAmount, timeframe, compounding]);
+  }, [stakeAmount, timeframe, compounding, APY]);
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
@@ -119,13 +122,13 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
               <XAxis 
                 dataKey="month" 
                 stroke="#888" 
-                tickFormatter={(value) => `${value}m`}
+                tickFormatter={(value) => `${Math.floor(value/12)}y ${value%12}m`}
                 height={30}
                 tick={{ fontSize: 12 }}
               />
               <YAxis 
                 stroke="#888"
-                tickFormatter={(value) => `${value.toFixed(2)}`}
+                tickFormatter={(value) => `${value.toFixed(6)}`}
                 width={55}
                 tick={{ fontSize: 12 }}
                 domain={[
@@ -140,8 +143,8 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                   padding: '8px',
                   fontSize: '12px'
                 }}
-                labelFormatter={(value) => `Month ${value}`}
-                formatter={(value: number) => [`${value.toFixed(6)} ETH`]}
+                labelFormatter={(value) => `${Math.floor(value/12)}y ${value%12}m`}
+                formatter={(value: number) => [`${value.toFixed(9)} ETH`]}
               />
               <Line 
                 type="monotone" 
@@ -169,17 +172,17 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
         <div className="grid grid-cols-1 gap-2 pt-2 border-t border-zinc-800">
           <div className="flex justify-between items-center">
             <span className="text-sm text-zinc-400 whitespace-nowrap">Standard Rewards:</span>
-            <span className="font-medium text-white tabular-nums">{rewards.normal.toFixed(6)} ETH</span>
+            <span className="font-medium text-white tabular-nums">{rewards.normal.toFixed(9)} ETH</span>
           </div>
           {compounding && (
             <>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-zinc-400 whitespace-nowrap">Compound Rewards:</span>
-                <span className="font-medium text-green-500 tabular-nums">{rewards.compound.toFixed(6)} ETH</span>
+                <span className="font-medium text-green-500 tabular-nums">{rewards.compound.toFixed(9)} ETH</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-purple-500 whitespace-nowrap">Additional from Compounding:</span>
-                <span className="font-medium text-purple-500 tabular-nums">{(rewards.compound - rewards.normal).toFixed(6)} ETH</span>
+                <span className="font-medium text-purple-500 tabular-nums">{(rewards.compound - rewards.normal).toFixed(9)} ETH</span>
               </div>
             </>
           )}
