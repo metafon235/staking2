@@ -923,7 +923,7 @@ export function registerRoutes(app: Express): Server {
       console.error('Error updating wallet address:', error);
       res.status(500).json({ error: 'Failed to update wallet address' });
     }
-    });
+  });
 
   // Add new analytics endpoint
   app.get('/api/analytics', async (req, res) => {
@@ -1164,6 +1164,65 @@ export function registerRoutes(app: Express): Server {
   // }
 
   const httpServer = createServer(app);
+
+  // Add portfolio endpoint back
+  app.get('/api/portfolio', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's stakes and calculate rewards
+      const userStakes = await db.query.stakes.findMany({
+        where: eq(stakes.userId, req.user.id),
+        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      // Calculate rewards if there are stakes
+      let currentRewards = 0;
+      if (userStakes.length > 0) {
+        const earliestStake = userStakes[0].createdAt;
+        currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
+      }
+
+      const portfolioData = {
+        eth: {
+          staked: totalStaked,
+          rewards: parseFloat(currentRewards.toFixed(9)),
+          apy: 3.00
+        }
+      };
+
+      res.json(portfolioData);
+    } catch (error) {
+      console.error('Error fetching portfolio data:', error);
+      res.status(500).json({ error: 'Failed to fetch portfolio data' });
+    }
+  });
+
+  // Add transactions endpoint back
+  app.get('/api/transactions', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Get user's transactions ordered by most recent first
+      const userTransactions = await db.query.transactions.findMany({
+        where: eq(transactions.userId, req.user.id),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+      });
+
+      res.json(userTransactions);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+  });
+
   return httpServer;
 }
 
