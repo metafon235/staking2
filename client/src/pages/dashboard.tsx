@@ -5,6 +5,7 @@ import StakingCard from "@/components/staking/StakingCard";
 import StakingChart from "@/components/staking/StakingChart";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
+import StakingStats from "@/components/staking/StakingStats";
 
 function DashboardContent() {
   const { data: portfolio, isLoading } = useQuery({
@@ -74,6 +75,15 @@ function DashboardContent() {
             data={rewardsHistory}
             totalStaked={data.totalStaked}
             currentRewards={data.rewards}
+            isLoading={isLoading}
+          />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <StakingStats 
+            totalStaked={data.totalStaked}
+            rewards={data.rewards}
+            monthlyRewards={data.monthlyRewards}
             isLoading={isLoading}
           />
         </div>
