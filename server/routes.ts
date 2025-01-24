@@ -172,6 +172,7 @@ async function generateRewardsForAllActiveStakes() {
         const reward = totalStaked * minutelyRate;
 
         if (reward >= 0.00000001) {
+          // Record per-minute rewards for accurate data
           batchRewards.push({
             userId: parseInt(userId),
             type: 'reward',
@@ -180,12 +181,13 @@ async function generateRewardsForAllActiveStakes() {
             createdAt: now
           });
 
-          // Check if a new notification should be created (every 60 minutes)
+          // Check if we should create an hourly notification
           const shouldNotify = !lastNotification ||
             (now.getTime() - lastNotification.getTime() >= 60 * 60 * 1000); // 60 minutes
 
           if (shouldNotify) {
-            const hourlyRewards = reward * 60; // Accumulated rewards over 60 minutes
+            // Calculate hourly rewards (60 minutes worth)
+            const hourlyRewards = reward * 60;
             batchNotifications.push({
               userId: parseInt(userId),
               type: 'reward',
@@ -200,13 +202,13 @@ async function generateRewardsForAllActiveStakes() {
       }
     }
 
-    // Batch-Insert für Rewards
+    // Batch-Insert for rewards
     if (batchRewards.length > 0) {
       await db.insert(transactions).values(batchRewards);
       console.log(`Processed ${batchRewards.length} rewards in batch`);
     }
 
-    // Batch-Insert für Notifications
+    // Batch-Insert for notifications
     if (batchNotifications.length > 0) {
       await db.insert(notifications).values(batchNotifications);
       console.log(`Created ${batchNotifications.length} notifications in batch`);
@@ -355,7 +357,8 @@ export function registerRoutes(app: Express): Server {
     if (rewardsGenerationInterval) {
       clearInterval(rewardsGenerationInterval);
     }
-    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Changed interval to 60000 (1 minute)
+    // Keep the 1-minute interval for rewards generation
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // 1 minute
     console.log('Rewards generation interval started');
     generateRewardsForAllActiveStakes();
   }
@@ -920,7 +923,7 @@ export function registerRoutes(app: Express): Server {
       console.error('Error updating wallet address:', error);
       res.status(500).json({ error: 'Failed to update wallet address' });
     }
-  });
+    });
 
   // Add new analytics endpoint
   app.get('/api/analytics', async (req, res) => {
@@ -1155,9 +1158,10 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  if (!rewardsGenerationInterval) {
-    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 3600000); // Run every 60 minutes
-  }
+  //The interval is already set in startRewardsGeneration, so this line is redundant and should be removed.
+  // if (!rewardsGenerationInterval) {
+  //   rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 3600000); // Run every 60 minutes
+  // }
 
   const httpServer = createServer(app);
   return httpServer;
