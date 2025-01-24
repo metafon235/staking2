@@ -20,12 +20,11 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     const years = parseInt(timeframe);
     const apy = 0.03; // 3% APY
 
-    // Normal staking rewards (simple interest)
+    // Normale Staking-Rewards (simple interest)
     const normalRewards = principal * apy * years;
 
-    // Compound staking rewards (compound interest)
-    // Assuming monthly compounding
-    const compoundRewards = principal * Math.pow(1 + apy / 12, years * 12) - principal;
+    // Compound Staking-Rewards (daily compounding)
+    const compoundRewards = principal * Math.pow(1 + apy / 365, years * 365) - principal;
 
     setRewards({
       normal: normalRewards,
@@ -38,13 +37,13 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
   }, [stakeAmount, timeframe, compounding]);
 
   return (
-    <Card>
+    <Card className="bg-zinc-900/50 border-zinc-800">
       <CardHeader>
-        <CardTitle>Rewards Calculator</CardTitle>
+        <CardTitle className="text-white">Rewards Berechnung</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="stake-amount">Stake Betrag (ETH)</Label>
+          <Label htmlFor="stake-amount" className="text-zinc-400">Stake Betrag (ETH)</Label>
           <Input
             id="stake-amount"
             type="number"
@@ -53,13 +52,14 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
             value={stakeAmount}
             onChange={(e) => setStakeAmount(e.target.value)}
             placeholder="0.00"
+            className="bg-zinc-800 border-zinc-700 text-white"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timeframe">Zeitraum</Label>
+          <Label htmlFor="timeframe" className="text-zinc-400">Zeitraum</Label>
           <Select value={timeframe} onValueChange={setTimeframe}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
               <SelectValue placeholder="Wähle einen Zeitraum" />
             </SelectTrigger>
             <SelectContent>
@@ -77,21 +77,21 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
             checked={compounding}
             onCheckedChange={setCompounding}
           />
-          <Label htmlFor="compound">Compounding aktivieren (monatlich)</Label>
+          <Label htmlFor="compound" className="text-zinc-400">Tägliches Compounding aktivieren</Label>
         </div>
 
         <div className="pt-4 space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Standard Rewards:</span>
-            <span className="font-medium">{rewards.normal.toFixed(6)} ETH</span>
+            <span className="text-sm text-zinc-400">Standard Rewards:</span>
+            <span className="font-medium text-white">{rewards.normal.toFixed(6)} ETH</span>
           </div>
           {compounding && (
             <>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Compound Rewards:</span>
-                <span className="font-medium">{rewards.compound.toFixed(6)} ETH</span>
+                <span className="text-sm text-zinc-400">Compound Rewards:</span>
+                <span className="font-medium text-green-500">{rewards.compound.toFixed(6)} ETH</span>
               </div>
-              <div className="flex justify-between items-center text-primary">
+              <div className="flex justify-between items-center text-purple-500">
                 <span className="text-sm">Zusätzliche Rewards durch Compounding:</span>
                 <span className="font-medium">
                   {(rewards.compound - rewards.normal).toFixed(6)} ETH
