@@ -19,36 +19,38 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
   const APY = 0.03; // 3% APY
   const DAYS_PER_YEAR = 365;
 
-  const calculateDailyCompounding = (principal: number, days: number) => {
-    let totalAmount = principal;
-    const dailyRate = APY / DAYS_PER_YEAR;
+  // Calculate compound interest using standard formula
+  // FV = P(1 + r/n)^(n*t)
+  const calculateCompoundInterest = (principal: number, years: number) => {
+    const r = APY; // Annual rate (3%)
+    const n = DAYS_PER_YEAR; // Compounding frequency (daily)
+    const t = years;
 
-    // Simulate daily compounding by actually calculating each day's rewards
-    // and adding them to the principal for the next day
-    for (let day = 1; day <= days; day++) {
-      const dailyReward = totalAmount * dailyRate;
-      totalAmount += dailyReward; // Add today's rewards to total for tomorrow's calculation
-    }
+    // Calculate future value with daily compounding
+    const futureValue = principal * Math.pow(1 + r/n, n * t);
 
-    return totalAmount - principal; // Return only the rewards portion
+    // Return only the rewards portion (future value - principal)
+    return futureValue - principal;
+  };
+
+  // Calculate simple interest (no compounding)
+  const calculateSimpleInterest = (principal: number, years: number) => {
+    return principal * APY * years;
   };
 
   const chartData = useMemo(() => {
     const data = [];
     const principal = parseFloat(stakeAmount) || 0;
-    const years = parseInt(timeframe);
-    const totalDays = years * DAYS_PER_YEAR;
+    const maxYears = parseInt(timeframe);
     const POINTS_PER_YEAR = 12; // Monthly data points for visualization
 
     // Generate monthly data points
-    for (let month = 0; month <= years * POINTS_PER_YEAR; month++) {
-      const daysElapsed = Math.floor((month / POINTS_PER_YEAR) * DAYS_PER_YEAR);
+    for (let month = 0; month <= maxYears * POINTS_PER_YEAR; month++) {
+      const years = month / POINTS_PER_YEAR;
 
-      // Calculate normal rewards (simple interest)
-      const normalReward = principal * APY * (daysElapsed / DAYS_PER_YEAR);
-
-      // Calculate compound rewards by simulating daily reinvestment
-      const compoundReward = calculateDailyCompounding(principal, daysElapsed);
+      // Calculate both types of interest for this time point
+      const normalReward = calculateSimpleInterest(principal, years);
+      const compoundReward = calculateCompoundInterest(principal, years);
 
       data.push({
         month: month,
@@ -63,13 +65,10 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
   useEffect(() => {
     const principal = parseFloat(stakeAmount) || 0;
     const years = parseInt(timeframe);
-    const days = years * DAYS_PER_YEAR;
 
-    // Standard Staking Rewards (simple interest)
-    const normalRewards = principal * APY * years;
-
-    // Compound Rewards - simulate daily reinvestment
-    const compoundRewards = calculateDailyCompounding(principal, days);
+    // Calculate final rewards for both methods
+    const normalRewards = calculateSimpleInterest(principal, years);
+    const compoundRewards = calculateCompoundInterest(principal, years);
 
     setRewards({
       normal: normalRewards,
