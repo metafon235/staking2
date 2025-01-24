@@ -37,8 +37,8 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
 
       data.push({
         month: month,
-        normal: parseFloat((principal + normalReward).toFixed(6)),
-        compound: parseFloat((principal + compoundReward).toFixed(6))
+        normal: parseFloat(normalReward.toFixed(6)),
+        compound: parseFloat(compoundReward.toFixed(6))
       });
     }
     return data;
@@ -129,7 +129,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 width={80}
                 tick={{ fontSize: 12 }}
                 domain={[
-                  (dataMin: number) => Math.floor(dataMin),
+                  0,
                   (dataMax: number) => Math.ceil(dataMax * 1.1)
                 ]}
               />
@@ -147,7 +147,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 type="monotone" 
                 dataKey="normal" 
                 stroke="#8884d8" 
-                name="Standard Staking"
+                name="Standard Rewards"
                 strokeWidth={2}
                 dot={false}
               />
@@ -156,7 +156,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                   type="monotone" 
                   dataKey="compound" 
                   stroke="#4ade80" 
-                  name="Compound Staking"
+                  name="Compound Rewards"
                   strokeWidth={3}
                   strokeOpacity={0.8}
                   dot={false}
@@ -167,18 +167,10 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
         </div>
 
         <div className="space-y-2 pt-2 border-t border-zinc-800">
-          <div className="flex justify-between items-center py-1">
-            <span className="text-sm text-zinc-400">Standard Rewards:</span>
-            <span className="font-medium text-white">{rewards.normal.toFixed(6)} ETH</span>
-          </div>
           {compounding && (
             <>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-sm text-zinc-400">Compound Rewards:</span>
-                <span className="font-medium text-green-500">{rewards.compound.toFixed(6)} ETH</span>
-              </div>
               <div className="flex justify-between items-center text-purple-500 py-1">
-                <span className="text-sm">Additional Rewards from Compounding:</span>
+                <span className="text-sm">Additional from Compounding:</span>
                 <span className="font-medium">
                   {(rewards.compound - rewards.normal).toFixed(6)} ETH
                 </span>
