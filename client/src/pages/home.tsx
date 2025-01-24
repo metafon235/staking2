@@ -4,6 +4,7 @@ import CoinCard from "@/components/coins/CoinCard";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
 import { useLocation, NavigateFunction } from "wouter";
+import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
 
 export default function Home() {
   const { user } = useUser();
@@ -93,6 +94,11 @@ export default function Home() {
               Start with just 0.01 ETH and earn rewards proportional to your stake.
             </p>
           </Card>
+        </div>
+
+        {/* Rewards Calculator Section */}
+        <div className="mt-24">
+          <RewardsCalculator currentStake={100} />
         </div>
 
         {/* Bottom CTA Section */}
