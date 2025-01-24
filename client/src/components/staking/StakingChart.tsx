@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { memo, useState, useMemo, useCallback } from "react";
+import { memo, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StakingChartProps {
@@ -15,18 +15,18 @@ interface StakingChartProps {
   isLoading?: boolean;
 }
 
-// Optimierte Chart-Komponente mit Memoization
+// Statische Gradient Definition
+const chartGradient = (
+  <defs>
+    <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+    </linearGradient>
+  </defs>
+);
+
 function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }: StakingChartProps) {
   const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'week'>('hour');
-
-  // Memoized Zeitformat-Funktion
-  const getTimeFormat = useCallback((range: 'hour' | 'day' | 'week') => {
-    switch (range) {
-      case 'hour': return 'HH:mm:ss';
-      case 'day': return 'MMM dd HH:mm';
-      case 'week': return 'MMM dd';
-    }
-  }, []);
 
   // Memoized Datenformatierung
   const formattedData = useMemo(() => {
@@ -46,13 +46,17 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       .filter(point => point.timestamp >= startTime && point.timestamp <= now)
       .map(point => ({
         ...point,
-        time: format(point.timestamp, getTimeFormat(timeRange)),
+        time: format(point.timestamp, 
+          timeRange === 'hour' ? 'HH:mm:ss' : 
+          timeRange === 'day' ? 'MMM dd HH:mm' : 
+          'MMM dd'
+        ),
         rewards: Number(point.rewards)
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
-  }, [data, timeRange, getTimeFormat]);
+  }, [data, timeRange]);
 
-  // Memoized Y-Achsen Domain für bessere Performance
+  // Memoized Y-Achsen Domain
   const yAxisDomain = useMemo(() => {
     if (!formattedData.length) return [0, 0];
     const values = formattedData.map(d => d.rewards);
@@ -84,16 +88,6 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
       </Card>
     );
   }
-
-  // Memoized Gradient Definition
-  const gradientDef = useMemo(() => (
-    <defs>
-      <linearGradient id="rewardsGradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-      </linearGradient>
-    </defs>
-  ), []);
 
   return (
     <Card className="col-span-3 bg-zinc-900 border-zinc-800">
@@ -140,7 +134,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                 data={formattedData}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
-                {gradientDef}
+                {chartGradient}
                 <XAxis
                   dataKey="time"
                   stroke="#71717a"
@@ -199,5 +193,4 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
   );
 }
 
-// Exportiere memoized Komponente
 export default memo(StakingChartComponent);
