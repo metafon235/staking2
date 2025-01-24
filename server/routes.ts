@@ -159,7 +159,6 @@ async function generateRewardsForAllActiveStakes() {
       totalStaked: number
     }>);
 
-    // Batch-Verarbeitung der Rewards
     const batchRewards = [];
     const batchNotifications = [];
     const now = new Date();
@@ -173,7 +172,6 @@ async function generateRewardsForAllActiveStakes() {
         const reward = totalStaked * minutelyRate;
 
         if (reward >= 0.00000001) {
-          // Sammle Rewards für Batch-Insert
           batchRewards.push({
             userId: parseInt(userId),
             type: 'reward',
@@ -182,17 +180,18 @@ async function generateRewardsForAllActiveStakes() {
             createdAt: now
           });
 
-          // Prüfe ob eine neue Notification erstellt werden soll (alle 15 Minuten)
+          // Check if a new notification should be created (every 60 minutes)
           const shouldNotify = !lastNotification ||
-            (now.getTime() - lastNotification.getTime() >= 15 * 60 * 1000);
+            (now.getTime() - lastNotification.getTime() >= 60 * 60 * 1000); // 60 minutes
 
           if (shouldNotify) {
-            const totalRewards = reward * 15; // Akkumulierte Rewards über 15 Minuten
+            const hourlyRewards = reward * 60; // Accumulated rewards over 60 minutes
             batchNotifications.push({
               userId: parseInt(userId),
               type: 'reward',
-              title: '15-Minuten Staking Rewards Übersicht',
-              message: `Sie haben in den letzten 15 Minuten ${totalRewards.toFixed(9)} ETH durch Staking verdient`,
+              title: 'Hourly Staking Rewards Update',
+              message: `You earned ${hourlyRewards.toFixed(9)} ETH from staking in the last hour`,
+              data: JSON.stringify({ amount: hourlyRewards, timeframe: '1 hour' }),
               read: false,
               createdAt: now
             });
@@ -311,36 +310,36 @@ async function setInCache(key: string, value: string, ttlSeconds: number): Promi
 }
 
 async function recordRewardTransaction(userId: number, reward: number) {
-    if (reward > 0) {
-      try {
-        // Check if we already have a reward transaction in the last minute
-        const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
-  
-        const recentReward = await db.query.transactions.findFirst({
-          where: (transactions, { and, eq, gt }) => and(
-            eq(transactions.userId, userId),
-            eq(transactions.type, 'reward'),
-            gt(transactions.createdAt, lastMinute)
-          ),
-          orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-        });
-  
-        // Only create new reward transaction if none exists in the last minute
-        if (!recentReward) {
-          await db.insert(transactions)
-            .values({
-              userId,
-              type: 'reward',
-              amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
-              status: 'completed',
-              createdAt: new Date()
-            });
-        }
-      } catch (error) {
-        console.error('Error recording reward transaction:', error);
+  if (reward > 0) {
+    try {
+      // Check if we already have a reward transaction in the last minute
+      const lastMinute = new Date(Date.now() - 60000); // 1 minute ago
+
+      const recentReward = await db.query.transactions.findFirst({
+        where: (transactions, { and, eq, gt }) => and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'reward'),
+          gt(transactions.createdAt, lastMinute)
+        ),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+      });
+
+      // Only create new reward transaction if none exists in the last minute
+      if (!recentReward) {
+        await db.insert(transactions)
+          .values({
+            userId,
+            type: 'reward',
+            amount: reward.toFixed(9), // Per-minute reward with 9 decimal precision
+            status: 'completed',
+            createdAt: new Date()
+          });
       }
+    } catch (error) {
+      console.error('Error recording reward transaction:', error);
     }
   }
+}
 
 const insertUserSchema = z.object({
   username: z.string().min(3).max(20),
@@ -356,7 +355,7 @@ export function registerRoutes(app: Express): Server {
     if (rewardsGenerationInterval) {
       clearInterval(rewardsGenerationInterval);
     }
-    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000);
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Changed interval to 60000 (1 minute)
     console.log('Rewards generation interval started');
     generateRewardsForAllActiveStakes();
   }
@@ -923,174 +922,11 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/register", async (req, res) => {
-    try {
-      const result = insertUserSchema.safeParse(req.body);
-      if (!result.success) {
-        return res
-          .status(400)
-          .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
-      }
-
-      const { username, password } = result.data;
-
-      // Check if user already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username))
-        .limit(1);
-
-      if (existingUser) {
-        return res.status(400).send("Username already exists");
-      }
-
-      // Hash the password
-      const hashedPassword = await crypto.randomBytes(64).toString('hex');
-
-      // Create the new user
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          username,
-          password: hashedPassword,
-        })
-        .returning();
-
-      // Log the user in after registration
-      req.login(newUser, (err) => {
-        if (err) {
-          return res.status(500).json({error: "Login failed"})
-        }
-
-        // Save the session explicitly
-        req.session.save((err) => {
-          if (err) {
-            return res.status(500).json({error: "Session save failed"})
-          }
-          return res.json({
-            message: "Registration successful",
-            user: { id: newUser.id, username: newUser.username }
-          });
-        });
-      });
-    } catch (error) {
-      return res.status(500).json({ error: 'Failed to register user' });
-    }
-  });
-
-
-  app.get('/api/transactions', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      // Get user's transactions ordered by most recent first
-      const userTransactions = await db.query.transactions.findMany({
-        where: eq(transactions.userId, req.user.id),
-        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-      });
-
-      res.json(userTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      res.status(500).json({ error: 'Failed to fetch transactions' });
-    }
-  });
-
-  // Add portfolio endpoint
-  app.get('/api/portfolio', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      // Get user's stakes and calculate rewards
-      const userStakes = await db.query.stakes.findMany({
-        where: eq(stakes.userId, req.user.id),
-        orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
-      });
-
-      const totalStaked = userStakes.reduce((sum, stake) =>
-        sum + parseFloat(stake.amount.toString()), 0);
-
-      // Calculate rewards if there are stakes
-      let currentRewards = 0;
-      if (userStakes.length > 0) {
-        const earliestStake = userStakes[0].createdAt;
-        currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
-      }
-
-      const portfolioData = {
-        eth: {
-          staked: totalStaked,
-          rewards: parseFloat(currentRewards.toFixed(9)),
-          apy: 3.00
-        }
-      };
-
-      res.json(portfolioData);
-    } catch (error) {
-      console.error('Error fetching portfolio data:', error);
-      res.status(500).json({ error: 'Failed to fetch portfolio data' });
-    }
-  });
-
-  // Add settings endpoints
-  app.get('/api/settings', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      // Get user's basic info
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, req.user.id),
-        columns: {
-          walletAddress: true,
-        }
-      });
-
-      res.json({
-        walletAddress: user?.walletAddress || null
-      });
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-      res.status(500).json({ error: 'Failed to fetch settings' });
-    }
-  });
-
-  // Update wallet address
-  app.post('/api/api/settings/wallet', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const { walletAddress } = req.body;
-
-      // Basic Ethereum address validation
-      if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-        return res.status(400).json({ error: 'Invalid Ethereum address' });
-      }
-
-      await db.update(users)
-        .set({ walletAddress })
-        .where(eq(users.id, req.user.id));
-
-      res.json({ message: 'Wallet address updated successfully' });
-    } catch (error) {
-      console.error('Error updating wallet address:', error);
-      res.status(500).json({ error: 'Failed to update walletaddress' });
-    }
-  });
-
   // Add new analytics endpoint
   app.get('/api/analytics', async (req, res) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
+        return res.status(4001).json({ error: 'Not authenticated' });
       }
 
       // Get user's stakes and calculate total value
@@ -1320,7 +1156,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   if (!rewardsGenerationInterval) {
-    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // Run every minute
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 3600000); // Run every 60 minutes
   }
 
   const httpServer = createServer(app);
