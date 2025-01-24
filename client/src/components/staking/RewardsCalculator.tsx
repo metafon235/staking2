@@ -113,7 +113,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
               data={chartData}
-              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis 
@@ -125,8 +125,8 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
               />
               <YAxis 
                 stroke="#888"
-                tickFormatter={(value) => `${value.toFixed(2)} ETH`}
-                width={80}
+                tickFormatter={(value) => `${value.toFixed(2)}`}
+                width={55}
                 tick={{ fontSize: 12 }}
                 domain={[
                   0,
@@ -166,22 +166,20 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
           </ResponsiveContainer>
         </div>
 
-        <div className="space-y-2 pt-2 border-t border-zinc-800">
-          <div className="flex justify-between items-center py-1">
-            <span className="text-sm text-zinc-400">Standard Rewards:</span>
-            <span className="font-medium text-white">{rewards.normal.toFixed(6)} ETH</span>
+        <div className="grid grid-cols-1 gap-2 pt-2 border-t border-zinc-800">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-zinc-400 whitespace-nowrap">Standard Rewards:</span>
+            <span className="font-medium text-white tabular-nums">{rewards.normal.toFixed(6)} ETH</span>
           </div>
           {compounding && (
             <>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-sm text-zinc-400">Compound Rewards:</span>
-                <span className="font-medium text-green-500">{rewards.compound.toFixed(6)} ETH</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-zinc-400 whitespace-nowrap">Compound Rewards:</span>
+                <span className="font-medium text-green-500 tabular-nums">{rewards.compound.toFixed(6)} ETH</span>
               </div>
-              <div className="flex justify-between items-center text-purple-500 py-1">
-                <span className="text-sm">Additional from Compounding:</span>
-                <span className="font-medium">
-                  {(rewards.compound - rewards.normal).toFixed(6)} ETH
-                </span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-purple-500 whitespace-nowrap">Additional from Compounding:</span>
+                <span className="font-medium text-purple-500 tabular-nums">{(rewards.compound - rewards.normal).toFixed(6)} ETH</span>
               </div>
             </>
           )}
