@@ -10,7 +10,8 @@ interface RewardsCalculatorProps {
   currentStake?: number;
 }
 
-export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) {
+// Export as default for lazy loading
+export default function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) {
   const [stakeAmount, setStakeAmount] = useState(currentStake.toString());
   const [timeframe, setTimeframe] = useState("1");  // years
   const [compounding, setCompounding] = useState(false);

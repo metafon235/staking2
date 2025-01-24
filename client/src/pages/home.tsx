@@ -6,7 +6,7 @@ import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Lazy load components
+// Lazy load components with explicit default imports
 const CoinCard = lazy(() => import('@/components/coins/CoinCard'));
 const RewardsCalculator = lazy(() => import('@/components/staking/RewardsCalculator'));
 
@@ -18,6 +18,28 @@ function CoinCardSkeleton() {
       <Skeleton className="h-6 w-32 bg-zinc-800" />
       <Skeleton className="h-4 w-24 bg-zinc-800" />
       <Skeleton className="h-10 w-full bg-zinc-800" />
+    </Card>
+  );
+}
+
+// Skeleton loader for rewards calculator
+function RewardsCalculatorSkeleton() {
+  return (
+    <Card className="bg-zinc-900/50 border-zinc-800">
+      <div className="p-6">
+        <Skeleton className="h-8 w-48 mb-6 bg-zinc-800" />
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Skeleton className="h-20 bg-zinc-800" />
+            <Skeleton className="h-20 bg-zinc-800" />
+          </div>
+          <Skeleton className="h-[200px] w-full bg-zinc-800" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-full bg-zinc-800" />
+            <Skeleton className="h-6 w-full bg-zinc-800" />
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }
@@ -92,7 +114,13 @@ export default function Home() {
 
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Suspense fallback={<CoinCardSkeleton />}>
+          <Suspense fallback={
+            <>
+              {[1, 2, 3].map((i) => (
+                <CoinCardSkeleton key={i} />
+              ))}
+            </>
+          }>
             {coinData.map((coin) => (
               <CoinCard
                 key={coin.symbol}
@@ -132,11 +160,7 @@ export default function Home() {
 
         {/* Rewards Calculator Section */}
         <div className="mt-24">
-          <Suspense fallback={
-            <Card className="p-6">
-              <Skeleton className="h-48 w-full bg-zinc-800" />
-            </Card>
-          }>
+          <Suspense fallback={<RewardsCalculatorSkeleton />}>
             <RewardsCalculator currentStake={0.01} />
           </Suspense>
         </div>
