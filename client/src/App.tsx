@@ -15,6 +15,7 @@ import Navigation from "@/components/layout/Navigation";
 import Analytics from "@/pages/analytics";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
 
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -54,6 +55,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminDashboard />}
+      </Route>
+      <Route path="/admin/users">
+        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminUsers />}
       </Route>
 
       {/* Public coin details route */}

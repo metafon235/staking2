@@ -352,6 +352,68 @@ export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
 
+  // Admin user management routes
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const allUsers = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          isAdmin: users.isAdmin,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .orderBy(users.createdAt);
+
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.delete("/api/admin/users/:userId", async (req, res) => {
+    try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const userId = parseInt(req.params.userId);
+
+      // Don't allow admins to delete themselves
+      if (userId === req.user.id) {
+        return res.status(400).json({ error: "Cannot delete your own account" });
+      }
+
+      // Check if user exists and is not an admin
+      const [userToDelete] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!userToDelete) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (userToDelete.isAdmin) {
+        return res.status(400).json({ error: "Cannot delete admin users" });
+      }
+
+      // Delete user
+      await db.delete(users).where(eq(users.id, userId));
+
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
   // Admin Login Route
   app.post("/api/admin/login", async (req, res) => {
     try {
