@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
-import { useLocation, NavigateFunction } from "wouter";
+import { useLocation } from "wouter";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
 
 export default function Home() {
   const { user } = useUser();
-  const [, navigate] = useLocation() as [null, NavigateFunction];
+  const [, navigate] = useLocation();
 
   return (
     <div className="min-h-screen bg-black">
