@@ -16,6 +16,7 @@ import Analytics from "@/pages/analytics";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
+import AdminStaking from "@/pages/admin/staking";
 
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -58,6 +59,9 @@ function Router() {
       </Route>
       <Route path="/admin/users">
         {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminUsers />}
+      </Route>
+      <Route path="/admin/staking">
+        {() => !user?.isAdmin ? <Redirect to="/admin/login" /> : <AdminStaking />}
       </Route>
 
       {/* Public coin details route */}
