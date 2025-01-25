@@ -19,9 +19,9 @@ export default function AdminLogin() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // Redirect to admin dashboard if already logged in as admin
+  // If already logged in as admin, redirect to dashboard
   if (user?.isAdmin) {
-    setLocation("/admin");
+    window.location.href = "/admin";
     return null;
   }
 
@@ -56,7 +56,7 @@ export default function AdminLogin() {
         return;
       }
 
-      setLocation("/admin");
+      window.location.href = "/admin";
     } catch (error: any) {
       toast({
         variant: "destructive",

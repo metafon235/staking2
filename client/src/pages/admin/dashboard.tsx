@@ -8,20 +8,25 @@ export default function AdminDashboard() {
   const { user, logout } = useUser();
   const [, setLocation] = useLocation();
 
+  // Show loading state while checking user
   if (!user) {
-    setLocation("/admin/login");
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
+  // Redirect non-admin users
   if (!user.isAdmin) {
-    setLocation("/");
+    window.location.href = "/";
     return null;
   }
 
   const handleLogout = async () => {
     try {
       await logout();
-      setLocation("/admin/login");
+      window.location.href = "/admin/login";
     } catch (error) {
       console.error("Logout failed:", error);
     }
