@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, notifications, notificationSettings } from "@db/schema";
-import { eq, count, avg, sql, sum, and, gt, desc, isNotNull } from "drizzle-orm";
+import { eq, count, avg, sql, sum, and, gt, desc, isNotNull, min } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
 
@@ -524,14 +524,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Get all active stakes with user information
+      // Get all active stakes aggregated by user
       const stakingData = await db
         .select({
           id: users.id,
           username: users.username,
           walletAddress: users.walletAddress,
-          stakeAmount: stakes.amount,
-          stakeCreatedAt: stakes.createdAt,
+          totalStaked: sql<string>`sum(${stakes.amount})::numeric`,
+          firstStakeAt: sql<Date>`min(${stakes.createdAt})`
         })
         .from(users)
         .leftJoin(stakes, and(
@@ -540,17 +540,18 @@ export function registerRoutes(app: Express): Server {
         ))
         .where(
           isNotNull(stakes.id)
-        );
+        )
+        .groupBy(users.id, users.username, users.walletAddress);
 
-      // Calculate rewards for each user
+      // Calculate rewards for each user based on their total stake
       const stakingUsers = await Promise.all(
         stakingData.map(async (data) => {
-          const totalStaked = parseFloat(data.stakeAmount?.toString() || '0');
+          const totalStaked = parseFloat(data.totalStaked?.toString() || '0');
           const currentRewards = totalStaked > 0
             ? await calculateRewardsForTimestamp(
               data.id,
               totalStaked,
-              data.stakeCreatedAt?.getTime() || Date.now(),
+              data.firstStakeAt?.getTime() || Date.now(),
               Date.now(),
               false
             )
