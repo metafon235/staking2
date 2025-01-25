@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
-import { stakes, rewards, transactions, users, notifications } from "@db/schema";
+import { stakes, rewards, transactions, users, notifications, notificationSettings } from "@db/schema";
 import { eq, count, avg, sql, sum, and, gt, desc } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
@@ -404,8 +404,39 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Cannot delete admin users" });
       }
 
-      // Delete user
-      await db.delete(users).where(eq(users.id, userId));
+      // Delete all related records in the correct order
+      await db.transaction(async (tx) => {
+        // Delete notifications first
+        await tx.delete(notifications)
+          .where(eq(notifications.userId, userId));
+
+        // Delete notification settings
+        await tx.delete(notificationSettings)
+          .where(eq(notificationSettings.userId, userId));
+
+        // Get all stakes for the user
+        const userStakes = await tx.select()
+          .from(stakes)
+          .where(eq(stakes.userId, userId));
+
+        // Delete rewards for all stakes
+        for (const stake of userStakes) {
+          await tx.delete(rewards)
+            .where(eq(rewards.stakeId, stake.id));
+        }
+
+        // Delete stakes
+        await tx.delete(stakes)
+          .where(eq(stakes.userId, userId));
+
+        // Delete transactions
+        await tx.delete(transactions)
+          .where(eq(transactions.userId, userId));
+
+        // Finally delete the user
+        await tx.delete(users)
+          .where(eq(users.id, userId));
+      });
 
       res.json({ message: "User deleted successfully" });
     } catch (error) {
@@ -924,6 +955,7 @@ export function registerRoutes(app: Express): Server {
         amount: amount,
         coin: coin
       });
+
     } catch (error) {
       console.error('Transfer error:', error);
       res.status(500).json({ error: 'Failed to process transfer' });
