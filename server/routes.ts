@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, notifications, notificationSettings } from "@db/schema";
-import { eq, count, avg, sql, sum, and, gt, desc, isNotNull, min } from "drizzle-orm";
+import { eq, count, avg, sql, sum, and, gt, desc, isNotNull, min, COALESCE } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
 
@@ -530,17 +530,13 @@ export function registerRoutes(app: Express): Server {
           id: users.id,
           username: users.username,
           walletAddress: users.walletAddress,
-          totalStaked: sql<string>`sum(${stakes.amount})::numeric`,
-          firstStakeAt: sql<Date>`min(${stakes.createdAt})`
+          totalStaked: sql<string>`COALESCE(sum(${stakes.amount}), 0)::numeric`
         })
         .from(users)
         .leftJoin(stakes, and(
           eq(stakes.userId, users.id),
           eq(stakes.status, 'active')
         ))
-        .where(
-          isNotNull(stakes.id)
-        )
         .groupBy(users.id, users.username, users.walletAddress);
 
       // Calculate rewards for each user based on their total stake
@@ -551,7 +547,7 @@ export function registerRoutes(app: Express): Server {
             ? await calculateRewardsForTimestamp(
               data.id,
               totalStaked,
-              data.firstStakeAt?.getTime() || Date.now(),
+              Date.now() - (24 * 60 * 60 * 1000), // Use last 24 hours for reward calculation
               Date.now(),
               false
             )
