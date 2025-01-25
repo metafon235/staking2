@@ -73,7 +73,6 @@ export function useUser() {
     mutationFn: (userData) => handleRequest('/api/login', 'POST', userData),
     onSuccess: async (data) => {
       if (data.ok && data.user) {
-        // Setze den User direkt in den Cache
         queryClient.setQueryData(['user'], data.user);
       }
     },
@@ -82,7 +81,6 @@ export function useUser() {
   const logoutMutation = useMutation<RequestResult, Error>({
     mutationFn: () => handleRequest('/api/logout', 'POST'),
     onSuccess: () => {
-      // Setze den User-Cache direkt auf null
       queryClient.setQueryData(['user'], null);
     },
   });
@@ -91,7 +89,6 @@ export function useUser() {
     mutationFn: (userData) => handleRequest('/api/register', 'POST', userData),
     onSuccess: async (data) => {
       if (data.ok && data.user) {
-        // Setze den User direkt in den Cache
         queryClient.setQueryData(['user'], data.user);
       }
     },
