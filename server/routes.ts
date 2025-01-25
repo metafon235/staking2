@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, notifications, notificationSettings } from "@db/schema";
-import { eq, count, avg, sql, sum, and, gt, desc } from "drizzle-orm";
+import { eq, count, avg, sql, sum, and, gt, desc, isNotNull } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
 
@@ -516,6 +516,63 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Admin staking overview route
+  app.get("/api/admin/staking", async (req, res) => {
+    try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Get all active stakes with user information
+      const stakingData = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          walletAddress: users.walletAddress,
+          stakeAmount: stakes.amount,
+          stakeCreatedAt: stakes.createdAt,
+        })
+        .from(users)
+        .leftJoin(stakes, and(
+          eq(stakes.userId, users.id),
+          eq(stakes.status, 'active')
+        ))
+        .where(
+          isNotNull(stakes.id)
+        );
+
+      // Calculate rewards for each user
+      const stakingUsers = await Promise.all(
+        stakingData.map(async (data) => {
+          const totalStaked = parseFloat(data.stakeAmount?.toString() || '0');
+          const currentRewards = totalStaked > 0
+            ? await calculateRewardsForTimestamp(
+              data.id,
+              totalStaked,
+              data.stakeCreatedAt?.getTime() || Date.now(),
+              Date.now(),
+              false
+            )
+            : 0;
+
+          return {
+            id: data.id,
+            username: data.username,
+            walletAddress: data.walletAddress || 'Not set',
+            totalStaked,
+            currentRewards,
+            lastRewardTimestamp: new Date().toISOString()
+          };
+        })
+      );
+
+      res.json(stakingUsers);
+    } catch (error) {
+      console.error("Error fetching staking overview:", error);
+      res.status(500).json({ error: "Failed to fetch staking overview" });
+    }
+  });
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
