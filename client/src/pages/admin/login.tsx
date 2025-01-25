@@ -38,6 +38,7 @@ export default function AdminLogin() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const result = await login(values);
+
       if (!result.ok) {
         toast({
           variant: "destructive",
@@ -47,7 +48,8 @@ export default function AdminLogin() {
         return;
       }
 
-      if (!result.user?.isAdmin) {
+      const user = result.user;
+      if (!user || !user.isAdmin) {
         toast({
           variant: "destructive",
           title: "Access Denied",
