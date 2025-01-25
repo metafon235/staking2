@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -15,9 +16,16 @@ const formSchema = z.object({
 });
 
 export default function AdminLogin() {
-  const { login } = useUser();
+  const { user, login } = useUser();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  // Redirect to admin dashboard if already logged in as admin
+  useEffect(() => {
+    if (user?.isAdmin) {
+      setLocation("/admin");
+    }
+  }, [user, setLocation]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,6 +47,15 @@ export default function AdminLogin() {
         return;
       }
 
+      if (!result.user?.isAdmin) {
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: "You do not have admin privileges",
+        });
+        return;
+      }
+
       setLocation("/admin");
     } catch (error: any) {
       toast({
@@ -50,10 +67,10 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <Card className="w-full max-w-md mx-4">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+          <CardTitle className="text-2xl font-bold text-gray-900">Admin Login</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -65,7 +82,7 @@ export default function AdminLogin() {
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin" {...field} />
+                      <Input placeholder="admin@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
