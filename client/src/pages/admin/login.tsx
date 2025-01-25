@@ -15,7 +15,7 @@ const formSchema = z.object({
 });
 
 export default function AdminLogin() {
-  const { user, login } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -55,15 +55,7 @@ export default function AdminLogin() {
         return;
       }
 
-      if (!result.user?.isAdmin) {
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: "You do not have admin privileges",
-        });
-        return;
-      }
-
+      // Erfolgreicher Login - zum Dashboard weiterleiten
       window.location.href = "/admin";
     } catch (error: any) {
       toast({

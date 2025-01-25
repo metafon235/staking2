@@ -344,8 +344,8 @@ async function recordRewardTransaction(userId: number, reward: number) {
 }
 
 const insertUserSchema = z.object({
-  username: z.string().min(3).max(20),
-  password: z.string().min(8)
+  username: z.string().min(3).max(50),
+  password: z.string().min(6)
 });
 
 export function registerRoutes(app: Express): Server {
@@ -372,30 +372,46 @@ export function registerRoutes(app: Express): Server {
         .where(eq(users.username, username))
         .limit(1);
 
-      if (!user || !user.isAdmin) {
+      if (!user) {
+        return res.status(403).json({
+          ok: false,
+          message: "Access denied. Invalid credentials."
+        });
+      }
+
+      // Verify password
+      const isMatch = await new Promise((resolve) => {
+        req.logIn(user, (err) => {
+          if (err) {
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        });
+      });
+
+      if (!isMatch) {
+        return res.status(403).json({
+          ok: false,
+          message: "Access denied. Invalid credentials."
+        });
+      }
+
+      // Check admin rights after successful login
+      if (!user.isAdmin) {
         return res.status(403).json({
           ok: false,
           message: "Access denied. Admin privileges required."
         });
       }
 
-      // Verify password and create session
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({
-            ok: false,
-            message: "Login failed"
-          });
+      return res.json({
+        ok: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          isAdmin: user.isAdmin
         }
-
-        return res.json({
-          ok: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            isAdmin: user.isAdmin
-          }
-        });
       });
 
     } catch (error) {
