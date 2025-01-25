@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
 
 const formSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -21,11 +20,10 @@ export default function AdminLogin() {
   const [, setLocation] = useLocation();
 
   // Redirect to admin dashboard if already logged in as admin
-  useEffect(() => {
-    if (user?.isAdmin) {
-      setLocation("/admin");
-    }
-  }, [user, setLocation]);
+  if (user?.isAdmin) {
+    setLocation("/admin");
+    return null;
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

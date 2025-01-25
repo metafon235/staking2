@@ -2,30 +2,29 @@ import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, logout } = useUser();
   const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    if (!user?.isAdmin) {
-      setLocation("/admin/login");
-    }
-  }, [user, setLocation]);
+  if (!user) {
+    setLocation("/admin/login");
+    return null;
+  }
 
-  if (!user?.isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+  if (!user.isAdmin) {
+    setLocation("/");
+    return null;
   }
 
   const handleLogout = async () => {
-    await logout();
-    setLocation("/admin/login");
+    try {
+      await logout();
+      setLocation("/admin/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
