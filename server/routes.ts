@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
-import adminRouter from "./routes/admin";
 import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, notifications } from "@db/schema";
@@ -353,8 +352,17 @@ export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
 
-  // Register admin routes
-  app.use('/api/admin', adminRouter);
+  // Start rewards generation when server starts
+  function startRewardsGeneration() {
+    if (rewardsGenerationInterval) {
+      clearInterval(rewardsGenerationInterval);
+    }
+    // Keep the 1-minute interval for rewards generation
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // 1 minute
+    console.log('Rewards generation interval started');
+    generateRewardsForAllActiveStakes();
+  }
+  startRewardsGeneration();
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {

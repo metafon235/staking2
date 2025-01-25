@@ -19,7 +19,6 @@ export const users = pgTable("users", {
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
   walletAddress: text("wallet_address"),
-  isAdmin: boolean("is_admin").default(false).notNull(), // Add admin flag
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
