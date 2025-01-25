@@ -19,7 +19,7 @@ export default function AdminLogin() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // If already logged in as admin, redirect to dashboard
+  // Wenn bereits als Admin eingeloggt, zum Dashboard weiterleiten
   if (user?.isAdmin) {
     window.location.href = "/admin";
     return null;
@@ -35,7 +35,16 @@ export default function AdminLogin() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const result = await login(values);
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+        credentials: 'include'
+      });
+
+      const result = await response.json();
 
       if (!result.ok) {
         toast({
@@ -46,8 +55,7 @@ export default function AdminLogin() {
         return;
       }
 
-      const user = result.user;
-      if (!user || !user.isAdmin) {
+      if (!result.user?.isAdmin) {
         toast({
           variant: "destructive",
           title: "Access Denied",

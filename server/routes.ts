@@ -352,17 +352,61 @@ export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
 
-  // Start rewards generation when server starts
-  function startRewardsGeneration() {
-    if (rewardsGenerationInterval) {
-      clearInterval(rewardsGenerationInterval);
+  // Admin Login Route
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          ok: false,
+          message: "Invalid input: " + result.error.issues.map(i => i.message).join(", ")
+        });
+      }
+
+      const { username, password } = result.data;
+
+      // Check if user exists and is admin
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({
+          ok: false,
+          message: "Access denied. Admin privileges required."
+        });
+      }
+
+      // Verify password and create session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({
+            ok: false,
+            message: "Login failed"
+          });
+        }
+
+        return res.json({
+          ok: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            isAdmin: user.isAdmin
+          }
+        });
+      });
+
+    } catch (error) {
+      console.error('Admin login error:', error);
+      res.status(500).json({
+        ok: false,
+        message: "Internal server error"
+      });
     }
-    // Keep the 1-minute interval for rewards generation
-    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // 1 minute
-    console.log('Rewards generation interval started');
-    generateRewardsForAllActiveStakes();
-  }
-  startRewardsGeneration();
+  });
+
 
   // Get network statistics for a specific coin
   app.get('/api/network-stats/:symbol', async (req, res) => {
@@ -894,8 +938,7 @@ export function registerRoutes(app: Express): Server {
       res.json({
         walletAddress: user?.walletAddress || null
       });
-    } catch (error) {
-      console.error('Error fetching settings:', error);
+    } catch (error) {      console.error('Error fetching settings:', error);
       res.status(500).json({ error: 'Failed to fetch settings' });
     }
   });
@@ -1223,6 +1266,15 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  function startRewardsGeneration() {
+    if (rewardsGenerationInterval) {
+      clearInterval(rewardsGenerationInterval);
+    }
+    rewardsGenerationInterval = setInterval(generateRewardsForAllActiveStakes, 60000); // 1 minute
+    console.log('Rewards generation interval started');
+    generateRewardsForAllActiveStakes();
+  }
+  startRewardsGeneration();
   return httpServer;
 }
 
