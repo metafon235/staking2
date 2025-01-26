@@ -78,8 +78,8 @@ export default function AdminStaking() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Wallet Address</TableHead>
-                    <TableHead className="text-right">Total Staked (ETH)</TableHead>
-                    <TableHead className="text-right">Current Rewards (ETH)</TableHead>
+                    <TableHead className="text-right">Total Staked (PIVX)</TableHead>
+                    <TableHead className="text-right">Current Rewards (PIVX)</TableHead>
                     <TableHead>Last Reward</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -93,10 +93,10 @@ export default function AdminStaking() {
                         {stakingUser.walletAddress}
                       </TableCell>
                       <TableCell className="text-right">
-                        {stakingUser.totalStaked.toFixed(6)}
+                        {stakingUser.totalStaked.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {stakingUser.currentRewards.toFixed(9)}
+                        {stakingUser.currentRewards.toFixed(2)}
                       </TableCell>
                       <TableCell>
                         {new Date(stakingUser.lastRewardTimestamp).toLocaleString()}

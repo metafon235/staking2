@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
-import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
+import { SiPolkadot, SiSolana } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
@@ -16,10 +16,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-white mb-6">
-            Ethereum Staking Made Simple
+            PIVX Staking Made Simple
           </h1>
           <p className="text-xl text-zinc-400 mb-8 max-w-2xl mx-auto">
-            Start earning rewards with as little as 0.01 ETH. No technical knowledge required.
+            Start earning rewards with as little as 100 PIVX. No technical knowledge required.
             Secure, transparent, and efficient staking platform.
           </p>
 
@@ -46,18 +46,18 @@ export default function Home() {
         {/* Coin Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <CoinCard
-            name="Ethereum"
-            symbol="ETH"
-            apy={3.00}
-            minStake="0.01"
-            icon={SiEthereum}
+            name="PIVX"
+            symbol="PIVX"
+            apy={10.00}
+            minStake="100"
+            icon={SiPolkadot}
             enabled={true}
-            onClick={() => navigate("/coins/eth")}
+            onClick={() => navigate("/coins/pivx")}
           />
           <CoinCard
             name="Polkadot"
             symbol="DOT"
-            apy={12.00}
+            apy={10.00}
             minStake="5.00"
             icon={SiPolkadot}
             enabled={false}
@@ -66,7 +66,7 @@ export default function Home() {
           <CoinCard
             name="Solana"
             symbol="SOL"
-            apy={6.50}
+            apy={10.00}
             minStake="1.00"
             icon={SiSolana}
             enabled={false}
@@ -91,7 +91,7 @@ export default function Home() {
           <Card className="bg-zinc-900/50 border-zinc-800 p-6">
             <h3 className="text-xl font-semibold text-white mb-3">Low Minimum</h3>
             <p className="text-zinc-400">
-              Start with just 0.01 ETH and earn rewards proportional to your stake.
+              Start with just 100 PIVX and earn rewards proportional to your stake.
             </p>
           </Card>
         </div>
