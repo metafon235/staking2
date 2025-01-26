@@ -55,21 +55,3 @@ export const stakePIVX = async (amount: number): Promise<void> => {
     throw new Error(error.error || 'Failed to stake PIVX');
   }
 };
-
-export const stakeETH = async (amount: number): Promise<void> => {
-  const response = await fetch('/api/stakes', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // Required for auth
-    body: JSON.stringify({
-      amount: amount.toString()
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to stake ETH');
-  }
-};

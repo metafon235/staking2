@@ -27,7 +27,7 @@ export function StakeButton({ userId, onSuccess }: StakeButtonProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to stake ETH');
+        throw new Error(error.error || 'Failed to stake PIVX');
       }
 
       return response.json();
@@ -35,7 +35,7 @@ export function StakeButton({ userId, onSuccess }: StakeButtonProps) {
     onSuccess: () => {
       toast({
         title: "Staking initiated",
-        description: `Successfully staked ${amount} ETH`,
+        description: `Successfully staked ${amount} PIVX`,
       });
       setAmount('');
       onSuccess?.();
@@ -68,7 +68,7 @@ export function StakeButton({ userId, onSuccess }: StakeButtonProps) {
         type="number"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        placeholder="Enter ETH amount"
+        placeholder="Enter PIVX amount"
         className="px-3 py-2 border rounded-md"
         min="0"
         step="0.01"
