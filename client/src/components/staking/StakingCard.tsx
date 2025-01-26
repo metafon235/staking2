@@ -91,7 +91,7 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Please set up your funding/withdrawal wallet address in{" "}
-              <Link href="/app/settings" className="underline hover:text-yellow-400">
+              <Link href="/settings" className="underline hover:text-yellow-400">
                 Settings
               </Link>{" "}
               to enable staking.

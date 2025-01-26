@@ -10,7 +10,7 @@ import * as crypto from 'crypto';
 
 // Network base statistics
 const BASE_STATS = {
-  eth: {
+  pivx: {
     tvl: 2456789.45,
     validators: 845632,
     avgStake: 32.5,
@@ -32,7 +32,7 @@ const BASE_STATS = {
 
 // Calculate real-time network rewards based on staking data
 async function calculateNetworkRewards(symbol: string): Promise<number> {
-  if (symbol.toLowerCase() !== 'eth') {
+  if (symbol.toLowerCase() !== 'pivx') {
     return BASE_STATS[symbol as keyof typeof BASE_STATS].rewards;
   }
 
@@ -48,15 +48,15 @@ async function calculateNetworkRewards(symbol: string): Promise<number> {
     const totalStaked = parseFloat(result[0]?.totalStaked || '0');
     const avgStakeTimeSeconds = parseFloat(result[0]?.avgStakeTime || '0');
 
-    // Calculate rewards based on 3% APY
+    // Calculate rewards based on 10% APY
     // Convert time to years for APY calculation
     const timeInYears = avgStakeTimeSeconds / (365 * 24 * 60 * 60);
-    const networkRewards = totalStaked * 0.03 * timeInYears;
+    const networkRewards = totalStaked * 0.10 * timeInYears;
 
-    return parseFloat(networkRewards.toFixed(8));
+    return parseFloat(networkRewards.toFixed(2));
   } catch (error) {
     console.error('Error calculating network rewards:', error);
-    return BASE_STATS.eth.rewards;
+    return BASE_STATS.pivx.rewards;
   }
 }
 
@@ -72,7 +72,7 @@ async function generateHistoricalData(symbol: string, baseStats: typeof BASE_STA
     // Add some random variation to make the data look realistic
     const variation = () => 1 + (Math.random() * 0.1 - 0.05);
 
-    const rewards = symbol.toLowerCase() === 'eth'
+    const rewards = symbol.toLowerCase() === 'pivx'
       ? await calculateNetworkRewards(symbol) * ((30 - i) / 30)
       : dailyRewardRate * (30 - i) * variation();
 
@@ -166,12 +166,12 @@ async function generateRewardsForAllActiveStakes() {
     for (const [userId, data] of Object.entries(userStakes)) {
       const { totalStaked, lastNotification } = data;
 
-      if (totalStaked >= 0.01) {
-        const yearlyRate = 0.03; // 3% APY
+      if (totalStaked >= 100) { // Minimum stake amount for PIVX
+        const yearlyRate = 0.10; // 10% APY
         const minutelyRate = yearlyRate / (365 * 24 * 60);
         const reward = totalStaked * minutelyRate;
 
-        if (reward >= 0.00000001) {
+        if (reward >= 0.01) { // Adjusted minimum reward threshold for PIVX
           // Record per-minute rewards for accurate data
           batchRewards.push({
             userId: parseInt(userId),
@@ -192,7 +192,7 @@ async function generateRewardsForAllActiveStakes() {
               userId: parseInt(userId),
               type: 'reward',
               title: 'Hourly Staking Rewards Update',
-              message: `You earned ${hourlyRewards.toFixed(9)} ETH from staking in the last hour`,
+              message: `You earned ${hourlyRewards.toFixed(9)} PIVX from staking in the last hour`,
               data: JSON.stringify({ amount: hourlyRewards, timeframe: '1 hour' }),
               read: false,
               createdAt: now
@@ -258,15 +258,15 @@ async function calculateRewardsForTimestamp(
 
     let totalRewards = 0;
 
-    // Effizientere Rewards-Berechnung
+    // Effizientere Rewards-Berechnung mit 10% APY
     for (const stake of userStakes) {
       const stakeStartTime = stake.createdAt.getTime();
       if (stakeStartTime <= endTimeMs) {
         const stakeAmount = parseFloat(stake.amount.toString());
-        if (stakeAmount >= 0.01) {
+        if (stakeAmount >= 100) { // Minimum stake amount for PIVX
           const timePassedMs = endTimeMs - stakeStartTime;
           const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-          const yearlyRate = 0.03; // 3% APY
+          const yearlyRate = 0.10; // 10% APY
           const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
           totalRewards += stakeRewards;
         }
@@ -278,7 +278,7 @@ async function calculateRewardsForTimestamp(
 
     if (forTransaction && totalRewards > 0) {
       const minutelyReward = totalRewards / (365 * 24 * 60);
-      if (minutelyReward >= 0.00000001) {
+      if (minutelyReward >= 0.01) { // Adjusted minimum reward threshold for PIVX
         await recordRewardTransaction(userId, minutelyReward);
       }
       return minutelyReward;
@@ -641,7 +641,7 @@ export function registerRoutes(app: Express): Server {
       ) : 0;
 
       // Calculate monthly rewards based on current stake
-      const monthlyRewards = (totalStaked * 0.03) / 12;
+      const monthlyRewards = (totalStaked * 0.10) / 12; // 10% APY
 
       // Generate rewards history for the last week
       const now = Date.now();
@@ -801,8 +801,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: 'Invalid withdrawal amount' });
       }
 
-      // For now, we only support ETH withdrawals
-      if (coin.toUpperCase() !== 'ETH') {
+      // For now, we only support PIVX withdrawals
+      if (coin.toUpperCase() !== 'PIVX') {
         return res.status(400).json({ error: 'Unsupported coin for withdrawal' });
       }
 
@@ -815,7 +815,7 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      if (totalStaked < 0.01) {
+      if (totalStaked < 100) { // Minimum stake amount for PIVX
         return res.status(400).json({ error: 'No active stakes found' });
       }
 
@@ -855,8 +855,8 @@ export function registerRoutes(app: Express): Server {
 
       const { coin } = req.body;
 
-      // For now, we only support ETH withdrawals
-      if (coin.toUpperCase() !== 'ETH') {
+      // For now, we only support PIVX withdrawals
+      if (coin.toUpperCase() !== 'PIVX') {
         return res.status(400).json({ error: 'Unsupported coin for withdrawal' });
       }
 
@@ -928,8 +928,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: 'Invalid transfer amount' });
       }
 
-      // For now, we only support ETH transfers
-      if (coin.toUpperCase() !== 'ETH') {
+      // For now, we only support PIVX transfers
+      if (coin.toUpperCase() !== 'PIVX') {
         return res.status(400).json({ error: 'Unsupported coin for transfer' });
       }
 
@@ -942,7 +942,7 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      if (totalStaked < 0.01) {
+      if (totalStaked < 100) { // Minimum stake amount for PIVX
         return res.status(400).json({ error: 'No active stakes found' });
       }
 
@@ -1020,9 +1020,9 @@ export function registerRoutes(app: Express): Server {
   const stakeRequestSchema = z.object({
     amount: z.string().refine((val) => {
       const amount = parseFloat(val);
-      return !isNaN(amount) && amount >= 0.01;
+      return !isNaN(amount) && amount >= 100; // Minimum stake amount for PIVX
     }, {
-      message: "Minimum stake amount is 0.01 ETH"
+      message: "Minimum stake amount is 100 PIVX"
     })
   });
 
@@ -1058,10 +1058,10 @@ export function registerRoutes(app: Express): Server {
         // Only calculate rewards if the stake was created before the end time
         if (stakeStartTime <= endTimeMs) {
           const stakeAmount = parseFloat(stake.amount.toString());
-          if (stakeAmount >= 0.01) { // Only calculate rewards for stakes >= 0.01 ETH
+          if (stakeAmount >= 100) { // Only calculate rewards for stakes >= 100 PIVX
             const timePassedMs = endTimeMs - stakeStartTime;
             const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-            const yearlyRate = 0.03; // 3% APY
+            const yearlyRate = 0.10; // 10% APY
             const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
             totalRewards += stakeRewards;
           }
@@ -1071,7 +1071,7 @@ export function registerRoutes(app: Express): Server {
       // For transaction records, create minute-based snapshots
       if (forTransaction && totalRewards > 0) {
         const minutelyReward = totalRewards / (365 * 24 * 60);
-        if (minutelyReward >= 0.00000001) { // Threshold at 8 decimals
+        if (minutelyReward >= 0.01) { // Threshold at 8 decimals
           await recordRewardTransaction(userId, minutelyReward);
         }
         return minutelyReward;
@@ -1195,7 +1195,7 @@ export function registerRoutes(app: Express): Server {
       const analyticsData = {
         performance: {
           roi,
-          apy: 3.00, // Current fixed APY
+          apy: 10.00, // Current fixed APY
           totalRewards: currentRewards,
           rewardsHistory
         },
@@ -1210,10 +1210,10 @@ export function registerRoutes(app: Express): Server {
           profitLoss: currentRewards,
           stakingPositions: [
             {
-              coin: 'ETH',
+              coin: 'PIVX', // Changed to PIVX
               amount: totalStaked,
               value: totalValue,
-              apy: 3.00
+              apy: 10.00 // Changed to 10%
             }
           ],
           priceHistory
@@ -1310,14 +1310,14 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      if (totalStaked < 0.01) {
-        return res.status(400).json({ error: 'Minimum stake required: 0.01 ETH' });
+      if (totalStaked < 100) { // Minimum stake amount for PIVX
+        return res.status(400).json({ error: 'Minimum stake required: 100 PIVX' }); // Changed to PIVX
       }
 
-      // For now, we only support ETH, so ensure ETH allocation is 100%
+      // For now, we only support PIVX, so ensure PIVX allocation is 100%
       if (eth !== 100) {
         return res.status(400).json({
-          error: 'Currently only ETH staking is supported. Please set ETH allocation to 100%'
+          error: 'Currently only PIVX staking is supported. Please set PIVX allocation to 100%' // Changed to PIVX
         });
       }
 
@@ -1396,10 +1396,10 @@ export function registerRoutes(app: Express): Server {
       }
 
       const portfolioData = {
-        eth: {
+        pivx: { // Changed to PIVX
           staked: totalStaked,
           rewards: parseFloat(currentRewards.toFixed(9)),
-          apy: 3.00
+          apy: 10.00 // Changed to 10%
         }
       };
 
