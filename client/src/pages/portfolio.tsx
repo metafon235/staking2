@@ -13,12 +13,12 @@ import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog"
 import { format } from "date-fns";
 
 interface PortfolioData {
-  eth: {
+  pivx?: {
     staked: number;
     rewards: number;
     apy: number;
   };
-  pivx: {
+  eth?: {
     staked: number;
     rewards: number;
     apy: number;
@@ -81,9 +81,16 @@ export default function Portfolio() {
     }
   };
 
-  const totalStaked = portfolio ? portfolio.eth.staked : 0;
-  const totalRewards = portfolio ? portfolio.eth.rewards : 0;
-  const totalValue = totalStaked + totalRewards;
+  // Calculate PIVX totals
+  const totalPivxStaked = portfolio?.pivx?.staked || 0;
+  const totalPivxRewards = portfolio?.pivx?.rewards || 0;
+  const totalPivxValue = totalPivxStaked + totalPivxRewards;
+
+  //Calculate ETH totals
+  const totalEthStaked = portfolio?.eth?.staked || 0;
+  const totalEthRewards = portfolio?.eth?.rewards || 0;
+  const totalEthValue = totalEthStaked + totalEthRewards;
+
 
   return (
     <div className="space-y-6">
@@ -111,13 +118,13 @@ export default function Portfolio() {
               <div>
                 <p className="text-sm text-zinc-300">Total Value Staked</p>
                 <p className="text-3xl font-bold text-white">
-                  {totalStaked.toFixed(2)} ETH
+                  {(totalEthStaked + totalPivxStaked).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-zinc-300">Total Current Rewards</p>
                 <p className="text-3xl font-bold text-green-400">
-                  {totalRewards.toFixed(2)} ETH
+                  {(totalEthRewards + totalPivxRewards).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -143,24 +150,24 @@ export default function Portfolio() {
                   <Skeleton className="h-4 w-[250px] bg-zinc-800" />
                   <Skeleton className="h-4 w-[200px] bg-zinc-800" />
                 </div>
-              ) : portfolio ? (
+              ) : portfolio?.eth ? (
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-zinc-400">Initial Stake</p>
                     <p className="text-2xl font-bold text-white">
-                      {portfolio.eth.staked.toFixed(9)} ETH
+                      {portfolio.eth.staked.toFixed(2)} ETH
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Generated Rewards</p>
                     <p className="text-2xl font-bold text-green-500">
-                      +{portfolio.eth.rewards.toFixed(9)} ETH
+                      +{portfolio.eth.rewards.toFixed(2)} ETH
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
                     <p className="text-2xl font-bold text-purple-500">
-                      {totalValue.toFixed(9)} ETH
+                      {totalEthValue.toFixed(2)} ETH
                     </p>
                   </div>
                   <div>
@@ -171,7 +178,7 @@ export default function Portfolio() {
                   </div>
                 </div>
               ) : (
-                <p className="text-zinc-400">Failed to load data</p>
+                <p className="text-zinc-400">No ETH staking data available</p>
               )}
             </CardContent>
           </Card>
@@ -194,7 +201,7 @@ export default function Portfolio() {
                   <Skeleton className="h-4 w-[250px] bg-zinc-800" />
                   <Skeleton className="h-4 w-[200px] bg-zinc-800" />
                 </div>
-              ) : portfolio ? (
+              ) : portfolio?.pivx ? (
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-zinc-400">Initial Stake</p>
@@ -211,7 +218,7 @@ export default function Portfolio() {
                   <div>
                     <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
                     <p className="text-2xl font-bold text-purple-500">
-                      {(portfolio.pivx.staked + portfolio.pivx.rewards).toFixed(2)} PIVX
+                      {totalPivxValue.toFixed(2)} PIVX
                     </p>
                   </div>
                   <div>
@@ -222,7 +229,7 @@ export default function Portfolio() {
                   </div>
                 </div>
               ) : (
-                <p className="text-zinc-400">Failed to load data</p>
+                <p className="text-zinc-400">No PIVX staking data available</p>
               )}
             </CardContent>
           </Card>
@@ -263,22 +270,34 @@ export default function Portfolio() {
 
       <div className="mt-6">
         <div className="grid gap-6">
-          {portfolio && (
+          {(portfolio?.eth || portfolio?.pivx) && (
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex gap-4">
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => handleWithdrawAll('ETH')}
-                    disabled={isWithdrawing || totalValue <= 0}
-                  >
-                    {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
-                  </Button>
+                  {portfolio?.eth && (
+                    <Button
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      onClick={() => handleWithdrawAll('ETH')}
+                      disabled={isWithdrawing || totalEthValue <= 0}
+                    >
+                      {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
+                    </Button>
+                  )}
+                  {portfolio?.pivx && (
+                    <Button
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      onClick={() => handleWithdrawAll('PIVX')}
+                      disabled={isWithdrawing || totalPivxValue <= 0}
+                    >
+                      {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
+                    </Button>
+                  )}
                   <AutoCompoundingDialog
                     currentAllocation={{
-                      eth: 100, 
+                      eth: portfolio?.eth ? 100 : 0,
                       sol: 0,
-                      dot: 0
+                      dot: 0,
+                      pivx: portfolio?.pivx ? 100 : 0
                     }}
                   />
                 </div>
