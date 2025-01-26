@@ -31,7 +31,18 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Router() {
+// Move Router component inside App to ensure QueryClientProvider is available
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterContent />
+      <Toaster />
+    </QueryClientProvider>
+  );
+}
+
+// Separate RouterContent component to use hooks after QueryClientProvider is set up
+function RouterContent() {
   const { user, isLoading } = useUser();
 
   if (isLoading) {
@@ -91,15 +102,6 @@ function Router() {
       {/* Fallback */}
       <Route component={NotFound} />
     </Switch>
-  );
-}
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
-    </QueryClientProvider>
   );
 }
 
