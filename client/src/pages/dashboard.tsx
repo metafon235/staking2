@@ -19,25 +19,25 @@ function DashboardContent() {
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
-    if (!portfolio?.eth?.staked) {
-      console.log('Missing required portfolio data:', portfolio?.eth);
+    if (!portfolio?.pivx?.staked) {
+      console.log('Missing required portfolio data:', portfolio?.pivx);
       return [];
     }
 
     const points = [];
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
-    const stakedTime = portfolio.eth.stakedAt ? new Date(portfolio.eth.stakedAt).getTime() : now - (24 * 60 * 60 * 1000);
+    const stakedTime = portfolio.pivx.stakedAt ? new Date(portfolio.pivx.stakedAt).getTime() : now - (24 * 60 * 60 * 1000);
 
     // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
       const elapsedTime = (time - stakedTime) / 1000; // Convert to seconds
       if (elapsedTime <= 0) continue;
 
-      // Calculate rewards based on 3% APY
+      // Calculate rewards based on 10% APY
       // (staked amount * APY * elapsed time in years)
       const yearsElapsed = elapsedTime / (365 * 24 * 60 * 60);
-      const reward = portfolio.eth.staked * (0.03 * yearsElapsed);
+      const reward = portfolio.pivx.staked * (0.10 * yearsElapsed);
 
       points.push({
         timestamp: time,
@@ -46,14 +46,14 @@ function DashboardContent() {
     }
 
     return points;
-  }, [portfolio?.eth?.staked, portfolio?.eth?.stakedAt]);
+  }, [portfolio?.pivx?.staked, portfolio?.pivx?.stakedAt]);
 
   // Memoize the derived data to prevent unnecessary re-renders
   const data = useMemo(() => ({
-    totalStaked: portfolio?.eth?.staked ?? 0,
-    rewards: portfolio?.eth?.rewards ?? 0,
-    monthlyRewards: (portfolio?.eth?.staked ?? 0) * 0.03 / 12, // Calculate monthly rewards based on 3% APY
-  }), [portfolio?.eth?.staked, portfolio?.eth?.rewards]);
+    totalStaked: portfolio?.pivx?.staked ?? 0,
+    rewards: portfolio?.pivx?.rewards ?? 0,
+    monthlyRewards: (portfolio?.pivx?.staked ?? 0) * 0.10 / 12, // Calculate monthly rewards based on 10% APY
+  }), [portfolio?.pivx?.staked, portfolio?.pivx?.rewards]);
 
   return (
     <div className="min-h-screen bg-black p-6">

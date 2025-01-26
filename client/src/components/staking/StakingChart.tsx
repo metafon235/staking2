@@ -92,7 +92,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
           <div>
             <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
             <CardDescription className="text-zinc-400">
-              Real-time rewards accumulation for {totalStaked.toFixed(6)} ETH staked
+              Real-time rewards accumulation for {totalStaked.toFixed(2)} PIVX staked
             </CardDescription>
           </div>
           <ToggleGroup 
@@ -143,7 +143,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={value => value.toFixed(9)}
+                  tickFormatter={value => value.toFixed(2)}
                   domain={yAxisDomain}
                 />
                 <Tooltip
@@ -154,7 +154,7 @@ function StakingChartComponent({ data, totalStaked, currentRewards, isLoading }:
                   }}
                   labelStyle={{ color: "#e4e4e7" }}
                   itemStyle={{ color: "#a78bfa" }}
-                  formatter={(value: number) => [value.toFixed(9), "ETH"]}
+                  formatter={(value: number) => [value.toFixed(2), "PIVX"]}
                   labelFormatter={(label) => `Time: ${label}`}
                 />
                 <Area
