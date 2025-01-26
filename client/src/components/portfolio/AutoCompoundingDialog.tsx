@@ -9,7 +9,7 @@ import { Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PortfolioAllocation {
-  eth: number;
+  pivx: number;
   sol: number;
   dot: number;
 }
@@ -54,10 +54,10 @@ export default function AutoCompoundingDialog({
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>ETH Allocation ({Math.round(targetAllocation.eth)}%)</Label>
+              <Label>PIVX Allocation ({Math.round(targetAllocation.pivx)}%)</Label>
               <Slider
-                value={[targetAllocation.eth]}
-                onValueChange={([value]) => setTargetAllocation({ ...targetAllocation, eth: value })}
+                value={[targetAllocation.pivx]}
+                onValueChange={([value]) => setTargetAllocation({ ...targetAllocation, pivx: value })}
                 min={0}
                 max={100}
                 step={1}

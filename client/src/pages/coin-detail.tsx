@@ -320,7 +320,7 @@ const COIN_DATA = {
   dot: {
     name: "Polkadot",
     symbol: "DOT",
-    apy: 12.00,
+    apy: 10.00,
     minStake: "5.00",
     icon: SiPolkadot,
     description: "Stake DOT to secure the network and earn rewards through Polkadot's nominated proof-of-stake system.",
@@ -329,7 +329,7 @@ const COIN_DATA = {
   sol: {
     name: "Solana",
     symbol: "SOL",
-    apy: 6.50,
+    apy: 10.00,
     minStake: "1.00",
     icon: SiSolana,
     description: "Participate in Solana's proof-of-stake consensus mechanism to earn staking rewards.",

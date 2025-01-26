@@ -16,13 +16,13 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
   const [compounding, setCompounding] = useState(false);
   const [rewards, setRewards] = useState({ normal: 0, compound: 0 });
 
-  const APY = 0.03; // 3% APY
+  const APY = 0.10; // 10% APY
   const DAYS_PER_YEAR = 365;
 
   // Calculate compound interest using standard formula
   // FV = P(1 + r/n)^(n*t)
   const calculateCompoundInterest = (principal: number, years: number) => {
-    const r = APY; // Annual rate (3%)
+    const r = APY; // Annual rate (10%)
     const n = DAYS_PER_YEAR; // Compounding frequency (daily)
     const t = years;
 
@@ -54,8 +54,8 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
 
       data.push({
         month: month,
-        normal: parseFloat(normalReward.toFixed(9)),
-        compound: parseFloat(compoundReward.toFixed(9))
+        normal: parseFloat(normalReward.toFixed(2)),
+        compound: parseFloat(compoundReward.toFixed(2))
       });
     }
 
@@ -89,15 +89,15 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="stake-amount" className="text-sm text-zinc-400">Stake Amount (ETH)</Label>
+            <Label htmlFor="stake-amount" className="text-sm text-zinc-400">Stake Amount (PIVX)</Label>
             <Input
               id="stake-amount"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               value={stakeAmount}
               onChange={(e) => setStakeAmount(e.target.value)}
-              placeholder="0.00"
+              placeholder="0"
               className="bg-zinc-800 border-zinc-700 text-white"
             />
           </div>
@@ -148,7 +148,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
               />
               <YAxis 
                 stroke="#888"
-                tickFormatter={(value) => `${value.toFixed(6)}`}
+                tickFormatter={(value) => `${value.toFixed(2)}`}
                 width={55}
                 tick={{ fontSize: 12 }}
                 domain={[
@@ -164,7 +164,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                   fontSize: '12px'
                 }}
                 labelFormatter={(value) => `${Math.floor(value/12)}y ${value%12}m`}
-                formatter={(value: number) => [`${value.toFixed(9)} ETH`]}
+                formatter={(value: number) => [`${value.toFixed(2)} PIVX`]}
               />
               <Line 
                 type="monotone" 
@@ -202,18 +202,18 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
         <div className="grid grid-cols-1 gap-2 pt-2 border-t border-zinc-800">
           <div className="flex justify-between items-center">
             <span className="text-sm text-zinc-400 whitespace-nowrap">Standard Rewards:</span>
-            <span className="font-medium text-white tabular-nums">{rewards.normal.toFixed(9)} ETH</span>
+            <span className="font-medium text-white tabular-nums">{rewards.normal.toFixed(2)} PIVX</span>
           </div>
           {compounding && (
             <>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-zinc-400 whitespace-nowrap">Compound Rewards:</span>
-                <span className="font-medium text-green-500 tabular-nums">{rewards.compound.toFixed(9)} ETH</span>
+                <span className="font-medium text-green-500 tabular-nums">{rewards.compound.toFixed(2)} PIVX</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-purple-500 whitespace-nowrap">Additional from Compounding:</span>
                 <span className="font-medium text-purple-500 tabular-nums">
-                  +{(rewards.compound - rewards.normal).toFixed(9)} ETH ({percentageIncrease}% more)
+                  +{(rewards.compound - rewards.normal).toFixed(2)} PIVX ({percentageIncrease}% more)
                 </span>
               </div>
             </>

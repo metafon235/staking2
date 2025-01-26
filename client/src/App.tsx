@@ -1,6 +1,5 @@
 import { Switch, Route, Redirect } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
@@ -18,6 +17,16 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminStaking from "@/pages/admin/staking";
 
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 // App layout with navigation for authenticated users
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -28,16 +37,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
       <div className="h-16 lg:hidden" />
     </div>
-  );
-}
-
-// Move Router component inside App to ensure QueryClientProvider is available
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <RouterContent />
-      <Toaster />
-    </QueryClientProvider>
   );
 }
 
@@ -86,7 +85,7 @@ function RouterContent() {
         {() => !user ? <Redirect to="/auth" /> : <AppLayout><Portfolio /></AppLayout>}
       </Route>
       <Route path="/app/coins/:symbol">
-        {({ symbol }) => !user ? <Redirect to="/auth" /> : (
+        {() => !user ? <Redirect to="/auth" /> : (
           <AppLayout>
             <CoinDetail />
           </AppLayout>
@@ -102,6 +101,16 @@ function RouterContent() {
       {/* Fallback */}
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+// Main App component
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterContent />
+      <Toaster />
+    </QueryClientProvider>
   );
 }
 
