@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { SidebarIcon, HomeIcon, ChartBarIcon } from "lucide-react";
+import { SidebarIcon, HomeIcon, ChartBarIcon, WalletIcon, SettingsIcon } from "lucide-react";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -15,6 +15,16 @@ export default function Sidebar() {
       href: "/dashboard",
       icon: ChartBarIcon,
       label: "Dashboard"
+    },
+    {
+      href: "/portfolio",
+      icon: WalletIcon,
+      label: "Portfolio"
+    },
+    {
+      href: "/settings",
+      icon: SettingsIcon,
+      label: "Settings"
     }
   ];
 
@@ -23,7 +33,7 @@ export default function Sidebar() {
       <div className="p-6">
         <div className="flex items-center gap-2 mb-6">
           <SidebarIcon className="h-6 w-6" />
-          <h1 className="font-bold">ETH Staking</h1>
+          <h1 className="font-bold">Multi-Coin Staking</h1>
         </div>
 
         <nav className="space-y-2">

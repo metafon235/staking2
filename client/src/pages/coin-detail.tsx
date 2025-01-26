@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
+import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useUser } from "@/hooks/use-user";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,7 +12,7 @@ import NetworkStatsChart from "@/components/network/NetworkStatsChart";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { stakeETH } from "@/lib/web3";
+import { stakePIVX } from "@/lib/web3";
 
 interface NetworkStats {
   current: {
@@ -65,16 +66,16 @@ export default function CoinDetail() {
   });
 
   const stakeMutation = useMutation({
-    mutationFn: () => stakeETH(parseFloat(stakeAmount)),
+    mutationFn: () => stakePIVX(parseFloat(stakeAmount)),
     onSuccess: () => {
       toast({
         title: "Staking Successful",
-        description: `Successfully staked ${stakeAmount} ETH. Your rewards will start accumulating.`
+        description: `Successfully staked ${stakeAmount} PIVX. Your rewards will start accumulating.`
       });
       setStakeAmount("");
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/network-stats/eth'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/network-stats/pivx'] });
     },
     onError: (error: Error) => {
       toast({
@@ -307,13 +308,13 @@ export default function CoinDetail() {
 }
 
 const COIN_DATA = {
-  eth: {
-    name: "Ethereum",
-    symbol: "ETH",
-    apy: 3.00,
-    minStake: "0.01",
-    icon: SiEthereum,
-    description: "Ethereum 2.0 staking enables you to earn rewards by participating in network validation.",
+  pivx: {
+    name: "PIVX",
+    symbol: "PIVX",
+    apy: 10.00,
+    minStake: "100",
+    icon: PiCurrencyCircleDollarFill,
+    description: "PIVX staking enables you to earn passive income while supporting the network's security and decentralization.",
     enabled: true
   },
   dot: {

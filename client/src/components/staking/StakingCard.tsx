@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { stakeETH } from "@/lib/web3";
+import { stakePIVX } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -31,11 +31,11 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
   });
 
   const stakeMutation = useMutation({
-    mutationFn: () => stakeETH(parseFloat(amount)),
+    mutationFn: () => stakePIVX(parseFloat(amount)),
     onSuccess: () => {
       toast({
         title: "Staking Successful",
-        description: `Successfully staked ${amount} ETH. Your rewards will start accumulating.`
+        description: `Successfully staked ${amount} PIVX. Your rewards will start accumulating.`
       });
       setAmount("");
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
@@ -51,11 +51,11 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
 
   const handleStake = () => {
     const amountNum = parseFloat(amount);
-    if (!amount || amountNum < 0.01) {
+    if (!amount || amountNum < 100) {
       toast({
         variant: "destructive",
         title: "Invalid Amount",
-        description: "Minimum stake amount is 0.01 ETH"
+        description: "Minimum stake amount is 100 PIVX"
       });
       return;
     }
@@ -69,7 +69,7 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
     return (
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-white">Stake ETH</CardTitle>
+          <CardTitle className="text-white">Stake PIVX</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Skeleton className="h-10 bg-zinc-800" />
@@ -83,7 +83,7 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
-        <CardTitle className="text-white">Stake ETH</CardTitle>
+        <CardTitle className="text-white">Stake PIVX</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {!hasWallet && (
@@ -100,14 +100,14 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
         )}
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-400">Amount (ETH)</label>
+          <label className="text-sm font-medium text-zinc-400">Amount (PIVX)</label>
           <Input
             type="number"
-            placeholder="Min. 0.01 ETH"
+            placeholder="Min. 100 PIVX"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            min="0.01"
-            step="0.01"
+            min="100"
+            step="1"
             disabled={stakeMutation.isPending || !hasWallet}
             className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
           />
@@ -117,19 +117,19 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
           <div className="space-y-2 pt-4">
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Current Rewards:</span>
-              <span>{stakingData.rewards.toFixed(9)} ETH</span>
+              <span>{stakingData.rewards.toFixed(2)} PIVX</span>
             </div>
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Monthly Rewards:</span>
-              <span>{(stakingData.totalStaked * 0.03 / 12).toFixed(9)} ETH</span>
+              <span>{(stakingData.totalStaked * 0.10 / 12).toFixed(2)} PIVX</span>
             </div>
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Total Staked:</span>
-              <span>{stakingData.totalStaked.toFixed(9)} ETH</span>
+              <span>{stakingData.totalStaked.toFixed(2)} PIVX</span>
             </div>
             <div className="flex justify-between text-sm text-zinc-400">
               <span>APY:</span>
-              <span>3.00%</span>
+              <span>10.00%</span>
             </div>
           </div>
         )}
@@ -137,7 +137,7 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
           onClick={handleStake}
-          disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 0.01 || !hasWallet}
+          disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 100 || !hasWallet}
         >
           {!hasWallet 
             ? "Set Up Wallet First" 

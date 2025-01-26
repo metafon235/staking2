@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiEthereum, SiSolana } from "react-icons/si";
+import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +14,11 @@ import { format } from "date-fns";
 
 interface PortfolioData {
   eth: {
+    staked: number;
+    rewards: number;
+    apy: number;
+  };
+  pivx: {
     staked: number;
     rewards: number;
     apy: number;
@@ -51,8 +57,8 @@ export default function Portfolio() {
   const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
     queryFn: fetchPortfolioData,
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 0 // Always consider data stale to force refresh
+    refetchInterval: 60000, 
+    staleTime: 0 
   });
 
   const handleWithdrawAll = async (coin: string) => {
@@ -75,7 +81,6 @@ export default function Portfolio() {
     }
   };
 
-  // Calculate totals
   const totalStaked = portfolio ? portfolio.eth.staked : 0;
   const totalRewards = portfolio ? portfolio.eth.rewards : 0;
   const totalValue = totalStaked + totalRewards;
@@ -95,7 +100,6 @@ export default function Portfolio() {
       </div>
 
       <div ref={portfolioRef} className="space-y-6 bg-zinc-900 p-6 rounded-lg">
-        {/* Total Overview Card */}
         <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
           <CardHeader>
             <CardTitle className="text-xl font-medium text-white">
@@ -107,13 +111,13 @@ export default function Portfolio() {
               <div>
                 <p className="text-sm text-zinc-300">Total Value Staked</p>
                 <p className="text-3xl font-bold text-white">
-                  {totalStaked.toFixed(9)} ETH
+                  {totalStaked.toFixed(2)} ETH
                 </p>
               </div>
               <div>
                 <p className="text-sm text-zinc-300">Total Current Rewards</p>
                 <p className="text-3xl font-bold text-green-400">
-                  {totalRewards.toFixed(9)} ETH
+                  {totalRewards.toFixed(2)} ETH
                 </p>
               </div>
             </div>
@@ -121,7 +125,6 @@ export default function Portfolio() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* ETH Staking Card */}
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium text-white">
@@ -173,7 +176,57 @@ export default function Portfolio() {
             </CardContent>
           </Card>
 
-          {/* SOL Staking Card (Coming Soon) */}
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xl font-medium text-white">
+                <div className="flex items-center gap-2">
+                  <PiCurrencyCircleDollarFill className="w-6 h-6" />
+                  PIVX Staking
+                </div>
+              </CardTitle>
+              <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+                Active
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-[250px] bg-zinc-800" />
+                  <Skeleton className="h-4 w-[200px] bg-zinc-800" />
+                </div>
+              ) : portfolio ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-zinc-400">Initial Stake</p>
+                    <p className="text-2xl font-bold text-white">
+                      {portfolio.pivx.staked.toFixed(2)} PIVX
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Generated Rewards</p>
+                    <p className="text-2xl font-bold text-green-500">
+                      +{portfolio.pivx.rewards.toFixed(2)} PIVX
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
+                    <p className="text-2xl font-bold text-purple-500">
+                      {(portfolio.pivx.staked + portfolio.pivx.rewards).toFixed(2)} PIVX
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Current APY</p>
+                    <p className="text-lg text-purple-400">
+                      {portfolio.pivx.apy.toFixed(2)}%
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-zinc-400">Failed to load data</p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-zinc-900/50 border-zinc-800 relative overflow-hidden">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
               <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-lg py-2">
@@ -210,7 +263,6 @@ export default function Portfolio() {
 
       <div className="mt-6">
         <div className="grid gap-6">
-          {/* ETH Staking Actions */}
           {portfolio && (
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="pt-6 space-y-4">
@@ -224,7 +276,7 @@ export default function Portfolio() {
                   </Button>
                   <AutoCompoundingDialog
                     currentAllocation={{
-                      eth: 100, // Currently only ETH is supported
+                      eth: 100, 
                       sol: 0,
                       dot: 0
                     }}
@@ -234,7 +286,6 @@ export default function Portfolio() {
             </Card>
           )}
 
-          {/* Transaction History */}
           <TransactionHistory />
         </div>
       </div>
