@@ -10,6 +10,7 @@ import Portfolio from "@/pages/portfolio";
 import CoinDetail from "@/pages/coin-detail";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
+import CoinsOverview from "@/pages/coins";
 import { queryClient } from "./lib/queryClient";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
@@ -60,6 +61,9 @@ function Router() {
       </Route>
       <Route path="/app/portfolio">
         {() => <ProtectedRoute component={Portfolio} />}
+      </Route>
+      <Route path="/app/coins">
+        {() => <ProtectedRoute component={CoinsOverview} />}
       </Route>
       <Route path="/app/coins/:symbol">
         {(params) => <ProtectedRoute component={() => <CoinDetail symbol={params.symbol} />} />}
