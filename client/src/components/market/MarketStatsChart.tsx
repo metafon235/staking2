@@ -3,18 +3,9 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveCont
 import { format } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useMemo } from "react";
-import { getPIVXStats } from "@/lib/binance";
+import { getPIVXStats } from "@/lib/cryptocompare";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface MarketStatsProps {
-  priceChange24h?: number;
-  priceChangePercent24h?: number;
-  volume24h?: number;
-  highPrice24h?: number;
-  lowPrice24h?: number;
-  weightedAvgPrice?: number;
-}
 
 export default function MarketStatsChart() {
   const { data: pivxStats, isLoading } = useQuery({
@@ -23,13 +14,13 @@ export default function MarketStatsChart() {
     refetchInterval: 30000,
   });
 
-  const stats = pivxStats ?? {
-    priceChange24h: 0,
-    priceChangePercent24h: 0,
-    volume24h: 0,
-    highPrice24h: 0,
-    lowPrice24h: 0,
-    weightedAvgPrice: 0,
+  const stats = {
+    priceChange24h: pivxStats?.priceChange24h ?? 0,
+    priceChangePercent24h: pivxStats?.priceChangePercent24h ?? 0,
+    volume24h: pivxStats?.volume24h ?? 0,
+    highPrice24h: pivxStats?.highPrice24h ?? 0,
+    lowPrice24h: pivxStats?.lowPrice24h ?? 0,
+    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 5.23, // Fallback price
   };
 
   const marketData = useMemo(() => {
@@ -70,7 +61,7 @@ export default function MarketStatsChart() {
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-white">Price Movement (24h)</CardTitle>
+            <CardTitle className="text-white">PIVX Price Movement (24h)</CardTitle>
             <div className={`flex items-center ${stats.priceChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {stats.priceChangePercent24h >= 0 ? (
                 <TrendingUp className="w-4 h-4 mr-1" />
@@ -105,7 +96,7 @@ export default function MarketStatsChart() {
                   }}
                   labelStyle={{ color: "#e4e4e7" }}
                   labelFormatter={(value) => format(value, "HH:mm")}
-                  formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, "Price"]}
+                  formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, "PIVX Price"]}
                 />
                 <Line
                   type="monotone"
@@ -132,7 +123,7 @@ export default function MarketStatsChart() {
 
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-white">Trading Volume (24h)</CardTitle>
+          <CardTitle className="text-white">PIVX Trading Volume (24h)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[200px]">

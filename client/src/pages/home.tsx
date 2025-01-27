@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
-import { PiCurrencyCircleDollarFill } from "react-icons/pi";
+import { SiPivx } from "react-icons/si";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
@@ -50,7 +50,6 @@ export default function Home() {
             symbol="PIVX"
             apy={10.00}
             minStake="100"
-            icon={PiCurrencyCircleDollarFill}
             enabled={true}
             onClick={() => navigate("/coins/pivx")}
           />

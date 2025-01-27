@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
+import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 
 interface CoinCardProps {
   name: string;
@@ -8,11 +9,10 @@ interface CoinCardProps {
   apy: number;
   minStake: string;
   enabled?: boolean;
-  icon: IconType;
   onClick?: () => void;
 }
 
-export default function CoinCard({ name, symbol, apy, minStake, enabled = true, icon: Icon, onClick }: CoinCardProps) {
+export default function CoinCard({ name, symbol, apy, minStake, enabled = true, onClick }: CoinCardProps) {
   return (
     <Card 
       className={`bg-zinc-900/50 ${enabled ? 'hover:bg-zinc-900/80' : 'opacity-50'} border-zinc-800 transition-all duration-300 ${enabled ? 'cursor-pointer' : ''}`}
@@ -20,7 +20,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true, 
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <Icon className="w-8 h-8 text-white" />
+          <PiCurrencyCircleDollarFill className="w-8 h-8 text-purple-400" />
           <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400">
             Available for staking
           </div>
