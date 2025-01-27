@@ -18,14 +18,6 @@ function DashboardContent() {
     staleTime: 0,
     retry: 1,
     refetchOnWindowFocus: true,
-    onError: (err) => {
-      console.error('Portfolio fetch error:', err);
-      toast({
-        title: "Error loading portfolio data",
-        description: "Please try refreshing the page",
-        variant: "destructive",
-      });
-    },
   });
 
   console.log('Portfolio Data:', portfolioData); // Debug log
@@ -100,12 +92,13 @@ function DashboardContent() {
     );
   }
 
-  if (error) {
+  // Only show error if we have an error and no data
+  if (error && !portfolioData) {
     return (
       <div className="min-h-screen bg-black p-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-red-500">
-            Failed to load portfolio data. Please refresh the page.
+            Failed to load portfolio data. Please try again later.
           </div>
         </div>
       </div>
