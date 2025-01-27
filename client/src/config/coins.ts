@@ -1,15 +1,12 @@
-import { PivxIcon } from "@/components/icons/PivxIcon";
-import type { IconType } from "react-icons";
-import { 
-  SiBitcoin,
-  SiLitecoin,
-  SiDogecoin,
-  SiEthereum,
-  SiBinance
-} from "react-icons/si";
+import { type IconType } from "react-icons";
+import { FaCoins } from "react-icons/fa";
 import {
-  FaCoins
-} from "react-icons/fa";
+  PivxIcon,
+  CrownIcon,
+  FiroIcon,
+  GnoIcon,
+  DfiIcon
+} from "@/components/icons/CoinIcons";
 
 export interface CoinConfig {
   name: string;
@@ -180,7 +177,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "CRW",
     apy: 211.00,
     minStake: "500",
-    icon: SiBitcoin,
+    icon: CrownIcon,
     description: "Crown offers an innovative blockchain infrastructure with a sustainable staking model.",
     enabled: false,
     technicalDetails: {
@@ -250,7 +247,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "DFI",
     apy: 5.00,
     minStake: "200",
-    icon: SiBinance,
+    icon: DfiIcon,
     description: "DeFiChain is the blockchain for decentralized finance applications.",
     enabled: false,
     technicalDetails: {
@@ -285,7 +282,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "FIRO",
     apy: 13.00,
     minStake: "100",
-    icon: SiLitecoin,
+    icon: FiroIcon,
     description: "Firo (formerly Zcoin) is a leader in blockchain privacy technology.",
     enabled: false,
     technicalDetails: {
@@ -320,7 +317,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "GNO",
     apy: 4.00,
     minStake: "1",
-    icon: SiEthereum,
+    icon: GnoIcon,
     description: "Gnosis Chain is an Ethereum-compatible blockchain with fast, cheap transactions.",
     enabled: false,
     technicalDetails: {
