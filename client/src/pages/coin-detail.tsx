@@ -1,19 +1,16 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import NetworkStatsChart from "@/components/network/NetworkStatsChart";
-import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { stakePIVX } from "@/lib/web3";
 import { useLocation } from "wouter";
-import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice, getPIVXStats } from "@/lib/cryptocompare";
+import { COIN_DATA } from "@/config/coins";
+import PriceChart from "@/components/market/PriceChart";
+import CoinDocumentation from "@/components/coins/CoinDocumentation";
 
 interface CoinDetailProps {
   symbol?: string;
@@ -56,6 +53,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
     <div className="min-h-screen bg-black">
       <div className="p-6">
         <div className="max-w-6xl mx-auto">
+          {/* Header Section */}
           <div className="flex items-center gap-4 mb-8">
             <coinData.icon className="w-12 h-12 text-purple-400" />
             <div>
@@ -66,8 +64,11 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
             </div>
           </div>
 
+          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column */}
             <div className="space-y-6">
+              {/* Overview Card */}
               <Card className="bg-zinc-900/50 border-zinc-800">
                 <CardHeader>
                   <CardTitle className="text-white">Übersicht</CardTitle>
@@ -101,19 +102,21 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                 </CardContent>
               </Card>
 
-              {user && <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Ihre Statistiken</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-zinc-400">
-                    Melden Sie sich an, um Ihre persönlichen Staking-Statistiken zu sehen.
-                  </p>
-                </CardContent>
-              </Card>}
+              {/* Price Chart */}
+              <PriceChart symbol={coinData.symbol} />
+
+              {/* Documentation */}
+              <CoinDocumentation
+                symbol={coinData.symbol}
+                technicalDetails={coinData.technicalDetails}
+                stakingDetails={coinData.stakingDetails}
+                documentation={coinData.documentation}
+              />
             </div>
 
+            {/* Right Column */}
             <div className="space-y-6">
+              {/* Network Statistics Card */}
               <Card className="bg-zinc-900/50 border-zinc-800">
                 <CardHeader>
                   <CardTitle className="text-white">Netzwerk Statistiken</CardTitle>
@@ -170,6 +173,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                 </CardContent>
               </Card>
 
+              {/* Network Stats Chart */}
               {networkStats && (
                 <NetworkStatsChart
                   data={networkStats.history}
@@ -188,14 +192,7 @@ export default function CoinDetail({ symbol }: CoinDetailProps) {
   return <CoinDetailContent symbol={symbol} />;
 }
 
-async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
-  const response = await fetch(`/api/network-stats/${symbol}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch network statistics');
-  }
-  return response.json();
-}
-
+// Types and API functions
 interface NetworkStats {
   current: {
     tvl: number;
@@ -213,85 +210,10 @@ interface NetworkStats {
   lastUpdated: string;
 }
 
-const COIN_DATA: Record<string, {
-  name: string;
-  symbol: string;
-  apy: number;
-  minStake: string;
-  icon: typeof PivxIcon;
-  description: string;
-  enabled: boolean;
-}> = {
-  pivx: {
-    name: "PIVX",
-    symbol: "PIVX",
-    apy: 10.00,
-    minStake: "100",
-    icon: PivxIcon,
-    description: "PIVX Staking ermöglicht es Ihnen, passives Einkommen zu erzielen und gleichzeitig die Sicherheit und Dezentralisierung des Netzwerks zu unterstützen.",
-    enabled: true
-  },
-  pac: {
-    name: "PAC",
-    symbol: "PAC",
-    apy: 8.50,
-    minStake: "1000",
-    icon: PivxIcon,
-    description: "PAC Protocol's staking mechanism rewards long-term holders while maintaining network security.",
-    enabled: false
-  },
-  wagerr: {
-    name: "WAGERR",
-    symbol: "WGR",
-    apy: 9.00,
-    minStake: "250",
-    icon: PivxIcon,
-    description: "Wagerr's decentralized sports betting blockchain offers staking rewards to network validators.",
-    enabled: false
-  },
-  crown: {
-    name: "CROWN",
-    symbol: "CRW",
-    apy: 7.50,
-    minStake: "500",
-    icon: PivxIcon,
-    description: "Crown platform's staking system provides sustainable returns while supporting the network infrastructure.",
-    enabled: false
-  },
-  energi: {
-    name: "ENERGI",
-    symbol: "NRG",
-    apy: 12.00,
-    minStake: "100",
-    icon: PivxIcon,
-    description: "Energi's staking mechanism offers competitive returns while securing the smart contract platform.",
-    enabled: false
-  },
-  defichain: {
-    name: "DEFICHAIN",
-    symbol: "DFI",
-    apy: 15.00,
-    minStake: "200",
-    icon: PivxIcon,
-    description: "DeFiChain staking supports the native DeFi platform while generating passive income.",
-    enabled: false
-  },
-  firo: {
-    name: "FIRO",
-    symbol: "FIRO",
-    apy: 11.00,
-    minStake: "100",
-    icon: PivxIcon,
-    description: "Firo staking rewards participants while maintaining privacy-focused transaction processing.",
-    enabled: false
-  },
-  gnosis: {
-    name: "GNOSIS",
-    symbol: "GNO",
-    apy: 14.00,
-    minStake: "1",
-    icon: PivxIcon,
-    description: "Gnosis Chain staking provides rewards for securing this Ethereum-compatible network.",
-    enabled: false
+async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
+  const response = await fetch(`/api/network-stats/${symbol}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch network statistics');
   }
-};
+  return response.json();
+}
