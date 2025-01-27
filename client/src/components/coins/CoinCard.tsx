@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
-import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useLocation } from "wouter";
+import { PivxIcon } from "@/components/icons/PivxIcon";
 
 interface CoinCardProps {
   name: string;
@@ -28,7 +28,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true }
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <PiCurrencyCircleDollarFill className="w-8 h-8 text-purple-400" />
+          <PivxIcon className="w-8 h-8 text-purple-400" />
           <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400">
             Available for staking
           </div>
