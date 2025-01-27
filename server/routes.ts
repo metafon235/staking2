@@ -1,176 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { z } from "zod";
 import { stakes, rewards, transactions, users, notifications, notificationSettings } from "@db/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
-import session from 'express-session';
-import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import MemoryStore from 'memorystore';
+import { setupAuth } from "./auth";
 import { NotificationService } from "./services/notifications";
-import * as crypto from 'crypto';
-
-const sessionStore = MemoryStore(session);
-
-const setupAuth = (app: Express) => {
-  app.use(
-    session({
-      secret: process.env.REPL_ID || 'your-secret-key',
-      resave: false,
-      saveUninitialized: false,
-      store: new sessionStore({
-        checkPeriod: 86400000 // Prune expired entries every 24h
-      }),
-      cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      }
-    })
-  );
-
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  // Use LocalStrategy with passport
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        // Find user by username
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.username, username))
-          .limit(1);
-
-        if (!user) {
-          return done(null, false, { message: 'Incorrect username.' });
-        }
-
-        // For development purposes, accept any password that matches
-        // In production, you would use proper password hashing
-        if (user.password !== password) {
-          console.log('Password mismatch:', { provided: password, stored: user.password });
-          return done(null, false, { message: 'Incorrect password.' });
-        }
-
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, id))
-        .limit(1);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
-
-  // Auth endpoints
-  app.post('/api/login', (req, res, next) => {
-    passport.authenticate('local', (err: any, user: Express.User | false, info: any) => {
-      if (err) {
-        console.error('Login error:', err);
-        return next(err);
-      }
-
-      if (!user) {
-        console.log('Login failed:', info?.message);
-        return res.status(401).json({ message: info?.message || 'Login failed' });
-      }
-
-      req.logIn(user, (err) => {
-        if (err) {
-          console.error('Login error:', err);
-          return next(err);
-        }
-
-        console.log('Login successful for user:', user.username);
-        return res.json({ 
-          user: {
-            id: user.id,
-            username: user.username,
-            isAdmin: user.isAdmin
-          }
-        });
-      });
-    })(req, res, next);
-  });
-
-  app.post('/api/register', async (req, res) => {
-    try {
-      const { username, password } = req.body;
-
-      // Check if user exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username))
-        .limit(1);
-
-      if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
-      }
-
-      // Create new user with plain password for development
-      // In production, you would hash the password
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          username,
-          password, // Store plain password for development
-          isAdmin: false
-        })
-        .returning();
-
-      // Log in the new user
-      req.login(newUser, (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error logging in after registration' });
-        }
-        res.json({ 
-          user: {
-            id: newUser.id,
-            username: newUser.username,
-            isAdmin: newUser.isAdmin
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Registration error:', error);
-      res.status(500).json({ message: 'Internal server error during registration' });
-    }
-  });
-
-  app.post('/api/logout', (req, res) => {
-    req.logout(() => {
-      res.json({ success: true });
-    });
-  });
-
-  app.get('/api/user', (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
-    res.json({
-      id: req.user.id,
-      username: req.user.username,
-      isAdmin: req.user.isAdmin
-    });
-  });
-};
+import { z } from "zod";
+import { sql } from 'drizzle-orm/sql';
 
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
@@ -771,7 +607,8 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      if (totalStaked < 100) { // Minimum stake amount for PIVX        return res.status(400).json({ error: 'No active stakes found' });
+      if (totalStaked < 100) { // Minimum stake amount for PIVX
+        return res.status(400).json({ error: 'No active stakes found' });
       }
 
       const earliestStake = userStakes[0]?.createdAt || new Date();
@@ -868,16 +705,16 @@ export function registerRoutes(app: Express): Server {
         )
       });
 
-      const totalStaked = userStakes.reduce((sum, stake) => 
+      const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      const rewards = userStakes.length > 0 
+      const rewards = userStakes.length > 0
         ? await calculateRewardsForTimestamp(
-            req.user.id,
-            totalStaked,
-            userStakes[0].createdAt.getTime(),
-            Date.now()
-          )
+          req.user.id,
+          totalStaked,
+          userStakes[0].createdAt.getTime(),
+          Date.now()
+        )
         : 0;
 
       res.json({
@@ -915,9 +752,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   async function calculateRewardsForTimestamp(
-    userId: number, 
-    stakedAmount: number, 
-    startTimeMs: number, 
+    userId: number,
+    stakedAmount: number,
+    startTimeMs: number,
     endTimeMs: number
   ): Promise<number> {
     try {
@@ -997,8 +834,6 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
-  //The interval is already set in startRewardsGeneration, so this line is redundant and should be removed.
-
   function startRewardsGeneration() {
     if (rewardsGenerationInterval) {
       clearInterval(rewardsGenerationInterval);
@@ -1035,6 +870,3 @@ const insertUserSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
 });
-
-// Add necessary imports
-import { sql } from 'drizzle-orm/sql';
