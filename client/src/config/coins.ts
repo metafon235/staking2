@@ -1,4 +1,5 @@
 import { PivxIcon } from "@/components/icons/PivxIcon";
+import { PacIcon } from "@/components/icons/PacIcon";
 import type { IconType } from "react-icons";
 
 export interface CoinConfig {
@@ -84,7 +85,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "PAC",
     apy: 25.00,
     minStake: "1000",
-    icon: PivxIcon,
+    icon: PacIcon,
     description: "PAC Protocol staking introduces a revolutionary approach to cryptocurrency yield generation through its advanced masternode and staking system. Built on a foundation of community-driven development and sustainable tokenomics, PAC staking offers investors a reliable way to earn passive income while contributing to a robust, decentralized network infrastructure. The platform combines traditional staking benefits with innovative features designed for long-term value creation.",
     enabled: false,
     technicalDetails: {
