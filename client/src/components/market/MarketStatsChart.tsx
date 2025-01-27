@@ -3,7 +3,7 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveCont
 import { format } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useMemo } from "react";
-import { getPIVXStats } from "@/lib/coinmarketcap";
+import { getPIVXStats } from "@/lib/cryptocompare";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PivxIcon } from "@/components/icons/PivxIcon";

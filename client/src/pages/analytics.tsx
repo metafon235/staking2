@@ -9,6 +9,7 @@ import RewardsBarChart from "@/components/staking/RewardsBarChart";
 import MarketStatsChart from "@/components/market/MarketStatsChart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useState } from "react";
+import { getPIVXPrice, getPIVXStats } from "@/lib/cryptocompare";
 
 interface AnalyticsData {
   performance: {
@@ -63,7 +64,13 @@ function AnalyticsContent() {
     refetchInterval: 60000,
   });
 
-  if (isLoadingAnalytics) {
+  const { data: pivxPrice, isLoading: isPivxPriceLoading } = useQuery({
+    queryKey: ['pivx-price'],
+    queryFn: getPIVXPrice,
+    refetchInterval: 30000, 
+  });
+
+  if (isLoadingAnalytics || isPivxPriceLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -79,9 +86,8 @@ function AnalyticsContent() {
     );
   }
 
-  const pivxPrice = analytics?.portfolio?.pivxPrice ?? 0;
-  const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * pivxPrice;
-  const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * pivxPrice;
+  const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * (pivxPrice ?? 0);
+  const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * (pivxPrice ?? 0);
 
   return (
     <div className="space-y-6 p-6">
