@@ -34,7 +34,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 10.00,
     minStake: "100",
     icon: PivxIcon,
-    description: "PIVX Staking represents a cutting-edge Proof of Stake (PoS) blockchain investment opportunity. As a leading privacy-focused cryptocurrency, PIVX combines sophisticated staking mechanisms with advanced privacy features, allowing investors to earn consistent passive income while supporting network security. With its energy-efficient consensus mechanism and robust governance system, PIVX staking offers an environmentally conscious and democratized approach to cryptocurrency earnings.",
+    description: "PIVX Staking represents a cutting-edge Proof of Stake (PoS) blockchain investment opportunity. As a leading privacy-focused cryptocurrency, PIVX combines sophisticated staking mechanisms with advanced privacy features, allowing investors to earn consistent passive income while supporting network security.",
     enabled: true,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
