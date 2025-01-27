@@ -5,65 +5,7 @@ import { PivxIcon } from "@/components/icons/PivxIcon";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
-
-const AVAILABLE_COINS = {
-  pivx: {
-    name: "PIVX",
-    symbol: "PIVX",
-    apy: 10.00,
-    minStake: "100",
-    enabled: true
-  },
-  pac: {
-    name: "PAC",
-    symbol: "PAC",
-    apy: 8.50,
-    minStake: "1000",
-    enabled: false
-  },
-  wagerr: {
-    name: "WAGERR",
-    symbol: "WGR",
-    apy: 9.00,
-    minStake: "250",
-    enabled: false
-  },
-  crown: {
-    name: "CROWN",
-    symbol: "CRW",
-    apy: 7.50,
-    minStake: "500",
-    enabled: false
-  },
-  energi: {
-    name: "ENERGI",
-    symbol: "NRG",
-    apy: 12.00,
-    minStake: "100",
-    enabled: false
-  },
-  defichain: {
-    name: "DEFICHAIN",
-    symbol: "DFI",
-    apy: 15.00,
-    minStake: "200",
-    enabled: false
-  },
-  firo: {
-    name: "FIRO",
-    symbol: "FIRO",
-    apy: 11.00,
-    minStake: "100",
-    enabled: false
-  },
-  gnosis: {
-    name: "GNOSIS",
-    symbol: "GNO",
-    apy: 14.00,
-    minStake: "1",
-    enabled: false
-  }
-};
+import { COIN_DATA } from "@/config/coins";
 
 export default function Home() {
   const { user } = useUser();
@@ -104,7 +46,7 @@ export default function Home() {
 
         {/* Available Coins Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {Object.entries(AVAILABLE_COINS).map(([key, coin]) => (
+          {Object.entries(COIN_DATA).map(([key, coin]) => (
             <CoinCard
               key={key}
               name={coin.name}
@@ -112,7 +54,7 @@ export default function Home() {
               apy={coin.apy}
               minStake={coin.minStake}
               enabled={coin.enabled}
-              onClick={() => navigate(`/coins/${key}`)} // Added navigation
+              onClick={() => navigate(`/coins/${key}`)}
             />
           ))}
         </div>

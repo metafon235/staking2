@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
 import { PivxIcon } from "@/components/icons/PivxIcon";
 
 interface CoinCardProps {
@@ -14,24 +13,16 @@ interface CoinCardProps {
 }
 
 export default function CoinCard({ name, symbol, apy, minStake, enabled = true, onClick }: CoinCardProps) {
-  const [, navigate] = useLocation();
-
-  const handleClick = () => {
-    if (enabled) {
-      navigate(`/coins/${symbol.toLowerCase()}`);
-    }
-  };
-
   return (
     <Card 
-      className={`bg-zinc-900/50 ${enabled ? 'hover:bg-zinc-900/80' : 'opacity-50'} border-zinc-800 transition-all duration-300 ${enabled ? 'cursor-pointer' : ''}`}
-      onClick={handleClick}
+      className={`bg-zinc-900/50 ${enabled ? 'hover:bg-zinc-900/80' : 'opacity-50'} border-zinc-800 transition-all duration-300 cursor-pointer`}
+      onClick={onClick}
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <PivxIcon className="w-8 h-8 text-purple-400" />
           <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400">
-            {enabled ? "Verfügbar" : "Demnächst"}
+            {enabled ? "Available" : "Coming Soon"}
           </div>
         </div>
 
@@ -43,21 +34,15 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true, 
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm text-zinc-400">Mindestbetrag:</p>
+            <p className="text-sm text-zinc-400">Minimum stake:</p>
             <p className="text-lg font-semibold text-white">
               {minStake} {symbol}
             </p>
           </div>
 
-          {enabled ? (
-            <div className="py-2 px-4 bg-purple-600 text-white rounded-lg text-center">
-              Details anzeigen
-            </div>
-          ) : (
-            <div className="py-2 px-4 bg-zinc-800 text-zinc-500 rounded-lg text-center">
-              Demnächst verfügbar
-            </div>
-          )}
+          <div className={`py-2 px-4 ${enabled ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'} rounded-lg text-center`}>
+            View Details
+          </div>
         </div>
       </CardContent>
     </Card>
