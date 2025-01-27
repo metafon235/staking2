@@ -45,7 +45,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
   const formattedData = filterDataByTimeRange(timeRange).map(point => ({
     ...point,
     time: format(new Date(point.timestamp), getTimeFormat(timeRange)),
-    rewards: point.rewards.toFixed(2)
+    rewards: parseFloat(point.rewards.toFixed(6))
   }));
 
   return (
@@ -55,29 +55,29 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
           <div>
             <CardTitle className="text-lg text-white">Staking Rewards History</CardTitle>
             <CardDescription className="text-zinc-400">
-              Real-time rewards accumulation for {totalStaked.toFixed(2)} PIVX staked
+              Real-time rewards accumulation for {totalStaked.toFixed(6)} PIVX staked
             </CardDescription>
           </div>
-          <ToggleGroup 
-            type="single" 
+          <ToggleGroup
+            type="single"
             value={timeRange}
             onValueChange={(value: TimeRange) => value && setTimeRange(value)}
             className="bg-zinc-800 border border-zinc-700 rounded-lg"
           >
-            <ToggleGroupItem 
-              value="hour" 
+            <ToggleGroupItem
+              value="hour"
               className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
             >
               1H
             </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="day" 
+            <ToggleGroupItem
+              value="day"
               className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
             >
               24H
             </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="week" 
+            <ToggleGroupItem
+              value="week"
               className="text-sm data-[state=on]:bg-purple-600 data-[state=on]:text-white"
             >
               7D
@@ -107,7 +107,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={value => Number(value).toFixed(2)}
+                tickFormatter={value => Number(value).toFixed(6)}
               />
               <Tooltip
                 contentStyle={{
@@ -117,7 +117,7 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
                 }}
                 labelStyle={{ color: "#e4e4e7" }}
                 itemStyle={{ color: "#a78bfa" }}
-                formatter={(value: string) => [`${Number(value).toFixed(2)}`, "PIVX"]}
+                formatter={(value: string) => [`${parseFloat(value).toFixed(6)}`, "PIVX"]}
                 labelFormatter={(label) => `Time: ${label}`}
               />
               <Area
@@ -134,11 +134,11 @@ export default function StakingChart({ data, totalStaked, currentRewards }: Stak
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div className="bg-zinc-800 p-4 rounded-lg">
             <p className="text-sm text-zinc-400">Current Rewards</p>
-            <p className="text-lg font-semibold text-white">{currentRewards.toFixed(2)} PIVX</p>
+            <p className="text-lg font-semibold text-white">{currentRewards.toFixed(6)} PIVX</p>
           </div>
           <div className="bg-zinc-800 p-4 rounded-lg">
             <p className="text-sm text-zinc-400">Total Staked</p>
-            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(2)} PIVX</p>
+            <p className="text-lg font-semibold text-white">{totalStaked.toFixed(6)} PIVX</p>
           </div>
         </div>
       </CardContent>

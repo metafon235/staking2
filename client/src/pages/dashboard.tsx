@@ -126,8 +126,8 @@ function DashboardContent() {
           <div className="grid gap-6">
             <StakingChart 
               data={rewardsHistory}
-              totalStaked={data.totalStaked}
-              currentRewards={data.rewards}
+              totalStaked={parseFloat(data.totalStaked.toFixed(6))}
+              currentRewards={parseFloat(data.rewards.toFixed(6))}
             />
           </div>
 
@@ -136,6 +136,7 @@ function DashboardContent() {
               totalStaked={data.totalStaked}
               rewards={data.rewards}
               monthlyRewards={data.monthlyRewards}
+              isLoading={isLoading}
             />
           </div>
 
