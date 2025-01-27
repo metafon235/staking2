@@ -34,37 +34,37 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 10.00,
     minStake: "100",
     icon: PivxIcon,
-    description: "PIVX Staking ermöglicht es Ihnen, passives Einkommen zu erzielen und gleichzeitig die Sicherheit und Dezentralisierung des Netzwerks zu unterstützen.",
+    description: "PIVX Staking enables you to earn passive income while supporting network security and decentralization.",
     enabled: true,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
-      blockTime: "60 Sekunden",
-      maxSupply: "21 Millionen PIVX",
+      blockTime: "60 seconds",
+      maxSupply: "21 million PIVX",
       features: [
-        "Schnelle Transaktionen",
-        "Energieeffizientes PoS",
-        "Datenschutz durch zk-SNARKs",
-        "Dezentrale Governance",
-        "Cold Staking Unterstützung"
+        "Fast Transactions",
+        "Energy-efficient PoS",
+        "Privacy via zk-SNARKs",
+        "Decentralized Governance",
+        "Cold Staking Support"
       ]
     },
     stakingDetails: {
       minStake: "100",
       apy: 10.00,
-      rewards: "Belohnungen werden alle 60 Sekunden verteilt und basieren auf der Größe Ihres Stakes und der Netzwerkaktivität."
+      rewards: "Rewards are distributed every 60 seconds based on your stake size and network activity."
     },
     documentation: [
       {
-        question: "Was ist PIVX Staking?",
-        answer: "PIVX Staking ist ein Prozess, bei dem Sie Ihre PIVX-Coins als Sicherheit hinterlegen, um das Netzwerk zu sichern und im Gegenzug Belohnungen zu erhalten."
+        question: "What is PIVX Staking?",
+        answer: "PIVX Staking is a process where you lock your PIVX coins as collateral to secure the network and earn rewards in return."
       },
       {
-        question: "Wie funktioniert der Staking-Prozess?",
-        answer: "Sobald Sie den Mindestbetrag von 100 PIVX staken, nehmen Sie automatisch am Netzwerk-Konsens teil. Ihre Chance, einen Block zu validieren und Belohnungen zu erhalten, ist proportional zu Ihrem Stake."
+        question: "How does the staking process work?",
+        answer: "Once you stake the minimum amount of 100 PIVX, you automatically participate in network consensus. Your chance to validate blocks and receive rewards is proportional to your stake."
       },
       {
-        question: "Wie sicher ist PIVX Staking?",
-        answer: "PIVX verwendet fortschrittliche Kryptographie und einen sicheren Proof-of-Stake-Mechanismus. Ihre Coins bleiben immer in Ihrer Kontrolle, und das Staking erfolgt über sichere Smart Contracts."
+        question: "How secure is PIVX Staking?",
+        answer: "PIVX uses advanced cryptography and a secure Proof-of-Stake mechanism. Your coins remain under your control, and staking is done through secure smart contracts."
       }
     ]
   },
@@ -74,32 +74,32 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 8.50,
     minStake: "1000",
     icon: PivxIcon,
-    description: "PAC Protocol ermöglicht dezentrales Staking mit Fokus auf Gemeinschaft und Nachhaltigkeit.",
+    description: "PAC Protocol enables decentralized staking with a focus on community and sustainability.",
     enabled: false,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
-      blockTime: "120 Sekunden",
-      maxSupply: "100 Milliarden PAC",
+      blockTime: "120 seconds",
+      maxSupply: "100 billion PAC",
       features: [
         "Community Governance",
         "Masternode System",
-        "Schnelle Transaktionen",
-        "Cross-Chain Kompatibilität"
+        "Fast Transactions",
+        "Cross-Chain Compatibility"
       ]
     },
     stakingDetails: {
       minStake: "1000",
       apy: 8.50,
-      rewards: "PAC Staking-Belohnungen werden alle 120 Sekunden verteilt und durch das Masternode-System zusätzlich verstärkt."
+      rewards: "PAC staking rewards are distributed every 120 seconds and further amplified by the masternode system."
     },
     documentation: [
       {
-        question: "Was macht PAC Protocol besonders?",
-        answer: "PAC Protocol zeichnet sich durch sein einzigartiges Masternode-System und seine starke Community-Governance aus."
+        question: "What makes PAC Protocol special?",
+        answer: "PAC Protocol stands out due to its unique masternode system and strong community governance."
       },
       {
-        question: "Wie funktioniert das PAC Masternode-System?",
-        answer: "Masternodes erfordern einen höheren Stake und bieten zusätzliche Belohnungen für Netzwerk-Dienste wie InstantSend und PrivateSend."
+        question: "How does the PAC Masternode system work?",
+        answer: "Masternodes require a higher stake and offer additional rewards for network services such as InstantSend and PrivateSend."
       }
     ]
   },
@@ -109,32 +109,32 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 9.00,
     minStake: "250",
     icon: PivxIcon,
-    description: "Wagerr ermöglicht dezentrales Sportwetten und Staking mit attraktiven Renditen.",
+    description: "Wagerr enables decentralized sports betting and staking with attractive returns.",
     enabled: false,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
-      blockTime: "60 Sekunden",
-      maxSupply: "200 Millionen WGR",
+      blockTime: "60 seconds",
+      maxSupply: "200 million WGR",
       features: [
-        "Dezentrales Sportwetten",
-        "Oracle-Masternodes",
-        "Automatische Gewinnausschüttung",
-        "Deflationäres Tokenmodell"
+        "Decentralized Sports Betting",
+        "Oracle Masternodes",
+        "Automatic Payout of Winnings",
+        "Deflationary Token Model"
       ]
     },
     stakingDetails: {
       minStake: "250",
       apy: 9.00,
-      rewards: "WGR Staking kombiniert PoS-Belohnungen mit Gebühren aus der Sportwetten-Plattform."
+      rewards: "WGR staking combines PoS rewards with fees from the sports betting platform."
     },
     documentation: [
       {
-        question: "Wie verbindet Wagerr Staking und Sportwetten?",
-        answer: "Wagerr nutzt Staking zur Netzwerksicherung, während Wettgebühren teilweise an Staker ausgeschüttet werden."
+        question: "How does Wagerr connect staking and sports betting?",
+        answer: "Wagerr uses staking to secure the network, while betting fees are partially distributed to stakers."
       },
       {
-        question: "Was sind Oracle-Masternodes?",
-        answer: "Oracle-Masternodes sind spezialisierte Netzwerkknoten, die Sportergebnisse validieren und Smart Contracts auslösen."
+        question: "What are Oracle Masternodes?",
+        answer: "Oracle Masternodes are specialized network nodes that validate sports results and trigger smart contracts."
       }
     ]
   },
@@ -144,15 +144,15 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 7.50,
     minStake: "500",
     icon: PivxIcon,
-    description: "Crown bietet eine innovative Blockchain-Infrastruktur mit nachhaltigem Staking-Modell.",
+    description: "Crown offers an innovative blockchain infrastructure with a sustainable staking model.",
     enabled: false,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
-      blockTime: "60 Sekunden",
-      maxSupply: "42 Millionen CRW",
+      blockTime: "60 seconds",
+      maxSupply: "42 million CRW",
       features: [
-        "Systemnode Netzwerk",
-        "NFT Unterstützung",
+        "Systemnode Network",
+        "NFT Support",
         "Cross-Chain Bridge",
         "Governance System"
       ]
@@ -160,16 +160,16 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     stakingDetails: {
       minStake: "500",
       apy: 7.50,
-      rewards: "Crown verteilt Staking-Belohnungen basierend auf einem dynamischen Belohnungsmodell."
+      rewards: "Crown distributes staking rewards based on a dynamic reward model."
     },
     documentation: [
       {
-        question: "Was sind Crown Systemnodes?",
-        answer: "Systemnodes sind spezielle Netzwerkknoten, die erweiterte Dienste bereitstellen und höhere Belohnungen erhalten."
+        question: "What are Crown Systemnodes?",
+        answer: "Systemnodes are special network nodes that provide enhanced services and receive higher rewards."
       },
       {
-        question: "Wie funktioniert Crown's Governance?",
-        answer: "Staker können über Netzwerkänderungen und Entwicklungsvorschläge abstimmen."
+        question: "How does Crown's Governance work?",
+        answer: "Stakers can vote on network changes and development proposals."
       }
     ]
   },
@@ -179,32 +179,32 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 12.00,
     minStake: "100",
     icon: PivxIcon,
-    description: "Energi verbindet Smart Contracts mit Proof of Stake für maximale Skalierbarkeit.",
+    description: "Energi combines smart contracts with Proof of Stake for maximum scalability.",
     enabled: false,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
-      blockTime: "30 Sekunden",
-      maxSupply: "Unbegrenzt",
+      blockTime: "30 seconds",
+      maxSupply: "Unlimited",
       features: [
-        "Layer-2 Skalierung",
+        "Layer-2 Scaling",
         "Smart Contracts",
         "Governance System",
-        "Selbstfinanziertes Treasury"
+        "Self-Funded Treasury"
       ]
     },
     stakingDetails: {
       minStake: "100",
       apy: 12.00,
-      rewards: "Energi bietet eine der höchsten Staking-Renditen im Krypto-Sektor."
+      rewards: "Energi offers one of the highest staking yields in the crypto sector."
     },
     documentation: [
       {
-        question: "Wie unterscheidet sich Energi von anderen PoS-Coins?",
-        answer: "Energi kombiniert hohe Staking-Renditen mit Smart Contract-Funktionalität und Layer-2-Skalierung."
+        question: "How does Energi differ from other PoS coins?",
+        answer: "Energi combines high staking yields with smart contract functionality and Layer-2 scaling."
       },
       {
-        question: "Was ist das Energi Treasury System?",
-        answer: "Ein Teil der Blockbelohnungen fließt in ein Treasury für Entwicklung und Marketing."
+        question: "What is the Energi Treasury System?",
+        answer: "A portion of block rewards flows into a treasury for development and marketing."
       }
     ]
   },
@@ -214,32 +214,32 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 15.00,
     minStake: "200",
     icon: PivxIcon,
-    description: "DeFiChain ist die Blockchain für dezentralisierte Finanzanwendungen.",
+    description: "DeFiChain is the blockchain for decentralized finance applications.",
     enabled: false,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
-      blockTime: "30 Sekunden",
-      maxSupply: "1.2 Milliarden DFI",
+      blockTime: "30 seconds",
+      maxSupply: "1.2 billion DFI",
       features: [
-        "DeFi-fokussierte Chain",
-        "Bitcoin-Ankerkette",
-        "Dezentrale Assets",
-        "Liquiditätsmining"
+        "DeFi-focused Chain",
+        "Bitcoin Anchor Chain",
+        "Decentralized Assets",
+        "Liquidity Mining"
       ]
     },
     stakingDetails: {
       minStake: "200",
       apy: 15.00,
-      rewards: "DeFiChain kombiniert Staking-Belohnungen mit DeFi-Erträgen."
+      rewards: "DeFiChain combines staking rewards with DeFi yields."
     },
     documentation: [
       {
-        question: "Was macht DeFiChain einzigartig?",
-        answer: "DeFiChain ist speziell für DeFi-Anwendungen optimiert und an Bitcoin verankert."
+        question: "What makes DeFiChain unique?",
+        answer: "DeFiChain is specifically optimized for DeFi applications and anchored to Bitcoin."
       },
       {
-        question: "Wie funktioniert das Liquiditätsmining?",
-        answer: "Neben Staking können Sie auch Liquidität bereitstellen und zusätzliche Belohnungen verdienen."
+        question: "How does Liquidity Mining work?",
+        answer: "Besides staking, you can also provide liquidity and earn additional rewards."
       }
     ]
   },
@@ -249,32 +249,32 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 11.00,
     minStake: "100",
     icon: PivxIcon,
-    description: "Firo (früher Zcoin) ist führend in Blockchain-Datenschutztechnologie.",
+    description: "Firo (formerly Zcoin) is a leader in blockchain privacy technology.",
     enabled: false,
     technicalDetails: {
       consensus: "FiroPoS",
-      blockTime: "5 Minuten",
-      maxSupply: "21.4 Millionen FIRO",
+      blockTime: "5 minutes",
+      maxSupply: "21.4 million FIRO",
       features: [
-        "Lelantus Datenschutz",
-        "Spark Protokoll",
-        "Schnelle Transaktionen",
+        "Lelantus Privacy",
+        "Spark Protocol",
+        "Fast Transactions",
         "LLMQ ChainLocks"
       ]
     },
     stakingDetails: {
       minStake: "100",
       apy: 11.00,
-      rewards: "Firo belohnt Staker für die Sicherung des Privacy-fokussierten Netzwerks."
+      rewards: "Firo rewards stakers for securing the privacy-focused network."
     },
     documentation: [
       {
-        question: "Was ist Lelantus?",
-        answer: "Lelantus ist Firos proprietäre Datenschutztechnologie für anonyme Transaktionen."
+        question: "What is Lelantus?",
+        answer: "Lelantus is Firo's proprietary privacy technology for anonymous transactions."
       },
       {
-        question: "Wie sicher ist Firo Staking?",
-        answer: "Firo verwendet ChainLocks und einen einzigartigen PoS-Mechanismus für maximale Sicherheit."
+        question: "How secure is Firo Staking?",
+        answer: "Firo uses ChainLocks and a unique PoS mechanism for maximum security."
       }
     ]
   },
@@ -284,32 +284,32 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 14.00,
     minStake: "1",
     icon: PivxIcon,
-    description: "Gnosis Chain ist eine Ethereum-kompatible Blockchain mit schnellen, günstigen Transaktionen.",
+    description: "Gnosis Chain is an Ethereum-compatible blockchain with fast, cheap transactions.",
     enabled: false,
     technicalDetails: {
       consensus: "POSDAO",
-      blockTime: "5 Sekunden",
-      maxSupply: "10 Millionen GNO",
+      blockTime: "5 seconds",
+      maxSupply: "10 million GNO",
       features: [
-        "EVM Kompatibilität",
-        "Layer-1 Skalierung",
-        "Niedrige Gebühren",
-        "Brücke zu Ethereum"
+        "EVM Compatibility",
+        "Layer-1 Scaling",
+        "Low Fees",
+        "Bridge to Ethereum"
       ]
     },
     stakingDetails: {
       minStake: "1",
       apy: 14.00,
-      rewards: "Gnosis Chain Validatoren erhalten Belohnungen für die Blockproduktion und Transaktionsgebühren."
+      rewards: "Gnosis Chain validators receive rewards for block production and transaction fees."
     },
     documentation: [
       {
-        question: "Was ist POSDAO?",
-        answer: "POSDAO ist ein neuartiger Konsensalgorithmus, der Delegated Proof of Stake mit einer DAO kombiniert."
+        question: "What is POSDAO?",
+        answer: "POSDAO is a novel consensus algorithm that combines Delegated Proof of Stake with a DAO."
       },
       {
-        question: "Wie funktioniert die Ethereum-Kompatibilität?",
-        answer: "Gnosis Chain unterstützt alle Ethereum-Tools und -Smart Contracts bei deutlich niedrigeren Gebühren."
+        question: "How does Ethereum compatibility work?",
+        answer: "Gnosis Chain supports all Ethereum tools and smart contracts at significantly lower fees."
       }
     ]
   }

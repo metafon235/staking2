@@ -28,7 +28,7 @@ export default function PriceChart({ symbol, timeframe = "7d" }: PriceChartProps
   });
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('de-DE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -38,7 +38,7 @@ export default function PriceChart({ symbol, timeframe = "7d" }: PriceChartProps
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    return new Intl.DateTimeFormat('de-DE', {
+    return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -49,7 +49,7 @@ export default function PriceChart({ symbol, timeframe = "7d" }: PriceChartProps
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
       <CardHeader>
-        <CardTitle className="text-white">Preisentwicklung</CardTitle>
+        <CardTitle className="text-white">Price History</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -80,14 +80,14 @@ export default function PriceChart({ symbol, timeframe = "7d" }: PriceChartProps
                     border: "1px solid hsl(var(--border))",
                   }}
                   labelFormatter={formatDate}
-                  formatter={(value: number) => [formatPrice(value), "Preis"]}
+                  formatter={(value: number) => [formatPrice(value), "Price"]}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
           <p className="text-center text-zinc-400 py-4">
-            Keine Preisdaten verfügbar
+            No price data available
           </p>
         )}
       </CardContent>

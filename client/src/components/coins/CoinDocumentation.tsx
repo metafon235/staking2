@@ -36,31 +36,31 @@ export default function CoinDocumentation({
     <div className="space-y-6">
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-white">Technische Details</CardTitle>
+          <CardTitle className="text-white">Technical Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-zinc-400">Konsensus-Mechanismus</p>
+              <p className="text-sm text-zinc-400">Consensus Mechanism</p>
               <p className="text-lg font-semibold text-white">
                 {technicalDetails.consensus}
               </p>
             </div>
             <div>
-              <p className="text-sm text-zinc-400">Blockzeit</p>
+              <p className="text-sm text-zinc-400">Block Time</p>
               <p className="text-lg font-semibold text-white">
                 {technicalDetails.blockTime}
               </p>
             </div>
             <div>
-              <p className="text-sm text-zinc-400">Maximale Anzahl</p>
+              <p className="text-sm text-zinc-400">Maximum Supply</p>
               <p className="text-lg font-semibold text-white">
                 {technicalDetails.maxSupply}
               </p>
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-sm text-zinc-400 mb-2">Hauptfunktionen</p>
+            <p className="text-sm text-zinc-400 mb-2">Key Features</p>
             <ul className="list-disc list-inside text-white space-y-1">
               {technicalDetails.features.map((feature, index) => (
                 <li key={index}>{feature}</li>
@@ -77,27 +77,27 @@ export default function CoinDocumentation({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-zinc-400">Mindestbetrag</p>
+              <p className="text-sm text-zinc-400">Minimum Stake</p>
               <p className="text-lg font-semibold text-white">
                 {stakingDetails.minStake} {symbol}
               </p>
             </div>
             <div>
-              <p className="text-sm text-zinc-400">Jährliche Rendite</p>
+              <p className="text-sm text-zinc-400">Annual Return</p>
               <p className="text-lg font-semibold text-purple-400">
                 {stakingDetails.apy}% APY
               </p>
             </div>
             {stakingDetails.lockupPeriod && (
               <div>
-                <p className="text-sm text-zinc-400">Sperrfrist</p>
+                <p className="text-sm text-zinc-400">Lock-up Period</p>
                 <p className="text-lg font-semibold text-white">
                   {stakingDetails.lockupPeriod}
                 </p>
               </div>
             )}
             <div className="col-span-2">
-              <p className="text-sm text-zinc-400 mb-2">Belohnungsdetails</p>
+              <p className="text-sm text-zinc-400 mb-2">Reward Details</p>
               <p className="text-white">{stakingDetails.rewards}</p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function CoinDocumentation({
 
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-white">FAQ & Dokumentation</CardTitle>
+          <CardTitle className="text-white">FAQ & Documentation</CardTitle>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
