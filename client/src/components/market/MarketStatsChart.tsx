@@ -35,7 +35,7 @@ export default function MarketStatsChart() {
         }
       }
     },
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 0
   });
 
@@ -45,7 +45,7 @@ export default function MarketStatsChart() {
     volume24h: pivxStats?.volume24h ?? 0,
     highPrice24h: pivxStats?.highPrice24h ?? 0,
     lowPrice24h: pivxStats?.lowPrice24h ?? 0,
-    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 5.23,
+    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 0,
   }), [pivxStats]);
 
   const marketData = useMemo(() => {

@@ -62,7 +62,7 @@ export async function getPIVXStats(): Promise<{
 }> {
   try {
     const response = await fetch(
-      `${BASE_URL}/ticker/24hr?symbol=PIVXEUR`
+      `${BASE_URL}/ticker/24hr?symbol=PIVXUSDT`
     );
 
     if (!response.ok) {
@@ -94,7 +94,7 @@ export async function getPIVXStats(): Promise<{
 export async function getPIVXPriceHistory(days: number = 7): Promise<Array<{ timestamp: number; price: number }>> {
   try {
     const response = await fetch(
-      `${BASE_URL}/klines?symbol=PIVXEUR&interval=1d&limit=${days}`
+      `${BASE_URL}/klines?symbol=PIVXUSDT&interval=1d&limit=${days}`
     );
 
     if (!response.ok) {
@@ -108,18 +108,6 @@ export async function getPIVXPriceHistory(days: number = 7): Promise<Array<{ tim
     }));
   } catch (error) {
     console.error("Failed to fetch PIVX price history:", error);
-    // Return simulated price history as fallback
-    const now = Date.now();
-    const history = [];
-    for (let i = days; i >= 0; i--) {
-      const timestamp = now - (i * 24 * 60 * 60 * 1000);
-      const basePrice = 5.23;
-      const randomVariation = (Math.random() - 0.5) * 0.2;
-      history.push({
-        timestamp,
-        price: basePrice + randomVariation,
-      });
-    }
-    return history;
+    throw error;
   }
 }
