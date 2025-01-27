@@ -3,25 +3,35 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveCont
 import { format } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useMemo } from "react";
+import { getPIVXStats } from "@/lib/binance";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MarketStatsProps {
-  priceChange24h: number;
-  priceChangePercent24h: number;
-  volume24h: number;
-  highPrice24h: number;
-  lowPrice24h: number;
-  weightedAvgPrice: number;
+  priceChange24h?: number;
+  priceChangePercent24h?: number;
+  volume24h?: number;
+  highPrice24h?: number;
+  lowPrice24h?: number;
+  weightedAvgPrice?: number;
 }
 
-export default function MarketStatsChart({
-  priceChange24h,
-  priceChangePercent24h,
-  volume24h,
-  highPrice24h,
-  lowPrice24h,
-  weightedAvgPrice,
-}: MarketStatsProps) {
-  // Generiere die Daten nur einmal beim ersten Rendern und wenn sich die Props ändern
+export default function MarketStatsChart() {
+  const { data: pivxStats, isLoading } = useQuery({
+    queryKey: ['pivxStats'],
+    queryFn: getPIVXStats,
+    refetchInterval: 30000,
+  });
+
+  const stats = pivxStats ?? {
+    priceChange24h: 0,
+    priceChangePercent24h: 0,
+    volume24h: 0,
+    highPrice24h: 0,
+    lowPrice24h: 0,
+    weightedAvgPrice: 0,
+  };
+
   const marketData = useMemo(() => {
     const generatePriceData = () => {
       const data = [];
@@ -30,21 +40,30 @@ export default function MarketStatsChart({
 
       for (let i = 24; i >= 0; i--) {
         const timestamp = now - (i * hourInMs);
-        const basePrice = weightedAvgPrice;
-        const variance = (Math.random() - 0.5) * Math.abs(priceChange24h) * 0.5;
+        const basePrice = stats.weightedAvgPrice;
+        const variance = (Math.random() - 0.5) * Math.abs(stats.priceChange24h) * 0.5;
         const price = basePrice + variance;
 
         data.push({
           timestamp,
           price,
-          volume: (volume24h / 24) * (0.8 + Math.random() * 0.4),
+          volume: (stats.volume24h / 24) * (0.8 + Math.random() * 0.4),
         });
       }
       return data;
     };
 
     return generatePriceData();
-  }, [weightedAvgPrice, priceChange24h, volume24h]); // Nur neu generieren, wenn sich diese Werte ändern
+  }, [stats.weightedAvgPrice, stats.priceChange24h, stats.volume24h]);
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2">
+        <Skeleton className="h-[400px] bg-zinc-800" />
+        <Skeleton className="h-[400px] bg-zinc-800" />
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -52,13 +71,13 @@ export default function MarketStatsChart({
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-white">Price Movement (24h)</CardTitle>
-            <div className={`flex items-center ${priceChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {priceChangePercent24h >= 0 ? (
+            <div className={`flex items-center ${stats.priceChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {stats.priceChangePercent24h >= 0 ? (
                 <TrendingUp className="w-4 h-4 mr-1" />
               ) : (
                 <TrendingDown className="w-4 h-4 mr-1" />
               )}
-              <span>{priceChangePercent24h.toFixed(2)}%</span>
+              <span>{stats.priceChangePercent24h.toFixed(2)}%</span>
             </div>
           </div>
         </CardHeader>
@@ -76,7 +95,7 @@ export default function MarketStatsChart({
                   domain={['auto', 'auto']}
                   stroke="#71717a"
                   fontSize={12}
-                  tickFormatter={(value) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                  tickFormatter={(value) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
                 />
                 <Tooltip
                   contentStyle={{
@@ -101,11 +120,11 @@ export default function MarketStatsChart({
           <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-zinc-400">24h High</span>
-              <p className="text-white font-medium">${highPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              <p className="text-white font-medium">${stats.highPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
             </div>
             <div>
               <span className="text-zinc-400">24h Low</span>
-              <p className="text-white font-medium">${lowPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              <p className="text-white font-medium">${stats.lowPrice24h.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
             </div>
           </div>
         </CardContent>
@@ -145,7 +164,7 @@ export default function MarketStatsChart({
                   labelStyle={{ color: "#e4e4e7" }}
                   labelFormatter={(value) => format(value, "HH:mm")}
                   formatter={(value: number) => [
-                    `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ETH`,
+                    `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} PIVX`,
                     "Volume"
                   ]}
                 />
@@ -163,13 +182,13 @@ export default function MarketStatsChart({
             <div>
               <span className="text-zinc-400">Total Volume</span>
               <p className="text-white font-medium">
-                {volume24h.toLocaleString(undefined, { maximumFractionDigits: 2 })} ETH
+                {stats.volume24h.toLocaleString(undefined, { maximumFractionDigits: 2 })} PIVX
               </p>
             </div>
             <div>
               <span className="text-zinc-400">Avg Price</span>
               <p className="text-white font-medium">
-                ${weightedAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                ${stats.weightedAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </p>
             </div>
           </div>
