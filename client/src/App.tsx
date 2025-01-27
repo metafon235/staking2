@@ -15,6 +15,11 @@ import { queryClient } from "./lib/queryClient";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 
+// Admin Pages
+import AdminLogin from "@/pages/admin/login";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminStaking from "@/pages/admin/staking";
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
   const { user, isLoading } = useUser();
   const [, setLocation] = useLocation();
@@ -34,6 +39,27 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
 
   return user ? <Component /> : null;
+}
+
+function AdminProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
+  const { user, isLoading } = useUser();
+  const [, setLocation] = useLocation();
+
+  React.useEffect(() => {
+    if (!isLoading && (!user || !user.isAdmin)) {
+      setLocation('/admin/login');
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
+  return user?.isAdmin ? <Component /> : null;
 }
 
 function Router() {
@@ -56,6 +82,15 @@ function Router() {
       </Route>
       <Route path="/coins/:symbol">
         {(params) => <CoinDetail symbol={params.symbol} />}
+      </Route>
+
+      {/* Admin routes */}
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin">
+        {() => <AdminProtectedRoute component={AdminDashboard} />}
+      </Route>
+      <Route path="/admin/staking">
+        {() => <AdminProtectedRoute component={AdminStaking} />}
       </Route>
 
       {/* Protected routes */}
