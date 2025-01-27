@@ -11,11 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { stakePIVX } from "@/lib/web3";
-import { useParams, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice, getPIVXStats } from "@/lib/cryptocompare";  // Changed from coinmarketcap to cryptocompare
+import { getPIVXPrice, getPIVXStats } from "@/lib/cryptocompare";
 
-function CoinDetailContent() {
+interface CoinDetailProps {
+  symbol?: string;
+}
+
+function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
   const [stakeAmount, setStakeAmount] = useState("");
   const { user } = useUser();
   const { toast } = useToast();
@@ -32,8 +36,8 @@ function CoinDetailContent() {
   });
 
   const { data: networkStats, isLoading: isLoadingStats } = useQuery({
-    queryKey: [`/api/network-stats/pivx`],
-    queryFn: () => fetchNetworkStats('pivx'),
+    queryKey: [`/api/network-stats/${symbol}`],
+    queryFn: () => fetchNetworkStats(symbol),
     enabled: true,
     refetchInterval: 60000,
     staleTime: 0
@@ -44,11 +48,11 @@ function CoinDetailContent() {
     onSuccess: () => {
       toast({
         title: "Staking Successful",
-        description: `Successfully staked ${stakeAmount} PIVX. Your rewards will start accumulating.`
+        description: `Successfully staked ${stakeAmount} ${symbol}. Your rewards will start accumulating.`
       });
       setStakeAmount("");
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/network-stats/pivx'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/network-stats/${symbol}`] });
     },
     onError: (error: Error) => {
       toast({
@@ -60,19 +64,19 @@ function CoinDetailContent() {
   });
 
   const { data: currentPrice } = useQuery({
-    queryKey: ['pivx-price'],
-    queryFn: getPIVXPrice,
+    queryKey: [`${symbol}-price`],
+    queryFn: () => getCoinPrice(symbol),
     refetchInterval: 60000,
   });
 
   const { data: pivxStats } = useQuery({
-    queryKey: ['pivx-stats'],
-    queryFn: getPIVXStats,
+    queryKey: [`${symbol}-stats`],
+    queryFn: () => getCoinStats(symbol),
     refetchInterval: 60000,
   });
 
 
-  const coinData = COIN_DATA.pivx;
+  const coinData = COIN_DATA[symbol];
 
   const monthlyReward = Number(stakeAmount || "0") * (coinData.apy / 12 / 100);
   const yearlyReward = Number(stakeAmount || "0") * (coinData.apy / 100);
@@ -110,7 +114,7 @@ function CoinDetailContent() {
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <PivxIcon className="w-12 h-12 text-purple-400" />
+          {coinData.icon && <coinData.icon className="w-12 h-12 text-purple-400" />}
           <div>
             <h1 className="text-4xl font-bold text-white">{coinData.name} Staking</h1>
             {currentPrice && (
@@ -289,10 +293,10 @@ function CoinDetailContent() {
   );
 }
 
-export default function CoinDetail() {
+export default function CoinDetail({ symbol }: CoinDetailProps) {
   return (
     <AppLayout>
-      <CoinDetailContent />
+      <CoinDetailContent symbol={symbol} />
     </AppLayout>
   );
 }
@@ -303,6 +307,18 @@ async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
     throw new Error('Failed to fetch network statistics');
   }
   return response.json();
+}
+
+async function getCoinPrice(symbol: string) {
+    const response = await fetch(`/api/price/${symbol}`);
+    if (!response.ok) throw new Error(`Failed to fetch price for ${symbol}`);
+    return response.json();
+}
+
+async function getCoinStats(symbol: string) {
+    const response = await fetch(`/api/stats/${symbol}`);
+    if (!response.ok) throw new Error(`Failed to fetch stats for ${symbol}`);
+    return response.json();
 }
 
 interface NetworkStats {
@@ -331,5 +347,6 @@ const COIN_DATA = {
     icon: PivxIcon,
     description: "PIVX staking enables you to earn passive income while supporting the network's security and decentralization.",
     enabled: true
-  }
+  },
+  // Add other coins here...
 };
