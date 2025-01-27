@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -107,10 +108,12 @@ function RouterContent() {
 // Main App component
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterContent />
-      <Toaster />
-    </QueryClientProvider>
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterContent />
+        <Toaster />
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 }
 
