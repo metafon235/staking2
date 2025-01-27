@@ -27,19 +27,12 @@ export default function Home() {
 
           {/* CTA Section */}
           {!user && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <div className="flex justify-center mb-16">
               <Button 
                 className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg"
                 onClick={() => navigate("/auth")}
               >
                 Start Staking Now
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-purple-600 text-purple-400 hover:bg-purple-600/10 px-8 py-6 text-lg"
-                onClick={() => navigate("/auth")}
-              >
-                Login to Dashboard
               </Button>
             </div>
           )}
