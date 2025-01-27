@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from "recharts";
 import { COIN_DATA } from "@/config/coins";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface RewardsCalculatorProps {
   currentStake?: number;
@@ -17,14 +19,24 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
   const [compounding, setCompounding] = useState(false);
   const [selectedCoin, setSelectedCoin] = useState("pivx");
   const [rewards, setRewards] = useState({ normal: 0, compound: 0 });
+  const [error, setError] = useState<string | null>(null);
 
   // Get APY for selected coin
-  const getAPY = (coin: string) => {
-    return COIN_DATA[coin]?.apy || 10; // Default to 10% if not found
-  };
-
-  const APY = getAPY(selectedCoin) / 100; // Convert percentage to decimal
+  const selectedCoinData = COIN_DATA[selectedCoin];
+  const APY = (selectedCoinData?.apy || 0) / 100; // Convert percentage to decimal
   const DAYS_PER_YEAR = 365;
+
+  // Validate stake amount against minimum requirement
+  useEffect(() => {
+    const amount = parseFloat(stakeAmount);
+    const minStake = parseFloat(selectedCoinData?.minStake || "0");
+
+    if (amount && amount < minStake) {
+      setError(`Minimum stake required is ${minStake} ${selectedCoinData?.symbol}`);
+    } else {
+      setError(null);
+    }
+  }, [stakeAmount, selectedCoin]);
 
   // Calculate compound interest using standard formula
   // FV = P(1 + r/n)^(n*t)
@@ -80,8 +92,6 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
     ? ((rewards.compound - rewards.normal) / rewards.normal * 100).toFixed(2)
     : '0';
 
-  const selectedCoinData = COIN_DATA[selectedCoin];
-
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
@@ -89,6 +99,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-3">
+          {/* Coin Selection */}
           <div className="space-y-2">
             <Label htmlFor="coin-select" className="text-sm text-zinc-400">Select Coin</Label>
             <Select value={selectedCoin} onValueChange={setSelectedCoin}>
@@ -96,32 +107,33 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 <SelectValue placeholder="Select coin" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(COIN_DATA)
-                  .filter(([_, data]) => data.enabled)
-                  .map(([key, data]) => (
-                    <SelectItem key={key} value={key}>
-                      {data.name} ({data.symbol})
-                    </SelectItem>
-                  ))
-                }
+                {Object.entries(COIN_DATA).map(([key, data]) => (
+                  <SelectItem key={key} value={key}>
+                    {data.name} ({data.symbol}) - {data.apy}% APY
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+
+          {/* Stake Amount Input */}
           <div className="space-y-2">
             <Label htmlFor="stake-amount" className="text-sm text-zinc-400">
-              Stake Amount ({selectedCoinData?.symbol || 'PIVX'})
+              Stake Amount ({selectedCoinData?.symbol})
             </Label>
             <Input
               id="stake-amount"
               type="number"
               min="0"
-              step="1"
+              step="0.000001"
               value={stakeAmount}
               onChange={(e) => setStakeAmount(e.target.value)}
               placeholder="0"
               className="bg-zinc-800 border-zinc-700 text-white"
             />
           </div>
+
+          {/* Time Period Selection */}
           <div className="space-y-2">
             <Label htmlFor="timeframe" className="text-sm text-zinc-400">Time Period</Label>
             <Select value={timeframe} onValueChange={setTimeframe}>
@@ -133,11 +145,35 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 <SelectItem value="2">2 Years</SelectItem>
                 <SelectItem value="3">3 Years</SelectItem>
                 <SelectItem value="5">5 Years</SelectItem>
+                <SelectItem value="10">10 Years</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Coin Info */}
+        <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-800/50 rounded-lg">
+          <div>
+            <p className="text-sm text-zinc-400">Annual Return (APY)</p>
+            <p className="text-xl font-bold text-purple-400">{selectedCoinData?.apy}%</p>
+          </div>
+          <div>
+            <p className="text-sm text-zinc-400">Minimum Stake</p>
+            <p className="text-xl font-bold text-white">
+              {selectedCoinData?.minStake} {selectedCoinData?.symbol}
+            </p>
+          </div>
+        </div>
+
+        {/* Compounding Toggle */}
         <div className="flex items-center space-x-2">
           <Switch
             id="compound"
@@ -147,6 +183,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
           <Label htmlFor="compound" className="text-sm text-zinc-400">Enable Daily Compounding</Label>
         </div>
 
+        {/* Chart */}
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
@@ -186,7 +223,7 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
                 }}
                 labelFormatter={(value) => `${Math.floor(value/12)}y ${value%12}m`}
                 formatter={(value: number) => [
-                  `${value.toFixed(6)} ${selectedCoinData?.symbol || 'PIVX'}`
+                  `${value.toFixed(6)} ${selectedCoinData?.symbol}`
                 ]}
               />
               <Line 
@@ -222,11 +259,12 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
           </ResponsiveContainer>
         </div>
 
+        {/* Results Summary */}
         <div className="grid grid-cols-1 gap-2 pt-2 border-t border-zinc-800">
           <div className="flex justify-between items-center">
             <span className="text-sm text-zinc-400 whitespace-nowrap">Standard Rewards:</span>
             <span className="font-medium text-white tabular-nums">
-              {rewards.normal.toFixed(6)} {selectedCoinData?.symbol || 'PIVX'}
+              {rewards.normal.toFixed(6)} {selectedCoinData?.symbol}
             </span>
           </div>
           {compounding && (
@@ -234,13 +272,13 @@ export function RewardsCalculator({ currentStake = 0 }: RewardsCalculatorProps) 
               <div className="flex justify-between items-center">
                 <span className="text-sm text-zinc-400 whitespace-nowrap">Compound Rewards:</span>
                 <span className="font-medium text-green-500 tabular-nums">
-                  {rewards.compound.toFixed(6)} {selectedCoinData?.symbol || 'PIVX'}
+                  {rewards.compound.toFixed(6)} {selectedCoinData?.symbol}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-purple-500 whitespace-nowrap">Additional from Compounding:</span>
                 <span className="font-medium text-purple-500 tabular-nums">
-                  +{(rewards.compound - rewards.normal).toFixed(6)} {selectedCoinData?.symbol || 'PIVX'} ({percentageIncrease}% more)
+                  +{(rewards.compound - rewards.normal).toFixed(6)} {selectedCoinData?.symbol} ({percentageIncrease}% more)
                 </span>
               </div>
             </>
