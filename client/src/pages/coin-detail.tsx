@@ -20,272 +20,163 @@ interface CoinDetailProps {
 }
 
 function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
-  const [stakeAmount, setStakeAmount] = useState("");
   const { user } = useUser();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [, navigate] = useLocation();
-
-  const { data: settings } = useQuery({
-    queryKey: ['/api/settings'],
-    queryFn: async () => {
-      const response = await fetch('/api/settings');
-      if (!response.ok) throw new Error('Failed to fetch settings');
-      return response.json();
-    }
-  });
+  const lowercaseSymbol = symbol.toLowerCase();
 
   const { data: networkStats, isLoading: isLoadingStats } = useQuery({
-    queryKey: [`/api/network-stats/${symbol}`],
-    queryFn: () => fetchNetworkStats(symbol),
+    queryKey: [`/api/network-stats/${lowercaseSymbol}`],
+    queryFn: () => fetchNetworkStats(lowercaseSymbol),
     enabled: true,
     refetchInterval: 60000,
     staleTime: 0
   });
 
-  const stakeMutation = useMutation({
-    mutationFn: () => stakePIVX(Number(stakeAmount)),
-    onSuccess: () => {
-      toast({
-        title: "Staking Successful",
-        description: `Successfully staked ${stakeAmount} ${symbol}. Your rewards will start accumulating.`
-      });
-      setStakeAmount("");
-      queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/network-stats/${symbol}`] });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Staking Failed",
-        description: error.message
-      });
-    }
-  });
+  const coinData = COIN_DATA[lowercaseSymbol];
+  if (!coinData) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Coin nicht gefunden</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
-  const { data: currentPrice } = useQuery({
-    queryKey: [`${symbol}-price`],
-    queryFn: () => getCoinPrice(symbol),
-    refetchInterval: 60000,
-  });
-
-  const { data: pivxStats } = useQuery({
-    queryKey: [`${symbol}-stats`],
-    queryFn: () => getCoinStats(symbol),
-    refetchInterval: 60000,
-  });
-
-
-  const coinData = COIN_DATA[symbol];
-
-  const monthlyReward = Number(stakeAmount || "0") * (coinData.apy / 12 / 100);
-  const yearlyReward = Number(stakeAmount || "0") * (coinData.apy / 100);
-  const hasWallet = settings?.walletAddress && settings.walletAddress.length > 0;
-
-  const handleStake = () => {
+  const handleStartStaking = () => {
     if (!user) {
       navigate("/auth");
       return;
     }
-
-    if (!hasWallet) {
-      toast({
-        variant: "destructive",
-        title: "Wallet Required",
-        description: "Please set up your wallet address in settings first."
-      });
-      return;
-    }
-
-    const amountNum = Number(stakeAmount);
-    if (!stakeAmount || amountNum < Number(coinData.minStake)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid Amount",
-        description: `Minimum stake amount is ${coinData.minStake} ${coinData.symbol}`
-      });
-      return;
-    }
-
-    stakeMutation.mutate();
+    navigate(`/app/coins/${lowercaseSymbol}`);
   };
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          {coinData.icon && <coinData.icon className="w-12 h-12 text-purple-400" />}
-          <div>
-            <h1 className="text-4xl font-bold text-white">{coinData.name} Staking</h1>
-            {currentPrice && (
+    <div className="min-h-screen bg-black">
+      <div className="p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-4 mb-8">
+            <coinData.icon className="w-12 h-12 text-purple-400" />
+            <div>
+              <h1 className="text-4xl font-bold text-white">{coinData.name}</h1>
               <p className="text-lg text-zinc-400">
-                Current Price: ${currentPrice.toFixed(4)} USD
+                Erfahren Sie mehr über {coinData.name} Staking
               </p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-zinc-400">{coinData.description}</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-zinc-400">Annual Percentage Yield</p>
-                    <p className="text-2xl font-bold text-purple-400">{coinData.apy}% APY</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Minimum Stake</p>
-                    <p className="text-2xl font-bold text-white">
-                      {coinData.minStake} {coinData.symbol}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Stake {coinData.symbol}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {!hasWallet && (
-                  <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Please set up your funding/withdrawal wallet address in{" "}
-                      <a href="/app/settings" className="underline hover:text-yellow-400">
-                        Settings
-                      </a>{" "}
-                      to enable staking.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="space-y-2">
-                  <label className="text-sm text-zinc-400 mb-2 block">
-                    Amount to stake ({coinData.symbol})
-                  </label>
-                  <Input
-                    type="number"
-                    value={stakeAmount}
-                    onChange={(e) => setStakeAmount(e.target.value)}
-                    min={Number(coinData.minStake)}
-                    step="0.01"
-                    placeholder={`Min. ${coinData.minStake} ${coinData.symbol}`}
-                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-                    disabled={!hasWallet || stakeMutation.isPending}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-zinc-400">Monthly Rewards</p>
-                    <p className="text-2xl font-bold text-white">
-                      {monthlyReward.toFixed(2)} {coinData.symbol}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Yearly Rewards</p>
-                    <p className="text-2xl font-bold text-white">
-                      {yearlyReward.toFixed(2)} {coinData.symbol}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                  onClick={handleStake}
-                  disabled={
-                    !coinData.enabled ||
-                    stakeMutation.isPending ||
-                    !hasWallet ||
-                    !stakeAmount ||
-                    Number(stakeAmount) < Number(coinData.minStake)
-                  }
-                >
-                  {!hasWallet
-                    ? "Set Up Wallet First"
-                    : stakeMutation.isPending
-                    ? "Staking..."
-                    : coinData.enabled
-                    ? "Start Staking"
-                    : "Coming Soon"}
-                </Button>
-              </CardContent>
-            </Card>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Network Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isLoadingStats ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <Card className="bg-zinc-900/50 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white">Übersicht</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-zinc-400">{coinData.description}</p>
                   <div className="grid grid-cols-2 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <Skeleton key={i} className="h-16 bg-zinc-800" />
-                    ))}
-                  </div>
-                ) : networkStats ? (
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-1">
-                      <p className="text-xs text-zinc-400">
-                        Total {coinData.symbol} Staking
-                      </p>
-                      <p className="text-lg font-semibold text-white">
-                        {networkStats.current.tvl.toLocaleString(undefined, {
-                          maximumFractionDigits: 0
-                        })} {coinData.symbol}
-                      </p>
+                    <div>
+                      <p className="text-sm text-zinc-400">Jährliche Rendite</p>
+                      <p className="text-2xl font-bold text-purple-400">{coinData.apy}% APY</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-zinc-400">Active Validators</p>
-                      <p className="text-lg font-semibold text-white">
-                        {networkStats.current.validators.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-zinc-400">Average Stake Size</p>
-                      <p className="text-lg font-semibold text-white">
-                        {networkStats.current.avgStake.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        })} {coinData.symbol}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-zinc-400">Network Rewards</p>
-                      <p className="text-lg font-semibold text-white">
-                        {networkStats.current.rewards.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        })} {coinData.symbol}
-                      </p>
-                    </div>
-                    <div className="col-span-2 mt-2">
-                      <p className="text-xs text-zinc-500 text-right">
-                        Last updated: {new Date(networkStats.lastUpdated).toLocaleTimeString()}
+                    <div>
+                      <p className="text-sm text-zinc-400">Mindestbetrag</p>
+                      <p className="text-2xl font-bold text-white">
+                        {coinData.minStake} {coinData.symbol}
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <p className="text-zinc-400 text-center py-4">Failed to load network statistics</p>
-                )}
-              </CardContent>
-            </Card>
 
-            {networkStats && (
-              <NetworkStatsChart
-                data={networkStats.history}
-                symbol={coinData.symbol}
-              />
-            )}
+                  <Button
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white mt-4"
+                    onClick={handleStartStaking}
+                    disabled={!coinData.enabled}
+                  >
+                    {!coinData.enabled 
+                      ? "Demnächst verfügbar" 
+                      : user 
+                        ? "Jetzt staken" 
+                        : `${coinData.name} staken`}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {user && <Card className="bg-zinc-900/50 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white">Ihre Statistiken</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-zinc-400">
+                    Melden Sie sich an, um Ihre persönlichen Staking-Statistiken zu sehen.
+                  </p>
+                </CardContent>
+              </Card>}
+            </div>
+
+            <div className="space-y-6">
+              <Card className="bg-zinc-900/50 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white">Netzwerk Statistiken</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isLoadingStats ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <Skeleton key={i} className="h-16 bg-zinc-800" />
+                      ))}
+                    </div>
+                  ) : networkStats ? (
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-400">
+                          Gesamtes {coinData.symbol} Staking
+                        </p>
+                        <p className="text-lg font-semibold text-white">
+                          {networkStats.current.tvl.toLocaleString(undefined, {
+                            maximumFractionDigits: 0
+                          })} {coinData.symbol}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-400">Aktive Validatoren</p>
+                        <p className="text-lg font-semibold text-white">
+                          {networkStats.current.validators.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-400">Durchschnittlicher Stake</p>
+                        <p className="text-lg font-semibold text-white">
+                          {networkStats.current.avgStake.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })} {coinData.symbol}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-400">Netzwerk Belohnungen</p>
+                        <p className="text-lg font-semibold text-white">
+                          {networkStats.current.rewards.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })} {coinData.symbol}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-zinc-400 text-center py-4">
+                      Fehler beim Laden der Netzwerkstatistiken
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {networkStats && (
+                <NetworkStatsChart
+                  data={networkStats.history}
+                  symbol={coinData.symbol}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -294,11 +185,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
 }
 
 export default function CoinDetail({ symbol }: CoinDetailProps) {
-  return (
-    <AppLayout>
-      <CoinDetailContent symbol={symbol} />
-    </AppLayout>
-  );
+  return <CoinDetailContent symbol={symbol} />;
 }
 
 async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
@@ -307,18 +194,6 @@ async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
     throw new Error('Failed to fetch network statistics');
   }
   return response.json();
-}
-
-async function getCoinPrice(symbol: string) {
-    const response = await fetch(`/api/price/${symbol}`);
-    if (!response.ok) throw new Error(`Failed to fetch price for ${symbol}`);
-    return response.json();
-}
-
-async function getCoinStats(symbol: string) {
-    const response = await fetch(`/api/stats/${symbol}`);
-    if (!response.ok) throw new Error(`Failed to fetch stats for ${symbol}`);
-    return response.json();
 }
 
 interface NetworkStats {
@@ -353,7 +228,7 @@ const COIN_DATA: Record<string, {
     apy: 10.00,
     minStake: "100",
     icon: PivxIcon,
-    description: "PIVX staking enables you to earn passive income while supporting the network's security and decentralization.",
+    description: "PIVX Staking ermöglicht es Ihnen, passives Einkommen zu erzielen und gleichzeitig die Sicherheit und Dezentralisierung des Netzwerks zu unterstützen.",
     enabled: true
   },
   pac: {

@@ -17,7 +17,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true }
 
   const handleClick = () => {
     if (enabled) {
-      navigate(`/app/coins/${symbol.toLowerCase()}`);
+      navigate(`/coins/${symbol.toLowerCase()}`);
     }
   };
 
@@ -50,7 +50,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true }
 
           {enabled ? (
             <div className="py-2 px-4 bg-purple-600 text-white rounded-lg text-center">
-              Start Staking
+              View Details
             </div>
           ) : (
             <div className="py-2 px-4 bg-zinc-800 text-zinc-500 rounded-lg text-center">

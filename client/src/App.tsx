@@ -54,6 +54,9 @@ function Router() {
       <Route path="/auth">
         {() => (user ? <Dashboard /> : <AuthPage />)}
       </Route>
+      <Route path="/coins/:symbol">
+        {(params) => <CoinDetail symbol={params.symbol} />}
+      </Route>
 
       {/* Protected routes */}
       <Route path="/app">
