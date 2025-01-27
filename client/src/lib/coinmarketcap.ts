@@ -19,6 +19,11 @@ const PriceSchema = z.object({
 
 export async function getPIVXPrice(): Promise<number> {
   try {
+    if (!API_KEY) {
+      console.error("CoinMarketCap API key is not set");
+      throw new Error("API key not configured");
+    }
+
     const response = await fetch(
       `${BASE_URL}/cryptocurrency/quotes/latest?symbol=PIVX`,
       {
@@ -31,7 +36,7 @@ export async function getPIVXPrice(): Promise<number> {
 
     if (!response.ok) {
       console.error("CoinMarketCap API error:", response.status);
-      return 5.23; // Fallback price
+      throw new Error(`API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -39,13 +44,13 @@ export async function getPIVXPrice(): Promise<number> {
 
     if (!result.success) {
       console.error("Data validation error:", result.error);
-      return 5.23;
+      throw new Error("Invalid API response format");
     }
 
     return result.data.data.PIVX[0].quote.USD.price;
   } catch (error) {
     console.error("Failed to fetch PIVX price:", error);
-    return 5.23;
+    throw error;
   }
 }
 
@@ -58,6 +63,10 @@ export async function getPIVXStats(): Promise<{
   weightedAvgPrice: number;
 }> {
   try {
+    if (!API_KEY) {
+      throw new Error("API key not configured");
+    }
+
     const response = await fetch(
       `${BASE_URL}/cryptocurrency/quotes/latest?symbol=PIVX`,
       {
@@ -85,8 +94,8 @@ export async function getPIVXStats(): Promise<{
     const priceChange = (currentPrice * priceChangePercent) / 100;
 
     return {
-      priceChange24h: priceChange,
-      priceChangePercent24h: priceChangePercent,
+      priceChange24h: Number(priceChange.toFixed(4)),
+      priceChangePercent24h: Number(priceChangePercent.toFixed(2)),
       volume24h: pivxData.volume_24h,
       highPrice24h: currentPrice * (1 + Math.abs(priceChangePercent) / 100),
       lowPrice24h: currentPrice * (1 - Math.abs(priceChangePercent) / 100),
@@ -94,13 +103,6 @@ export async function getPIVXStats(): Promise<{
     };
   } catch (error) {
     console.error("Failed to fetch PIVX stats:", error);
-    return {
-      priceChange24h: 0.15,
-      priceChangePercent24h: 2.95,
-      volume24h: 125000,
-      highPrice24h: 5.45,
-      lowPrice24h: 5.12,
-      weightedAvgPrice: 5.28,
-    };
+    throw error;
   }
 }
