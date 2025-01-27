@@ -102,7 +102,7 @@ export default function Home() {
 
         {/* Rewards Calculator Section */}
         <div className="mt-24">
-          <RewardsCalculator currentStake={100} />
+          <RewardsCalculator />
         </div>
 
         {/* Bottom CTA Section */}
