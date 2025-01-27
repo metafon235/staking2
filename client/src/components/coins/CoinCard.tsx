@@ -10,9 +10,10 @@ interface CoinCardProps {
   apy: number;
   minStake: string;
   enabled?: boolean;
+  onClick?: () => void;
 }
 
-export default function CoinCard({ name, symbol, apy, minStake, enabled = true }: CoinCardProps) {
+export default function CoinCard({ name, symbol, apy, minStake, enabled = true, onClick }: CoinCardProps) {
   const [, navigate] = useLocation();
 
   const handleClick = () => {
@@ -30,7 +31,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true }
         <div className="flex items-center justify-between mb-6">
           <PivxIcon className="w-8 h-8 text-purple-400" />
           <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400">
-            Available for staking
+            {enabled ? "Verfügbar" : "Demnächst"}
           </div>
         </div>
 
@@ -42,7 +43,7 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true }
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm text-zinc-400">Minimum stake:</p>
+            <p className="text-sm text-zinc-400">Mindestbetrag:</p>
             <p className="text-lg font-semibold text-white">
               {minStake} {symbol}
             </p>
@@ -50,11 +51,11 @@ export default function CoinCard({ name, symbol, apy, minStake, enabled = true }
 
           {enabled ? (
             <div className="py-2 px-4 bg-purple-600 text-white rounded-lg text-center">
-              View Details
+              Details anzeigen
             </div>
           ) : (
             <div className="py-2 px-4 bg-zinc-800 text-zinc-500 rounded-lg text-center">
-              Coming Soon
+              Demnächst verfügbar
             </div>
           )}
         </div>
