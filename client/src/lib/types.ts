@@ -26,3 +26,21 @@ export interface StakingResponse {
   currency: string;
   transactionId?: string;
 }
+
+export interface Portfolio {
+  pivx: {
+    staked: number;
+    rewards: number;
+    stakedAt?: string;
+    lastRewardAt?: string;
+  };
+}
+
+export interface PortfolioResponse {
+  portfolio: Portfolio;
+  history: Array<{
+    timestamp: number;
+    amount: number;
+    type: 'stake' | 'unstake' | 'reward';
+  }>;
+}

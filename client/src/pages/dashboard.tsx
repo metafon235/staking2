@@ -6,9 +6,10 @@ import StakingChart from "@/components/staking/StakingChart";
 import NotificationBell from "@/components/layout/NotificationBell";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
 import StakingStats from "@/components/staking/StakingStats";
+import type { PortfolioResponse } from "@/lib/types";
 
 function DashboardContent() {
-  const { data: portfolio, isLoading } = useQuery({
+  const { data: portfolioData, isLoading } = useQuery<PortfolioResponse>({
     queryKey: ['/api/portfolio'],
     refetchInterval: 5000, // Refresh every 5 seconds
     staleTime: 4000, // Consider data stale after 4 seconds
@@ -19,15 +20,16 @@ function DashboardContent() {
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
-    if (!portfolio?.pivx?.staked) {
-      console.log('Missing required portfolio data:', portfolio?.pivx);
+    if (!portfolioData?.portfolio?.pivx?.staked) {
       return [];
     }
 
     const points = [];
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
-    const stakedTime = portfolio.pivx.stakedAt ? new Date(portfolio.pivx.stakedAt).getTime() : now - (24 * 60 * 60 * 1000);
+    const stakedTime = portfolioData.portfolio.pivx.stakedAt 
+      ? new Date(portfolioData.portfolio.pivx.stakedAt).getTime() 
+      : now - (24 * 60 * 60 * 1000);
 
     // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
@@ -37,7 +39,7 @@ function DashboardContent() {
       // Calculate rewards based on 10% APY
       // (staked amount * APY * elapsed time in years)
       const yearsElapsed = elapsedTime / (365 * 24 * 60 * 60);
-      const reward = portfolio.pivx.staked * (0.10 * yearsElapsed);
+      const reward = portfolioData.portfolio.pivx.staked * (0.10 * yearsElapsed);
 
       points.push({
         timestamp: time,
@@ -46,14 +48,14 @@ function DashboardContent() {
     }
 
     return points;
-  }, [portfolio?.pivx?.staked, portfolio?.pivx?.stakedAt]);
+  }, [portfolioData?.portfolio?.pivx?.staked, portfolioData?.portfolio?.pivx?.stakedAt]);
 
   // Memoize the derived data to prevent unnecessary re-renders
   const data = useMemo(() => ({
-    totalStaked: portfolio?.pivx?.staked ?? 0,
-    rewards: portfolio?.pivx?.rewards ?? 0,
-    monthlyRewards: (portfolio?.pivx?.staked ?? 0) * 0.10 / 12, // Calculate monthly rewards based on 10% APY
-  }), [portfolio?.pivx?.staked, portfolio?.pivx?.rewards]);
+    totalStaked: portfolioData?.portfolio?.pivx?.staked ?? 0,
+    rewards: portfolioData?.portfolio?.pivx?.rewards ?? 0,
+    monthlyRewards: (portfolioData?.portfolio?.pivx?.staked ?? 0) * 0.10 / 12, // Calculate monthly rewards based on 10% APY
+  }), [portfolioData?.portfolio?.pivx?.staked, portfolioData?.portfolio?.pivx?.rewards]);
 
   return (
     <div className="min-h-screen bg-black p-6">
