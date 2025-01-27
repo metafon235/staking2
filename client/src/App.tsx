@@ -19,6 +19,7 @@ import { Loader2 } from "lucide-react";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminStaking from "@/pages/admin/staking";
+import AdminUsers from "@/pages/admin/users";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
   const { user, isLoading } = useUser();
@@ -91,6 +92,9 @@ function Router() {
       </Route>
       <Route path="/admin/staking">
         {() => <AdminProtectedRoute component={AdminStaking} />}
+      </Route>
+      <Route path="/admin/users">
+        {() => <AdminProtectedRoute component={AdminUsers} />}
       </Route>
 
       {/* Protected routes */}
