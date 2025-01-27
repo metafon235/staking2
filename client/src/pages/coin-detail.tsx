@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { stakePIVX } from "@/lib/web3";
 import { useParams, useLocation } from "wouter";
 import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice, getPIVXStats } from "@/lib/coingecko";
+import { getPIVXPrice, getPIVXStats } from "@/lib/coinmarketcap";
 
 function CoinDetailContent() {
   const [stakeAmount, setStakeAmount] = useState("");
@@ -62,7 +62,7 @@ function CoinDetailContent() {
   const { data: currentPrice } = useQuery({
     queryKey: ['pivx-price'],
     queryFn: getPIVXPrice,
-    refetchInterval: 60000, 
+    refetchInterval: 60000,
   });
 
   const { data: pivxStats } = useQuery({
@@ -115,7 +115,7 @@ function CoinDetailContent() {
             <h1 className="text-4xl font-bold text-white">{coinData.name} Staking</h1>
             {currentPrice && (
               <p className="text-lg text-zinc-400">
-                Current Price: ${currentPrice.toFixed(2)} USD
+                Current Price: ${currentPrice.toFixed(4)} USD
               </p>
             )}
           </div>

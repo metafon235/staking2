@@ -13,7 +13,7 @@ import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
 import { format } from "date-fns";
 import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice } from "@/lib/coingecko";
+import { getPIVXPrice } from "@/lib/coinmarketcap";  // Changed from coingecko to coinmarketcap
 
 interface PortfolioData {
   pivx: {
@@ -138,7 +138,7 @@ function PortfolioContent() {
                   PIVX Staking
                   {pivxPrice && (
                     <span className="text-sm text-zinc-400">
-                      (${pivxPrice.toFixed(2)})
+                      (${pivxPrice.toFixed(4)})
                     </span>
                   )}
                 </div>
