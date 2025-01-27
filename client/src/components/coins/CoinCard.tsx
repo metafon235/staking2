@@ -39,7 +39,7 @@ export default function CoinCard({
 
   return (
     <Card 
-      className={`bg-zinc-900/50 ${enabled ? 'hover:bg-[#9333EA] hover:border-purple-400' : 'opacity-50'} border-zinc-800 transition-all duration-300 cursor-pointer group`}
+      className={`bg-zinc-900/50 ${enabled ? 'hover:bg-[#9333EA] hover:border-purple-400' : 'hover:bg-[#9333EA] hover:border-purple-400 opacity-50'} border-zinc-800 transition-all duration-300 cursor-pointer group`}
       onClick={handleClick}
     >
       <CardContent className="p-6">
@@ -64,7 +64,7 @@ export default function CoinCard({
             </p>
           </div>
 
-          <div className={`py-2 px-4 ${enabled ? 'bg-purple-600 text-white group-hover:bg-white group-hover:text-black' : 'bg-zinc-800 text-zinc-500'} rounded-lg text-center transition-colors duration-300`}>
+          <div className={`py-2 px-4 ${enabled ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'} group-hover:bg-white group-hover:text-black rounded-lg text-center transition-colors duration-300`}>
             {isAppView ? "Start Staking" : "View Details"}
           </div>
 
