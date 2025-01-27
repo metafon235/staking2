@@ -6,6 +6,10 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
+import Portfolio from "@/pages/portfolio";
+import CoinDetail from "@/pages/coin-detail";
+import Analytics from "@/pages/analytics";
+import Settings from "@/pages/settings";
 import { queryClient } from "./lib/queryClient";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
@@ -53,6 +57,18 @@ function Router() {
       {/* Protected routes */}
       <Route path="/app">
         {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/app/portfolio">
+        {() => <ProtectedRoute component={Portfolio} />}
+      </Route>
+      <Route path="/app/coins">
+        {() => <ProtectedRoute component={CoinDetail} />}
+      </Route>
+      <Route path="/app/analytics">
+        {() => <ProtectedRoute component={Analytics} />}
+      </Route>
+      <Route path="/app/settings">
+        {() => <ProtectedRoute component={Settings} />}
       </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}

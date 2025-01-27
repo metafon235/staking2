@@ -6,7 +6,10 @@ import {
   Wallet,
   Trophy,
   Settings,
-  LogOut
+  LogOut,
+  Coins,
+  BarChart2,
+  Briefcase
 } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 
@@ -16,8 +19,11 @@ export function Sidebar() {
 
   const menuItems = [
     { href: "/app", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/app/portfolio", label: "Portfolio", icon: Briefcase },
+    { href: "/app/coins", label: "Coins", icon: Coins },
     { href: "/app/staking", label: "Staking", icon: Wallet },
     { href: "/app/rewards", label: "Rewards", icon: Trophy },
+    { href: "/app/analytics", label: "Analytics", icon: BarChart2 },
     { href: "/app/settings", label: "Settings", icon: Settings },
   ];
 
@@ -26,7 +32,7 @@ export function Sidebar() {
       <div className="p-6">
         <h1 className="text-xl font-bold text-white">PIVX Staking</h1>
       </div>
-      
+
       <nav className="flex-1 px-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
