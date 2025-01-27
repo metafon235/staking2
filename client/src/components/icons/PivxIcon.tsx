@@ -9,15 +9,20 @@ export function PivxIcon(props: SVGProps<SVGSVGElement>) {
       height="1em"
       {...props}
     >
-      {/* Main circle */}
+      {/* Background Circle */}
       <circle cx="128" cy="128" r="128" fill="currentColor" opacity="0.1" />
-      <circle cx="128" cy="128" r="124" fill="currentColor" opacity="0.2" />
 
-      {/* PIVX Logo - Stylized "X" */}
-      <path
-        fill="currentColor"
-        d="M175 75v106c0 8-4 14-12 14h-31c-8 0-12-5-12-12v-41h-1l-41 45c-4 4-9 8-15 8H31c-8 0-12-5-12-13V75c0-7 4-12 12-12h31c8 0 12 5 12 12v41h1l41-45c4-4 9-8 15-8h32c8 0 12 5 12 13z"
-      />
+      {/* PIVX Text and X symbol */}
+      <g fill="currentColor">
+        {/* P */}
+        <path d="M60 72h35c8 0 14 2 18 6s6 10 6 18c0 8-2 14-6 18s-10 6-18 6H78v36H60V72zm35 32c3 0 5-1 6-2s2-3 2-6-1-5-2-6-3-2-6-2H78v16h17z"/>
+        {/* I */}
+        <path d="M128 72h18v84h-18z"/>
+        {/* V */}
+        <path d="M157 72h19l15 84h-18l-7-46-7 46h-17z"/>
+        {/* X */}
+        <path d="M198 72h20l-14 42 14 42h-20l-7-25-7 25h-19l14-42-14-42h19l7 25z"/>
+      </g>
     </svg>
   );
 }

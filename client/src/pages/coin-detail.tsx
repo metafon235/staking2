@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { stakePIVX } from "@/lib/web3";
 import { useParams, useLocation } from "wouter";
 import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice, getPIVXStats } from "@/lib/coinmarketcap";
+import { getPIVXPrice, getPIVXStats } from "@/lib/cryptocompare";  // Changed from coinmarketcap to cryptocompare
 
 function CoinDetailContent() {
   const [stakeAmount, setStakeAmount] = useState("");

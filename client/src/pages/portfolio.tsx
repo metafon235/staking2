@@ -13,7 +13,7 @@ import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
 import { format } from "date-fns";
 import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice } from "@/lib/coinmarketcap";  // Changed from coingecko to coinmarketcap
+import { getPIVXPrice } from "@/lib/cryptocompare";  // Changed from coinmarketcap to cryptocompare
 
 interface PortfolioData {
   pivx: {
