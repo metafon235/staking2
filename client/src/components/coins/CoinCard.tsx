@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
-import { PivxIcon } from "@/components/icons/PivxIcon";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -13,6 +12,7 @@ interface CoinCardProps {
   enabled?: boolean;
   onClick?: () => void;
   isAppView?: boolean;
+  icon: IconType;
 }
 
 export default function CoinCard({ 
@@ -22,10 +22,11 @@ export default function CoinCard({
   minStake, 
   enabled = true, 
   onClick,
-  isAppView = false 
+  isAppView = false,
+  icon: Icon 
 }: CoinCardProps) {
   const [showWallet, setShowWallet] = useState(false);
-  const [location] = useLocation();
+  const [, setLocation] = useLocation();
 
   const handleClick = () => {
     if (isAppView && enabled) {
@@ -44,7 +45,7 @@ export default function CoinCard({
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <PivxIcon className="w-8 h-8 text-purple-400" />
+          {Icon && <Icon className="w-8 h-8 text-purple-400" />}
           <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400">
             {enabled ? "Available" : "Coming Soon"}
           </div>
