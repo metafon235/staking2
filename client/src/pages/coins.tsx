@@ -20,6 +20,7 @@ export default function CoinsOverview() {
                 apy={coin.apy}
                 minStake={coin.minStake}
                 enabled={coin.enabled}
+                icon={coin.icon}
                 isAppView={true}
                 onClick={() => navigate(`/app/coins/${key}`)}
               />
