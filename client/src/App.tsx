@@ -51,6 +51,9 @@ function Router() {
       </Route>
 
       {/* Protected routes */}
+      <Route path="/app">
+        {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
