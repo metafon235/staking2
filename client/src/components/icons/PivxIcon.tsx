@@ -1,17 +1,12 @@
 import { SVGProps } from 'react';
 
-export function PivxIcon(props: SVGProps<SVGSVGElement>) {
+export function PivxIcon(props: SVGProps<SVGSVGElement> & { className?: string }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      {...props}
-    >
-      <g fill="currentColor">
-        <path d="m7.767 5.087.006.108v13.61l-.006.108a1.5 1.5 0 0 1-2.98.108l-.006-.108V5.087l.006-.108a1.5 1.5 0 0 1 2.98-.108zM20.631 12c0 4.376-3.316 8.003-7.575 8.505l-.29.029-.266.009c-.214 0-.428-.01-.639-.03l-.29-.029c-4.259-.502-7.575-4.13-7.575-8.504 0-4.375 3.316-8.003 7.575-8.505A9.02 9.02 0 0 1 12 3.445c.214 0 .428.01.639.03l.29.029c4.259.502 7.575 4.13 7.575 8.504zm-3 0c0-2.81-2.239-5.121-5.07-5.274l-.242-.008A5.281 5.281 0 0 0 7.05 12c0 2.81 2.239 5.121 5.07 5.274l.242.008A5.281 5.281 0 0 0 17.63 12z"/>
-      </g>
-    </svg>
+    <img 
+      src="/assets/pivx-icon.png"
+      alt="PIVX"
+      style={{ width: '1em', height: '1em' }}
+      className={props.className}
+    />
   );
 }
