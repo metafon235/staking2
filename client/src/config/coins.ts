@@ -43,7 +43,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "PIVX",
     apy: 10.00,
     minStake: "100",
-    icon: PivxIcon, 
+    icon: PivxIcon,
     description: "PIVX Staking represents a cutting-edge Proof of Stake (PoS) blockchain investment opportunity. As a leading privacy-focused cryptocurrency, PIVX combines sophisticated staking mechanisms with advanced privacy features, allowing investors to earn consistent passive income while supporting network security. With its energy-efficient consensus mechanism and robust governance system, PIVX staking offers an environmentally conscious and democratized approach to cryptocurrency earnings.",
     enabled: true,
     technicalDetails: {
@@ -145,7 +145,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "WGR",
     apy: 134.00,
     minStake: "250",
-    icon: PivxIcon,
+    icon: FaCoins,
     description: "Wagerr enables decentralized sports betting and staking with attractive returns.",
     enabled: false,
     technicalDetails: {
@@ -215,7 +215,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "NRG",
     apy: 15.00,
     minStake: "100",
-    icon: PivxIcon,
+    icon: FaCoins,
     description: "Energi combines smart contracts with Proof of Stake for maximum scalability.",
     enabled: false,
     technicalDetails: {
