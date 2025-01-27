@@ -12,20 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 function DashboardContent() {
   const { toast } = useToast();
 
-  const { data: portfolioData, isLoading, error } = useQuery<PortfolioResponse>({
+  const { data: portfolioData, isLoading } = useQuery<PortfolioResponse>({
     queryKey: ['/api/portfolio'],
     refetchInterval: 5000,
     staleTime: 0,
-    retry: 1,
-    refetchOnWindowFocus: true,
   });
-
-  console.log('Portfolio Data:', portfolioData); // Debug log
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
     if (!portfolioData?.pivx?.staked) {
-      console.log('No staking data available');
       return [];
     }
 
@@ -86,19 +81,6 @@ function DashboardContent() {
               monthlyRewards={0}
               isLoading={true}
             />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Only show error if we have an error and no data
-  if (error && !portfolioData) {
-    return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-red-500">
-            Failed to load portfolio data. Please try again later.
           </div>
         </div>
       </div>

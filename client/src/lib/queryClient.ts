@@ -5,8 +5,6 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         try {
-          console.log('Fetching:', queryKey[0]); // Debug log
-
           const res = await fetch(queryKey[0] as string, {
             method: 'GET',
             credentials: 'include',
@@ -16,41 +14,35 @@ export const queryClient = new QueryClient({
             },
           });
 
-          // First try to parse the response as JSON
-          let data;
           const contentType = res.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
+          let data;
+
+          try {
             data = await res.json();
-          } else {
-            data = await res.text();
+          } catch (e) {
+            console.error('Failed to parse JSON:', e);
+            return null;
           }
 
-          // Log the response for debugging
-          console.log('API Response:', {
-            status: res.status,
-            data,
-            url: queryKey[0],
-          });
-
           if (!res.ok) {
-            // For 401s, we don't want to show an error, just return null
             if (res.status === 401) {
               return null;
             }
-            throw new Error(typeof data === 'string' ? data : JSON.stringify(data));
+            console.error('API Error:', res.status, data);
+            return null;
           }
 
           return data;
         } catch (error) {
           console.error('Query error:', error);
-          throw error;
+          return null;
         }
       },
-      refetchInterval: 5000, // Refetch every 5 seconds
+      refetchInterval: 5000,
       refetchOnWindowFocus: true,
       retry: 1,
       retryDelay: 1000,
-      staleTime: 0, // Always fetch fresh data
+      staleTime: 0,
     },
     mutations: {
       retry: false,
