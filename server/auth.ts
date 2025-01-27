@@ -43,6 +43,7 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log('Attempting login for username:', username);
         const [user] = await db
           .select()
           .from(users)
@@ -50,16 +51,20 @@ export function setupAuth(app: Express) {
           .limit(1);
 
         if (!user) {
+          console.log('User not found');
           return done(null, false, { message: "Incorrect username." });
         }
 
-        // For development, accept plain password comparison
+        // Simple password comparison for development
         if (password === user.password) {
+          console.log('Login successful');
           return done(null, user);
         }
 
+        console.log('Password mismatch');
         return done(null, false, { message: "Incorrect password." });
       } catch (err) {
+        console.error('Login error:', err);
         return done(err);
       }
     })
@@ -135,6 +140,8 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log('Login attempt:', req.body);
+
     const result = insertUserSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({
@@ -144,17 +151,21 @@ export function setupAuth(app: Express) {
 
     passport.authenticate("local", (err: any, user: Express.User | false, info: IVerifyOptions) => {
       if (err) {
+        console.error('Authentication error:', err);
         return next(err);
       }
 
       if (!user) {
-        return res.status(401).json({ message: info.message ?? "Login failed" });
+        console.log('Authentication failed:', info?.message);
+        return res.status(401).json({ message: info?.message ?? "Login failed" });
       }
 
       req.login(user, (err) => {
         if (err) {
+          console.error('Login error:', err);
           return next(err);
         }
+        console.log('Login successful for user:', user.username);
         return res.json({
           message: "Login successful",
           user: { id: user.id, username: user.username, isAdmin: user.isAdmin }
