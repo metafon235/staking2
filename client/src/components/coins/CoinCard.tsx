@@ -39,39 +39,39 @@ export default function CoinCard({
 
   return (
     <Card 
-      className={`bg-zinc-900/50 ${enabled ? 'hover:bg-zinc-800/30 hover:border-purple-500/50' : 'opacity-50'} border-zinc-800 transition-all duration-300 cursor-pointer`}
+      className={`bg-zinc-900/50 ${enabled ? 'hover:bg-purple-900/90 hover:border-purple-400' : 'opacity-50'} border-zinc-800 transition-all duration-300 cursor-pointer group`}
       onClick={handleClick}
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <PivxIcon className="w-8 h-8 text-purple-400" />
-          <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400">
+          <PivxIcon className="w-8 h-8 text-purple-400 group-hover:text-black transition-colors duration-300" />
+          <div className="px-3 py-1 text-xs rounded-full bg-zinc-800 text-zinc-400 group-hover:bg-purple-300 group-hover:text-purple-900 transition-colors duration-300">
             {enabled ? "Available" : "Coming Soon"}
           </div>
         </div>
 
-        <h3 className="text-2xl font-bold text-white mb-2">{name}</h3>
+        <h3 className="text-2xl font-bold text-white group-hover:text-black transition-colors duration-300">{name}</h3>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <p className="text-3xl font-bold text-purple-400">{apy}% APY</p>
+            <p className="text-3xl font-bold text-purple-400 group-hover:text-black transition-colors duration-300">{apy}% APY</p>
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm text-zinc-400">Minimum stake:</p>
-            <p className="text-lg font-semibold text-white">
+            <p className="text-sm text-zinc-400 group-hover:text-purple-950 transition-colors duration-300">Minimum stake:</p>
+            <p className="text-lg font-semibold text-white group-hover:text-black transition-colors duration-300">
               {minStake} {symbol}
             </p>
           </div>
 
-          <div className={`py-2 px-4 ${enabled ? 'bg-purple-600 text-white hover:bg-purple-500' : 'bg-zinc-800 text-zinc-500'} rounded-lg text-center transition-colors duration-300`}>
+          <div className={`py-2 px-4 ${enabled ? 'bg-purple-600 text-white group-hover:bg-white group-hover:text-purple-900' : 'bg-zinc-800 text-zinc-500'} rounded-lg text-center transition-colors duration-300`}>
             {isAppView ? "Start Staking" : "View Details"}
           </div>
 
           {showWallet && enabled && isAppView && (
-            <div className="mt-4 p-4 bg-zinc-800 rounded-lg">
-              <p className="text-sm text-zinc-400 mb-2">Send your {symbol} to this address to start staking:</p>
-              <p className="text-xs text-white break-all font-mono">{walletAddress}</p>
+            <div className="mt-4 p-4 bg-zinc-800 group-hover:bg-purple-800 rounded-lg transition-colors duration-300">
+              <p className="text-sm text-zinc-400 group-hover:text-purple-200 mb-2 transition-colors duration-300">Send your {symbol} to this address to start staking:</p>
+              <p className="text-xs text-white group-hover:text-purple-100 break-all font-mono transition-colors duration-300">{walletAddress}</p>
             </div>
           )}
         </div>
