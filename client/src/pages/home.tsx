@@ -34,13 +34,6 @@ export default function Home() {
               >
                 Start Staking Now
               </Button>
-              <Button 
-                variant="outline" 
-                className="border-purple-600 text-purple-400 hover:bg-purple-600/10 px-8 py-6 text-lg"
-                onClick={() => navigate("/auth")}
-              >
-                Login to Dashboard
-              </Button>
             </div>
           )}
         </div>
