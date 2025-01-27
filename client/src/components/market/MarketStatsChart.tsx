@@ -3,10 +3,10 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveCont
 import { format } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useMemo } from "react";
-import { getPIVXStats } from "@/lib/cryptocompare";
+import { getPIVXStats } from "@/lib/coinmarketcap";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GiTwoCoins } from "react-icons/gi";
+import { PivxIcon } from "@/components/icons/PivxIcon";
 
 export default function MarketStatsChart() {
   const { data: pivxStats, isLoading } = useQuery({
@@ -22,7 +22,7 @@ export default function MarketStatsChart() {
     volume24h: pivxStats?.volume24h ?? 0,
     highPrice24h: pivxStats?.highPrice24h ?? 0,
     lowPrice24h: pivxStats?.lowPrice24h ?? 0,
-    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 5.23, // Updated fallback price
+    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 5.23,
   }), [pivxStats]);
 
   const marketData = useMemo(() => {
@@ -64,7 +64,7 @@ export default function MarketStatsChart() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <GiTwoCoins className="w-6 h-6 text-purple-400" />
+              <PivxIcon className="w-6 h-6 text-purple-400" />
               <CardTitle className="text-white">PIVX Price Movement (24h)</CardTitle>
             </div>
             <div className={`flex items-center ${stats.priceChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
