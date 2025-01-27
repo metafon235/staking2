@@ -6,6 +6,83 @@ import { stakes, rewards, transactions, users, notifications, notificationSettin
 import { eq, count, avg, sql, sum, and, gt, desc, isNotNull, min } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
+import session from 'express-session';
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+
+const setupAuth = (app: Express) => {
+  app.use(
+    session({
+      secret: 'your-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      }
+    })
+  );
+
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.username, username))
+          .limit(1);
+
+        if (!user) {
+          return done(null, false, { message: 'Incorrect username.' });
+        }
+
+        // In production, use proper password hashing
+        if (user.password !== password) {
+          return done(null, false, { message: 'Incorrect password.' });
+        }
+
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    })
+  );
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  });
+
+  // Auth endpoints
+  app.post('/api/auth/login', passport.authenticate('local'), (req, res) => {
+    res.json({ user: req.user });
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    req.logout(() => {
+      res.json({ success: true });
+    });
+  });
+
+  app.get('/api/user', (req, res) => {
+    res.json(req.user || null);
+  });
+};
 
 // Network base statistics
 const BASE_STATS = {
@@ -1451,8 +1528,4 @@ export function registerRoutes(app: Express): Server {
 // Placeholder function - needs actual implementation
 async function generateReferralCode(): Promise<string> {
   return 'REF-XXXXXXX'; // Replace with actual code to generate referral code
-}
-
-async function setupAuth(app: Express) {
-  //This is a placeholder, replace with your actual auth setup.
 }
