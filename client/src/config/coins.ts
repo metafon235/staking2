@@ -82,7 +82,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   pac: {
     name: "PAC",
     symbol: "PAC",
-    apy: 8.50,
+    apy: 25.00,
     minStake: "1000",
     icon: PivxIcon,
     description: "PAC Protocol staking introduces a revolutionary approach to cryptocurrency yield generation through its advanced masternode and staking system. Built on a foundation of community-driven development and sustainable tokenomics, PAC staking offers investors a reliable way to earn passive income while contributing to a robust, decentralized network infrastructure. The platform combines traditional staking benefits with innovative features designed for long-term value creation.",
@@ -104,7 +104,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "1000",
-      apy: 8.50,
+      apy: 25.00,
       rewards: "PAC staking implements a dual reward system combining regular staking returns with masternode rewards. The platform distributes rewards every 120 seconds, with additional benefits for masternode operators who provide essential network services."
     },
     documentation: [
@@ -118,7 +118,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
       },
       {
         question: "What are the benefits of PAC Protocol staking?",
-        answer: "PAC Protocol staking offers several advantages: competitive 8.5% APY returns, potential masternode earnings, participation in network governance, and exposure to a growing cross-chain ecosystem. Stakers benefit from regular reward distributions and can participate in network development decisions."
+        answer: "PAC Protocol staking offers several advantages: competitive 25% APY returns, potential masternode earnings, participation in network governance, and exposure to a growing cross-chain ecosystem. Stakers benefit from regular reward distributions and can participate in network development decisions."
       },
       {
         question: "How does PAC ensure network security?",
@@ -133,7 +133,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   wagerr: {
     name: "WAGERR",
     symbol: "WGR",
-    apy: 9.00,
+    apy: 134.00,
     minStake: "250",
     icon: PivxIcon,
     description: "Wagerr enables decentralized sports betting and staking with attractive returns.",
@@ -151,8 +151,8 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "250",
-      apy: 9.00,
-      rewards: "WGR staking combines PoS rewards with fees from the sports betting platform."
+      apy: 134.00,
+      rewards: "WGR staking combines high PoS rewards with fees from the sports betting platform."
     },
     documentation: [
       {
@@ -168,7 +168,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   crown: {
     name: "CROWN",
     symbol: "CRW",
-    apy: 7.50,
+    apy: 211.00,
     minStake: "500",
     icon: PivxIcon,
     description: "Crown offers an innovative blockchain infrastructure with a sustainable staking model.",
@@ -186,8 +186,8 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "500",
-      apy: 7.50,
-      rewards: "Crown distributes staking rewards based on a dynamic reward model."
+      apy: 211.00,
+      rewards: "Crown distributes staking rewards based on a dynamic reward model with extremely high returns."
     },
     documentation: [
       {
@@ -203,7 +203,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   energi: {
     name: "ENERGI",
     symbol: "NRG",
-    apy: 12.00,
+    apy: 15.00,
     minStake: "100",
     icon: PivxIcon,
     description: "Energi combines smart contracts with Proof of Stake for maximum scalability.",
@@ -221,13 +221,13 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "100",
-      apy: 12.00,
-      rewards: "Energi offers one of the highest staking yields in the crypto sector."
+      apy: 15.00,
+      rewards: "Energi offers competitive staking yields in the crypto sector."
     },
     documentation: [
       {
         question: "How does Energi differ from other PoS coins?",
-        answer: "Energi combines high staking yields with smart contract functionality and Layer-2 scaling."
+        answer: "Energi combines sustainable staking yields with smart contract functionality and Layer-2 scaling."
       },
       {
         question: "What is the Energi Treasury System?",
@@ -238,7 +238,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   defichain: {
     name: "DEFICHAIN",
     symbol: "DFI",
-    apy: 15.00,
+    apy: 5.00,
     minStake: "200",
     icon: PivxIcon,
     description: "DeFiChain is the blockchain for decentralized finance applications.",
@@ -256,7 +256,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "200",
-      apy: 15.00,
+      apy: 5.00,
       rewards: "DeFiChain combines staking rewards with DeFi yields."
     },
     documentation: [
@@ -273,7 +273,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   firo: {
     name: "FIRO",
     symbol: "FIRO",
-    apy: 11.00,
+    apy: 13.00,
     minStake: "100",
     icon: PivxIcon,
     description: "Firo (formerly Zcoin) is a leader in blockchain privacy technology.",
@@ -291,7 +291,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "100",
-      apy: 11.00,
+      apy: 13.00,
       rewards: "Firo rewards stakers for securing the privacy-focused network."
     },
     documentation: [
@@ -308,7 +308,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
   gnosis: {
     name: "GNOSIS",
     symbol: "GNO",
-    apy: 14.00,
+    apy: 4.00,
     minStake: "1",
     icon: PivxIcon,
     description: "Gnosis Chain is an Ethereum-compatible blockchain with fast, cheap transactions.",
@@ -326,7 +326,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     },
     stakingDetails: {
       minStake: "1",
-      apy: 14.00,
+      apy: 4.00,
       rewards: "Gnosis Chain validators receive rewards for block production and transaction fees."
     },
     documentation: [
