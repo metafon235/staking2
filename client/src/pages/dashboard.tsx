@@ -15,10 +15,9 @@ function DashboardContent() {
   const { data: portfolioData, isLoading, error } = useQuery<PortfolioResponse>({
     queryKey: ['/api/portfolio'],
     refetchInterval: 5000,
-    staleTime: 4000,
-    retry: false,
+    staleTime: 0,
+    retry: 1,
     refetchOnWindowFocus: true,
-    placeholderData: (previousData) => previousData,
     onError: (err) => {
       console.error('Portfolio fetch error:', err);
       toast({
@@ -43,7 +42,6 @@ function DashboardContent() {
     const startTime = now - (60 * 60 * 1000); // Last hour
     const stakedTime = now - (24 * 60 * 60 * 1000); // Assume staked 24h ago
 
-    // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
       const elapsedTime = (time - stakedTime) / 1000;
       if (elapsedTime <= 0) continue;
@@ -58,18 +56,14 @@ function DashboardContent() {
       });
     }
 
-    console.log('Generated reward points:', points); // Debug log
     return points;
   }, [portfolioData?.pivx?.staked, portfolioData?.pivx?.apy]);
 
-  // Memoize the derived data
   const data = useMemo(() => {
     const totalStaked = portfolioData?.pivx?.staked ?? 0;
     const rewards = portfolioData?.pivx?.rewards ?? 0;
     const apy = portfolioData?.pivx?.apy ?? 10;
     const monthlyRewards = totalStaked * (apy / 100) / 12;
-
-    console.log('Calculated data:', { totalStaked, rewards, monthlyRewards }); // Debug log
 
     return {
       totalStaked,
@@ -77,6 +71,34 @@ function DashboardContent() {
       monthlyRewards,
     };
   }, [portfolioData?.pivx?.staked, portfolioData?.pivx?.rewards, portfolioData?.pivx?.apy]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-white">Staking Dashboard</h1>
+          </div>
+          <div className="grid gap-6">
+            <StakingChart 
+              data={[]}
+              totalStaked={0}
+              currentRewards={0}
+              isLoading={true}
+            />
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            <StakingStats 
+              totalStaked={0}
+              rewards={0}
+              monthlyRewards={0}
+              isLoading={true}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
