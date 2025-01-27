@@ -5,11 +5,7 @@ import { useState } from "react";
 import { stakePIVX } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { StakingData } from "@/lib/types";
 
 interface StakingCardProps {
   isLoading?: boolean;
@@ -19,16 +15,6 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Fetch user's wallet settings
-  const { data: settings } = useQuery({
-    queryKey: ['/api/settings'],
-    queryFn: async () => {
-      const response = await fetch('/api/settings');
-      if (!response.ok) throw new Error('Failed to fetch settings');
-      return response.json();
-    }
-  });
 
   const stakeMutation = useMutation({
     mutationFn: () => stakePIVX(parseFloat(amount)),
@@ -63,7 +49,6 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
   };
 
   const stakingData = queryClient.getQueryData<StakingData>(['/api/staking/data']);
-  const hasWallet = settings?.walletAddress && settings.walletAddress.length > 0;
 
   if (isLoading) {
     return (
@@ -86,19 +71,6 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
         <CardTitle className="text-white">Stake PIVX</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!hasWallet && (
-          <Alert className="bg-yellow-900/20 border-yellow-900/50 text-yellow-500">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Please set up your funding/withdrawal wallet address in{" "}
-              <Link href="/settings" className="underline hover:text-yellow-400">
-                Settings
-              </Link>{" "}
-              to enable staking.
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="space-y-2">
           <label className="text-sm font-medium text-zinc-400">Amount (PIVX)</label>
           <Input
@@ -108,7 +80,7 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
             onChange={(e) => setAmount(e.target.value)}
             min="100"
             step="1"
-            disabled={stakeMutation.isPending || !hasWallet}
+            disabled={stakeMutation.isPending}
             className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
           />
         </div>
@@ -137,13 +109,9 @@ export default function StakingCard({ isLoading }: StakingCardProps) {
         <Button 
           className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
           onClick={handleStake}
-          disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 100 || !hasWallet}
+          disabled={stakeMutation.isPending || !amount || parseFloat(amount) < 100}
         >
-          {!hasWallet 
-            ? "Set Up Wallet First" 
-            : stakeMutation.isPending 
-              ? "Staking..." 
-              : "Stake"}
+          {stakeMutation.isPending ? "Staking..." : "Stake"}
         </Button>
       </CardContent>
     </Card>

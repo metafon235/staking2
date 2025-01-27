@@ -20,8 +20,8 @@ export const store = {
     return user;
   },
   getUser: (id: number) => users.get(id),
-  getUserByEmail: (email: string) => 
-    Array.from(users.values()).find(u => u.email === email),
+  getUserByUsername: (username: string) => 
+    Array.from(users.values()).find(u => u.username === username),
 
   // Stakes
   createStake: (data: InsertStake) => {
