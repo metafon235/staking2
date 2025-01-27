@@ -65,7 +65,7 @@ export default function CoinDetail() {
   });
 
   const stakeMutation = useMutation({
-    mutationFn: () => stakePIVX(parseFloat(stakeAmount)),
+    mutationFn: () => stakePIVX(Number(stakeAmount)),
     onSuccess: () => {
       toast({
         title: "Staking Successful",
@@ -97,8 +97,8 @@ export default function CoinDetail() {
     );
   }
 
-  const monthlyReward = parseFloat(stakeAmount || "0") * (coinData.apy / 12 / 100);
-  const yearlyReward = parseFloat(stakeAmount || "0") * (coinData.apy / 100);
+  const monthlyReward = Number(stakeAmount || "0") * (coinData.apy / 12 / 100);
+  const yearlyReward = Number(stakeAmount || "0") * (coinData.apy / 100);
   const hasWallet = settings?.walletAddress && settings.walletAddress.length > 0;
 
   const handleStake = () => {
@@ -116,8 +116,8 @@ export default function CoinDetail() {
       return;
     }
 
-    const amountNum = parseFloat(stakeAmount);
-    if (!stakeAmount || amountNum < coinData.minStake) {
+    const amountNum = Number(stakeAmount);
+    if (!stakeAmount || amountNum < Number(coinData.minStake)) {
       toast({
         variant: "destructive",
         title: "Invalid Amount",
@@ -186,7 +186,7 @@ export default function CoinDetail() {
                     type="number"
                     value={stakeAmount}
                     onChange={(e) => setStakeAmount(e.target.value)}
-                    min={coinData.minStake}
+                    min={Number(coinData.minStake)}
                     step="0.01"
                     placeholder={`Min. ${coinData.minStake} ${coinData.symbol}`}
                     className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
@@ -217,7 +217,7 @@ export default function CoinDetail() {
                     stakeMutation.isPending ||
                     !hasWallet ||
                     !stakeAmount ||
-                    parseFloat(stakeAmount) < parseFloat(coinData.minStake)
+                    Number(stakeAmount) < Number(coinData.minStake)
                   }
                 >
                   {!hasWallet
