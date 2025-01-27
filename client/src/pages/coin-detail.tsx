@@ -35,7 +35,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Coin nicht gefunden</AlertDescription>
+          <AlertDescription>Coin not found</AlertDescription>
         </Alert>
       </div>
     );
@@ -59,7 +59,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
             <div>
               <h1 className="text-4xl font-bold text-white">{coinData.name}</h1>
               <p className="text-lg text-zinc-400">
-                Erfahren Sie mehr über {coinData.name} Staking
+                Learn more about {coinData.name} Staking
               </p>
             </div>
           </div>
@@ -71,17 +71,17 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
               {/* Overview Card */}
               <Card className="bg-zinc-900/50 border-zinc-800">
                 <CardHeader>
-                  <CardTitle className="text-white">Übersicht</CardTitle>
+                  <CardTitle className="text-white">Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-zinc-400">{coinData.description}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-zinc-400">Jährliche Rendite</p>
+                      <p className="text-sm text-zinc-400">Annual Return</p>
                       <p className="text-2xl font-bold text-purple-400">{coinData.apy}% APY</p>
                     </div>
                     <div>
-                      <p className="text-sm text-zinc-400">Mindestbetrag</p>
+                      <p className="text-sm text-zinc-400">Minimum stake</p>
                       <p className="text-2xl font-bold text-white">
                         {coinData.minStake} {coinData.symbol}
                       </p>
@@ -94,10 +94,10 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                     disabled={!coinData.enabled}
                   >
                     {!coinData.enabled 
-                      ? "Demnächst verfügbar" 
+                      ? "Coming Soon" 
                       : user 
-                        ? "Jetzt staken" 
-                        : `${coinData.name} staken`}
+                        ? "Start Staking" 
+                        : `Stake ${coinData.name}`}
                   </Button>
                 </CardContent>
               </Card>
@@ -119,7 +119,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
               {/* Network Statistics Card */}
               <Card className="bg-zinc-900/50 border-zinc-800">
                 <CardHeader>
-                  <CardTitle className="text-white">Netzwerk Statistiken</CardTitle>
+                  <CardTitle className="text-white">Network Statistics</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isLoadingStats ? (
@@ -132,7 +132,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-1">
                         <p className="text-xs text-zinc-400">
-                          Gesamtes {coinData.symbol} Staking
+                          Total {coinData.symbol} Staking
                         </p>
                         <p className="text-lg font-semibold text-white">
                           {networkStats.current.tvl.toLocaleString(undefined, {
@@ -141,13 +141,13 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs text-zinc-400">Aktive Validatoren</p>
+                        <p className="text-xs text-zinc-400">Active Validators</p>
                         <p className="text-lg font-semibold text-white">
                           {networkStats.current.validators.toLocaleString()}
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs text-zinc-400">Durchschnittlicher Stake</p>
+                        <p className="text-xs text-zinc-400">Average Stake</p>
                         <p className="text-lg font-semibold text-white">
                           {networkStats.current.avgStake.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -156,7 +156,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs text-zinc-400">Netzwerk Belohnungen</p>
+                        <p className="text-xs text-zinc-400">Network Rewards</p>
                         <p className="text-lg font-semibold text-white">
                           {networkStats.current.rewards.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
@@ -167,7 +167,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                     </div>
                   ) : (
                     <p className="text-zinc-400 text-center py-4">
-                      Fehler beim Laden der Netzwerkstatistiken
+                      Error loading network statistics
                     </p>
                   )}
                 </CardContent>
