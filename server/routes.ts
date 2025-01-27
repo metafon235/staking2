@@ -9,97 +9,8 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import MemoryStore from 'memorystore';
 import { NotificationService } from "./services/notifications";
-import * as crypto from 'crypto';
-
 
 const sessionStore = MemoryStore(session);
-
-// Rewards generation interval (1 minute)
-let rewardsGenerationInterval: NodeJS.Timeout | null = null;
-
-// Calculate rewards for a timestamp
-async function calculateRewardsForTimestamp(
-  userId: number, 
-  stakedAmount: number, 
-  startTimeMs: number, 
-  endTimeMs: number
-): Promise<number> {
-  try {
-    const lastWithdrawal = await db.query.transactions.findFirst({
-      where: (transactions, { and, eq }) => and(
-        eq(transactions.userId, userId),
-        eq(transactions.type, 'withdraw_all'),
-        eq(transactions.status, 'completed')
-      ),
-      orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
-    });
-
-    const userStakes = await db.query.stakes.findMany({
-      where: (stakes, { and, eq }) => and(
-        eq(stakes.userId, userId),
-        eq(stakes.status, 'active')
-      )
-    });
-
-    let totalRewards = 0;
-
-    for (const stake of userStakes) {
-      const stakeStartTime = stake.createdAt.getTime();
-      if (stakeStartTime <= endTimeMs) {
-        const stakeAmount = parseFloat(stake.amount.toString());
-        if (stakeAmount >= 100) {
-          const timePassedMs = endTimeMs - stakeStartTime;
-          const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-          const yearlyRate = 0.10; // 10% APY
-          const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
-          totalRewards += stakeRewards;
-        }
-      }
-    }
-
-    return totalRewards;
-  } catch (error) {
-    console.error('Error calculating rewards:', error);
-    return 0;
-  }
-}
-
-async function generateRewardsForAllActiveStakes() {
-  try {
-    console.log('Starting rewards generation cycle...');
-    const activeStakes = await db
-      .select({
-        userId: stakes.userId,
-        amount: stakes.amount,
-        createdAt: stakes.createdAt
-      })
-      .from(stakes)
-      .where(eq(stakes.status, 'active'));
-
-    console.log(`Found ${activeStakes.length} active stakes`);
-
-    for (const stake of activeStakes) {
-      const stakeAmount = parseFloat(stake.amount.toString());
-      if (stakeAmount >= 100) {
-        const yearlyRate = 0.10; // 10% APY
-        const minutelyRate = yearlyRate / (365 * 24 * 60);
-        const reward = stakeAmount * minutelyRate;
-
-        if (reward >= 0.00001) {
-          await db.insert(transactions).values({
-            userId: stake.userId,
-            type: 'reward',
-            amount: reward.toString(),
-            status: 'completed',
-            createdAt: new Date()
-          });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error generating rewards:', error);
-  }
-}
 
 const setupAuth = (app: Express) => {
   app.use(
@@ -163,14 +74,27 @@ const setupAuth = (app: Express) => {
   });
 
   // Auth endpoints
-  app.post('/api/login', passport.authenticate('local'), (req, res) => {
-    res.json({ 
-      user: {
-        id: req.user!.id,
-        username: req.user!.username,
-        isAdmin: req.user!.isAdmin
+  app.post('/api/login', (req, res, next) => {
+    passport.authenticate('local', (err: any, user: Express.User | false, info: any) => {
+      if (err) {
+        return next(err);
       }
-    });
+      if (!user) {
+        return res.status(401).json({ message: info?.message || 'Login failed' });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        return res.json({ 
+          user: {
+            id: user.id,
+            username: user.username,
+            isAdmin: user.isAdmin
+          }
+        });
+      });
+    })(req, res, next);
   });
 
   app.post('/api/register', async (req, res) => {
@@ -224,15 +148,14 @@ const setupAuth = (app: Express) => {
   });
 
   app.get('/api/user', (req, res) => {
-    if (req.user) {
-      res.json({
-        id: req.user.id,
-        username: req.user.username,
-        isAdmin: req.user.isAdmin
-      });
-    } else {
-      res.status(401).json({ message: 'Not authenticated' });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
     }
+    res.json({
+      id: req.user.id,
+      username: req.user.username,
+      isAdmin: req.user.isAdmin
+    });
   });
 };
 
@@ -241,6 +164,7 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // Start rewards generation interval
+  let rewardsGenerationInterval: NodeJS.Timeout | null = null;
   if (rewardsGenerationInterval) {
     clearInterval(rewardsGenerationInterval);
   }
@@ -977,6 +901,89 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  async function calculateRewardsForTimestamp(
+    userId: number, 
+    stakedAmount: number, 
+    startTimeMs: number, 
+    endTimeMs: number
+  ): Promise<number> {
+    try {
+      const lastWithdrawal = await db.query.transactions.findFirst({
+        where: (transactions, { and, eq }) => and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'withdraw_all'),
+          eq(transactions.status, 'completed')
+        ),
+        orderBy: (transactions, { desc }) => [desc(transactions.createdAt)]
+      });
+
+      const userStakes = await db.query.stakes.findMany({
+        where: (stakes, { and, eq }) => and(
+          eq(stakes.userId, userId),
+          eq(stakes.status, 'active')
+        )
+      });
+
+      let totalRewards = 0;
+
+      for (const stake of userStakes) {
+        const stakeStartTime = stake.createdAt.getTime();
+        if (stakeStartTime <= endTimeMs) {
+          const stakeAmount = parseFloat(stake.amount.toString());
+          if (stakeAmount >= 100) {
+            const timePassedMs = endTimeMs - stakeStartTime;
+            const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
+            const yearlyRate = 0.10; // 10% APY
+            const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
+            totalRewards += stakeRewards;
+          }
+        }
+      }
+
+      return totalRewards;
+    } catch (error) {
+      console.error('Error calculating rewards:', error);
+      return 0;
+    }
+  }
+
+  async function generateRewardsForAllActiveStakes() {
+    try {
+      console.log('Starting rewards generation cycle...');
+      const activeStakes = await db
+        .select({
+          userId: stakes.userId,
+          amount: stakes.amount,
+          createdAt: stakes.createdAt
+        })
+        .from(stakes)
+        .where(eq(stakes.status, 'active'));
+
+      console.log(`Found ${activeStakes.length} active stakes`);
+
+      for (const stake of activeStakes) {
+        const stakeAmount = parseFloat(stake.amount.toString());
+        if (stakeAmount >= 100) {
+          const yearlyRate = 0.10; // 10% APY
+          const minutelyRate = yearlyRate / (365 * 24 * 60);
+          const reward = stakeAmount * minutelyRate;
+
+          if (reward >= 0.00001) {
+            await db.insert(transactions).values({
+              userId: stake.userId,
+              type: 'reward',
+              amount: reward.toString(),
+              status: 'completed',
+              createdAt: new Date()
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error generating rewards:', error);
+    }
+  }
+
   //The interval is already set in startRewardsGeneration, so this line is redundant and should be removed.
 
   function startRewardsGeneration() {
@@ -1017,6 +1024,4 @@ const insertUserSchema = z.object({
 });
 
 // Add necessary imports
-import { asc } from "drizzle-orm";
-import { NotificationService } from "./services/notifications";
-import * as crypto from 'crypto';
+import { sql } from 'drizzle-orm/sql';
