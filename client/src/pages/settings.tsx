@@ -1,3 +1,4 @@
+import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ async function fetchUserSettings() {
   return response.json();
 }
 
-export default function Settings() {
+function SettingsContent() {
   const [walletAddress, setWalletAddress] = useState("");
   const [addressValidation, setAddressValidation] = useState<{ isValid: boolean; error?: string }>({ isValid: true });
   const { toast } = useToast();
@@ -67,7 +68,6 @@ export default function Settings() {
     }
   });
 
-  // Update wallet address when settings are loaded
   useEffect(() => {
     if (settings?.walletAddress) {
       setWalletAddress(settings.walletAddress);
@@ -75,7 +75,6 @@ export default function Settings() {
     }
   }, [settings?.walletAddress]);
 
-  // Validate address on change
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAddress = e.target.value;
     setWalletAddress(newAddress);
@@ -112,7 +111,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <h1 className="text-3xl font-bold text-white">Settings</h1>
 
       {/* Wallet Settings */}
@@ -172,5 +171,13 @@ export default function Settings() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function Settings() {
+  return (
+    <AppLayout>
+      <SettingsContent />
+    </AppLayout>
   );
 }
