@@ -23,8 +23,9 @@ const HistoricalDataSchema = z.object({
 
 export async function getPIVXPrice(): Promise<number> {
   try {
+    console.log("Fetching PIVX price from CryptoCompare...");
     const response = await fetch(
-      `${BASE_URL}/price?fsym=PIVX&tsyms=USD&api_key=${API_KEY}`,
+      `${BASE_URL}/price?fsym=PIVX&tsyms=USD`,
       {
         headers: {
           'Accept': 'application/json',
@@ -39,6 +40,8 @@ export async function getPIVXPrice(): Promise<number> {
     }
 
     const data = await response.json();
+    console.log("CryptoCompare response:", data);
+
     const result = PriceSchema.safeParse(data);
 
     if (!result.success) {
@@ -48,8 +51,8 @@ export async function getPIVXPrice(): Promise<number> {
 
     return result.data.PIVX.USD;
   } catch (error) {
-    console.error("Failed to fetch PIVX price:", error);
-    return 5.23; // Updated fallback price to match current PIVX price
+    console.error("Failed to fetch PIVX price from CryptoCompare:", error);
+    throw error; // Let the component handle the fallback
   }
 }
 
@@ -62,8 +65,9 @@ export async function getPIVXStats(): Promise<{
   weightedAvgPrice: number;
 }> {
   try {
+    console.log("Fetching PIVX stats from CryptoCompare...");
     const response = await fetch(
-      `${BASE_URL}/v2/histohour?fsym=PIVX&tsym=USD&limit=24&api_key=${API_KEY}`,
+      `${BASE_URL}/v2/histohour?fsym=PIVX&tsym=USD&limit=24`,
       {
         headers: {
           'Accept': 'application/json',
@@ -77,6 +81,8 @@ export async function getPIVXStats(): Promise<{
     }
 
     const data = await response.json();
+    console.log("CryptoCompare stats response:", data);
+
     const result = HistoricalDataSchema.safeParse(data);
 
     if (!result.success) {
@@ -109,15 +115,7 @@ export async function getPIVXStats(): Promise<{
       weightedAvgPrice: Number(weightedAvgPrice.toFixed(4)),
     };
   } catch (error) {
-    console.error("Failed to fetch PIVX stats:", error);
-    // Return realistic PIVX market data
-    return {
-      priceChange24h: 0.15,
-      priceChangePercent24h: 2.95,
-      volume24h: 125000,
-      highPrice24h: 5.45,
-      lowPrice24h: 5.12,
-      weightedAvgPrice: 5.28,
-    };
+    console.error("Failed to fetch PIVX stats from CryptoCompare:", error);
+    throw error;
   }
 }

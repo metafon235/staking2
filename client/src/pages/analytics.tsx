@@ -9,7 +9,8 @@ import RewardsBarChart from "@/components/staking/RewardsBarChart";
 import MarketStatsChart from "@/components/market/MarketStatsChart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useState } from "react";
-import { getPIVXPrice, getPIVXStats } from "@/lib/cryptocompare";
+import { getPIVXPrice as getPIVXPriceCC } from "@/lib/cryptocompare";
+import { getPIVXPrice as getPIVXPriceBinance } from "@/lib/binance";
 
 interface AnalyticsData {
   performance: {
@@ -66,8 +67,24 @@ function AnalyticsContent() {
 
   const { data: pivxPrice, isLoading: isPivxPriceLoading } = useQuery({
     queryKey: ['pivx-price'],
-    queryFn: getPIVXPrice,
-    refetchInterval: 30000, 
+    queryFn: async () => {
+      try {
+        // Try CryptoCompare first
+        return await getPIVXPriceCC();
+      } catch (error) {
+        console.error("CryptoCompare failed:", error);
+        try {
+          // Try Binance as fallback
+          return await getPIVXPriceBinance();
+        } catch (binanceError) {
+          console.error("Binance fallback failed:", binanceError);
+          // Return fallback value if both APIs fail
+          return 5.23; // Current PIVX price as fallback
+        }
+      }
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 0, // Consider data immediately stale
   });
 
   if (isLoadingAnalytics || isPivxPriceLoading) {
