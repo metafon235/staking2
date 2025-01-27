@@ -1,4 +1,5 @@
-import { Home, LineChart, Coins, Settings, Menu, LogOut, Wallet } from "lucide-react";
+import { Home, LineChart, Settings, Menu, LogOut, Wallet } from "lucide-react";
+import { GiTwoCoins } from "react-icons/gi";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -8,7 +9,7 @@ import { useUser } from "@/hooks/use-user";
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/app" },
   { icon: Wallet, label: "Portfolio", href: "/app/portfolio" },
-  { icon: Coins, label: "PIVX Staking", href: "/app/coins/pivx" },
+  { icon: GiTwoCoins, label: "PIVX Staking", href: "/app/coins/pivx", iconClass: "text-purple-500" },
   { icon: LineChart, label: "Analytics", href: "/app/analytics" },
   { icon: Settings, label: "Settings", href: "/app/settings" },
 ];
@@ -47,7 +48,7 @@ export default function Navigation() {
         <div className="flex h-full flex-col border-r border-zinc-800 bg-zinc-900">
           <div className="flex h-16 items-center justify-between px-4">
             {!isCollapsed && (
-              <span className="text-xl font-bold text-white">Staking App</span>
+              <span className="text-xl font-bold text-white">PIVX Staking</span>
             )}
             <Button
               variant="ghost"
@@ -75,7 +76,7 @@ export default function Navigation() {
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={cn("h-5 w-5", item.iconClass)} />
                   {!isCollapsed && <span>{item.label}</span>}
                 </Link>
               );
@@ -113,7 +114,7 @@ export default function Navigation() {
                     : "text-zinc-400 hover:text-white"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className={cn("h-5 w-5", item.iconClass)} />
                 <span className="text-xs">{item.label}</span>
               </Link>
             );

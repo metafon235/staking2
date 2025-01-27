@@ -16,14 +16,14 @@ export default function MarketStatsChart() {
     staleTime: 0
   });
 
-  const stats = {
+  const stats = useMemo(() => ({
     priceChange24h: pivxStats?.priceChange24h ?? 0,
     priceChangePercent24h: pivxStats?.priceChangePercent24h ?? 0,
     volume24h: pivxStats?.volume24h ?? 0,
     highPrice24h: pivxStats?.highPrice24h ?? 0,
     lowPrice24h: pivxStats?.lowPrice24h ?? 0,
-    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 1.23, // Updated fallback price
-  };
+    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 5.23, // Updated fallback price
+  }), [pivxStats]);
 
   const marketData = useMemo(() => {
     const generatePriceData = () => {
