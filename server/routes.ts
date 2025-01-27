@@ -9,6 +9,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import MemoryStore from 'memorystore';
 import { NotificationService } from "./services/notifications";
+import * as crypto from 'crypto';
 
 const sessionStore = MemoryStore(session);
 
@@ -31,9 +32,11 @@ const setupAuth = (app: Express) => {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Use LocalStrategy with passport
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // Find user by username
         const [user] = await db
           .select()
           .from(users)
@@ -44,8 +47,10 @@ const setupAuth = (app: Express) => {
           return done(null, false, { message: 'Incorrect username.' });
         }
 
-        // In production, use proper password hashing
+        // For development purposes, accept any password that matches
+        // In production, you would use proper password hashing
         if (user.password !== password) {
+          console.log('Password mismatch:', { provided: password, stored: user.password });
           return done(null, false, { message: 'Incorrect password.' });
         }
 
@@ -77,15 +82,22 @@ const setupAuth = (app: Express) => {
   app.post('/api/login', (req, res, next) => {
     passport.authenticate('local', (err: any, user: Express.User | false, info: any) => {
       if (err) {
+        console.error('Login error:', err);
         return next(err);
       }
+
       if (!user) {
+        console.log('Login failed:', info?.message);
         return res.status(401).json({ message: info?.message || 'Login failed' });
       }
+
       req.logIn(user, (err) => {
         if (err) {
+          console.error('Login error:', err);
           return next(err);
         }
+
+        console.log('Login successful for user:', user.username);
         return res.json({ 
           user: {
             id: user.id,
@@ -112,12 +124,13 @@ const setupAuth = (app: Express) => {
         return res.status(400).json({ message: 'Username already exists' });
       }
 
-      // Create new user
+      // Create new user with plain password for development
+      // In production, you would hash the password
       const [newUser] = await db
         .insert(users)
         .values({
           username,
-          password,
+          password, // Store plain password for development
           isAdmin: false
         })
         .returning();
