@@ -74,7 +74,7 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                   <CardTitle className="text-white">Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-zinc-400">{coinData.description}</p>
+                  <p className="text-zinc-400 text-justify">{coinData.description}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-zinc-400">Annual Return</p>
@@ -93,10 +93,10 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                     onClick={handleStartStaking}
                     disabled={!coinData.enabled}
                   >
-                    {!coinData.enabled 
-                      ? "Coming Soon" 
-                      : user 
-                        ? "Start Staking" 
+                    {!coinData.enabled
+                      ? "Coming Soon"
+                      : user
+                        ? "Start Staking"
                         : `Stake ${coinData.name}`}
                   </Button>
                 </CardContent>

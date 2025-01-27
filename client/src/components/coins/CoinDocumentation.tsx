@@ -63,7 +63,7 @@ export default function CoinDocumentation({
             <p className="text-sm text-zinc-400 mb-2">Key Features</p>
             <ul className="list-disc list-inside text-white space-y-1">
               {technicalDetails.features.map((feature, index) => (
-                <li key={index}>{feature}</li>
+                <li key={index} className="text-justify">{feature}</li>
               ))}
             </ul>
           </div>
@@ -98,7 +98,7 @@ export default function CoinDocumentation({
             )}
             <div className="col-span-2">
               <p className="text-sm text-zinc-400 mb-2">Reward Details</p>
-              <p className="text-white">{stakingDetails.rewards}</p>
+              <p className="text-white text-justify">{stakingDetails.rewards}</p>
             </div>
           </div>
         </CardContent>
@@ -115,7 +115,7 @@ export default function CoinDocumentation({
                 <AccordionTrigger className="text-white hover:text-purple-400">
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-zinc-400">
+                <AccordionContent className="text-zinc-400 text-justify">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
