@@ -8,6 +8,25 @@ import { NotificationService } from "./services/notifications";
 import { z } from "zod";
 import { sql } from 'drizzle-orm/sql';
 
+const BASE_STATS: Record<string, {
+  baseValidators: number;
+  baseTVL: number;
+  baseAvgStake: number;
+  baseRewards: number;
+}> = {
+  pivx: {
+    baseValidators: 1000,
+    baseTVL: 1000000,
+    baseAvgStake: 1000,
+    baseRewards: 100
+  }
+};
+
+const statsCache = new Map<string, {
+  data: any;
+  timestamp: number;
+}>();
+
 export function registerRoutes(app: Express): Server {
   // Important: Setup auth first before other routes
   setupAuth(app);
@@ -847,23 +866,43 @@ export function registerRoutes(app: Express): Server {
   return httpServer;
 }
 
-// Placeholder function - needs actual implementation
 async function generateReferralCode(): Promise<string> {
   return 'REF-XXXXXXX'; // Replace with actual code to generate referral code
 }
 
-// Placeholder for BASE_STATS and statsCache - these are likely defined elsewhere and should be imported.  Assuming they are objects and a Map respectively.
-const BASE_STATS = {};
-const statsCache = new Map();
+async function getCurrentNetworkStats(symbol: string) {
+  // For development, return mock data based on BASE_STATS
+  const baseStats = BASE_STATS[symbol];
+  const variation = Math.random() * 0.1 - 0.05; // ±5% variation
 
-async function getCurrentNetworkStats(symbol: string): Promise<any> {
-  // Placeholder implementation
-  return Promise.resolve({ some: 'data' });
+  return {
+    tvl: Math.round(baseStats.baseTVL * (1 + variation)),
+    validators: Math.round(baseStats.baseValidators * (1 + variation)),
+    avgStake: Math.round(baseStats.baseAvgStake * (1 + variation)),
+    rewards: Math.round(baseStats.baseRewards * (1 + variation))
+  };
 }
 
-async function generateHistoricalData(symbol: string, baseStats: any): Promise<any[]> {
-  // Placeholder implementation
-  return Promise.resolve([]);
+async function generateHistoricalData(symbol: string, baseStats: any) {
+  const history = [];
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  // Generate 30 days of historical data
+  for (let i = 30; i >= 0; i--) {
+    const date = now - (i * dayMs);
+    const variation = Math.random() * 0.2 - 0.1; // ±10% variation
+
+    history.push({
+      date,
+      tvl: Math.round(baseStats.baseTVL * (1 + variation)),
+      validators: Math.round(baseStats.baseValidators * (1 + variation)),
+      avgStake: Math.round(baseStats.baseAvgStake * (1 + variation)),
+      rewards: Math.round(baseStats.baseRewards * (1 + variation))
+    });
+  }
+
+  return history;
 }
 
 const insertUserSchema = z.object({
