@@ -12,10 +12,17 @@ import { useToast } from "@/hooks/use-toast";
 function DashboardContent() {
   const { toast } = useToast();
 
-  const { data: portfolioData, isLoading } = useQuery<PortfolioResponse>({
+  const { data: portfolioData, isLoading, error } = useQuery<PortfolioResponse>({
     queryKey: ['/api/portfolio'],
     refetchInterval: 5000,
-    staleTime: 0,
+    onError: (error) => {
+      console.error('Portfolio fetch error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load portfolio data. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Generate historical data points for the chart
@@ -39,7 +46,7 @@ function DashboardContent() {
 
       points.push({
         timestamp: time,
-        rewards: reward,
+        rewards: parseFloat(reward.toFixed(9)),
       });
     }
 
@@ -87,6 +94,18 @@ function DashboardContent() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-red-500">
+            Failed to load portfolio data. Please try refreshing the page.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black p-6">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -107,7 +126,6 @@ function DashboardContent() {
             data={rewardsHistory}
             totalStaked={data.totalStaked}
             currentRewards={data.rewards}
-            isLoading={isLoading}
           />
         </div>
 
@@ -116,12 +134,11 @@ function DashboardContent() {
             totalStaked={data.totalStaked}
             rewards={data.rewards}
             monthlyRewards={data.monthlyRewards}
-            isLoading={isLoading}
           />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <StakingCard isLoading={isLoading} />
+          <StakingCard />
           <RewardsCalculator currentStake={data.totalStaked} />
         </div>
       </div>

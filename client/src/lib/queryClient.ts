@@ -14,35 +14,25 @@ export const queryClient = new QueryClient({
             },
           });
 
-          const contentType = res.headers.get('content-type');
-          let data;
-
-          try {
-            data = await res.json();
-          } catch (e) {
-            console.error('Failed to parse JSON:', e);
-            return null;
-          }
-
           if (!res.ok) {
             if (res.status === 401) {
               return null;
             }
-            console.error('API Error:', res.status, data);
-            return null;
+            const errorText = await res.text();
+            throw new Error(errorText);
           }
 
-          return data;
+          return res.json();
         } catch (error) {
           console.error('Query error:', error);
-          return null;
+          throw error;
         }
       },
       refetchInterval: 5000,
       refetchOnWindowFocus: true,
+      staleTime: 0,
       retry: 1,
       retryDelay: 1000,
-      staleTime: 0,
     },
     mutations: {
       retry: false,

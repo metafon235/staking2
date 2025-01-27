@@ -1,10 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
 import { db } from "@db";
 import { z } from "zod";
 import { stakes, rewards, transactions, users, notifications, notificationSettings } from "@db/schema";
-import { eq, count, avg, sql, sum, and, gt, desc, isNotNull, min, COALESCE } from "drizzle-orm";
+import { eq, count, avg, sql, sum, and, gt, desc, isNotNull, min } from "drizzle-orm";
 import { NotificationService } from "./services/notifications";
 import * as crypto from 'crypto';
 
@@ -942,8 +941,7 @@ export function registerRoutes(app: Express): Server {
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      if (totalStaked < 100) { // Minimum stake amount for PIVX
-        return res.status(400).json({ error: 'No active stakes found' });
+      if (totalStaked < 100) { // Minimum stake amount for PIVX        return res.status(400).json({ error: 'No active stakes found' });
       }
 
       const earliestStake = userStakes[0]?.createdAt || new Date();
@@ -1372,41 +1370,49 @@ export function registerRoutes(app: Express): Server {
 
   const httpServer = createServer(app);
 
-  // Add portfolio endpoint back
-  app.get('/api/portfolio', async (req, res) => {
+  // Portfolio endpoint
+  app.get("/api/portfolio", async (req, res) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
+        return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Get user's stakes and calculate rewards
+      // Get all active stakes
       const userStakes = await db.query.stakes.findMany({
-        where: eq(stakes.userId, req.user.id),
+        where: (stakes, { and, eq }) => and(
+          eq(stakes.userId, req.user.id),
+          eq(stakes.status, "active")
+        ),
         orderBy: (stakes, { asc }) => [asc(stakes.createdAt)]
       });
 
       const totalStaked = userStakes.reduce((sum, stake) =>
         sum + parseFloat(stake.amount.toString()), 0);
 
-      // Calculate rewards if there are stakes
+      // Calculate current rewards if there are stakes
       let currentRewards = 0;
       if (userStakes.length > 0) {
         const earliestStake = userStakes[0].createdAt;
-        currentRewards = await calculateRewardsForTimestamp(req.user.id, totalStaked, earliestStake.getTime(), Date.now(), false);
+        currentRewards = await calculateRewardsForTimestamp(
+          req.user.id,
+          totalStaked,
+          earliestStake.getTime(),
+          Date.now(),
+          false
+        );
       }
 
-      const portfolioData = {
-        pivx: { // Changed to PIVX
-          staked: totalStaked,
+      // Return data in the expected format
+      res.json({
+        pivx: {
+          staked: parseFloat(totalStaked.toFixed(6)),
           rewards: parseFloat(currentRewards.toFixed(9)),
-          apy: 10.00 // Changed to 10%
+          apy: 10 // 10% APY for PIVX
         }
-      };
-
-      res.json(portfolioData);
+      });
     } catch (error) {
-      console.error('Error fetching portfolio data:', error);
-      res.status(500).json({ error: 'Failed to fetch portfolio data' });
+      console.error("Error fetching portfolio data:", error);
+      res.status(500).json({ error: "Failed to fetch portfolio data" });
     }
   });
 
@@ -1445,4 +1451,8 @@ export function registerRoutes(app: Express): Server {
 // Placeholder function - needs actual implementation
 async function generateReferralCode(): Promise<string> {
   return 'REF-XXXXXXX'; // Replace with actual code to generate referral code
+}
+
+async function setupAuth(app: Express) {
+  //This is a placeholder, replace with your actual auth setup.
 }
