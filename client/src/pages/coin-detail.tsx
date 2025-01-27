@@ -1,4 +1,4 @@
-import { useParams, useLocation } from "wouter";
+import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,41 +12,16 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { stakePIVX } from "@/lib/web3";
+import { useParams, useLocation } from "wouter";
 
-interface NetworkStats {
-  current: {
-    tvl: number;
-    validators: number;
-    avgStake: number;
-    rewards: number;
-  };
-  history: Array<{
-    date: number;
-    tvl: number;
-    validators: number;
-    avgStake: number;
-    rewards: number;
-  }>;
-  lastUpdated: string;
-}
-
-async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
-  const response = await fetch(`/api/network-stats/${symbol}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch network statistics');
-  }
-  return response.json();
-}
-
-export default function CoinDetail() {
-  const { symbol } = useParams();
+function CoinDetailContent() {
   const [stakeAmount, setStakeAmount] = useState("");
   const { user } = useUser();
-  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
-  // Fetch settings to check if wallet is set up
+
   const { data: settings } = useQuery({
     queryKey: ['/api/settings'],
     queryFn: async () => {
@@ -57,9 +32,9 @@ export default function CoinDetail() {
   });
 
   const { data: networkStats, isLoading: isLoadingStats } = useQuery({
-    queryKey: [`/api/network-stats/${symbol}`],
-    queryFn: () => fetchNetworkStats(symbol || ''),
-    enabled: !!symbol,
+    queryKey: [`/api/network-stats/pivx`],
+    queryFn: () => fetchNetworkStats('pivx'),
+    enabled: true,
     refetchInterval: 60000,
     staleTime: 0
   });
@@ -72,7 +47,6 @@ export default function CoinDetail() {
         description: `Successfully staked ${stakeAmount} PIVX. Your rewards will start accumulating.`
       });
       setStakeAmount("");
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/staking/data'] });
       queryClient.invalidateQueries({ queryKey: ['/api/network-stats/pivx'] });
     },
@@ -85,17 +59,8 @@ export default function CoinDetail() {
     }
   });
 
-  const coinData = COIN_DATA[symbol as keyof typeof COIN_DATA];
+  const coinData = COIN_DATA.pivx;
 
-  if (!coinData) {
-    return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-6">Coin not found</h1>
-        </div>
-      </div>
-    );
-  }
 
   const monthlyReward = Number(stakeAmount || "0") * (coinData.apy / 12 / 100);
   const yearlyReward = Number(stakeAmount || "0") * (coinData.apy / 100);
@@ -130,7 +95,7 @@ export default function CoinDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <PiCurrencyCircleDollarFill className="w-12 h-12 text-white" />
@@ -305,7 +270,39 @@ export default function CoinDetail() {
   );
 }
 
-// Update coin data to only show PIVX
+export default function CoinDetail() {
+  return (
+    <AppLayout>
+      <CoinDetailContent />
+    </AppLayout>
+  );
+}
+
+async function fetchNetworkStats(symbol: string): Promise<NetworkStats> {
+  const response = await fetch(`/api/network-stats/${symbol}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch network statistics');
+  }
+  return response.json();
+}
+
+interface NetworkStats {
+  current: {
+    tvl: number;
+    validators: number;
+    avgStake: number;
+    rewards: number;
+  };
+  history: Array<{
+    date: number;
+    tvl: number;
+    validators: number;
+    avgStake: number;
+    rewards: number;
+  }>;
+  lastUpdated: string;
+}
+
 const COIN_DATA = {
   pivx: {
     name: "PIVX",
