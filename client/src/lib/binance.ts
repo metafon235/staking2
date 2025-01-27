@@ -21,27 +21,12 @@ const TickerStatsSchema = z.object({
   lowPrice: z.string(),
 });
 
-export async function getEthPrice(): Promise<number> {
-  try {
-    const response = await fetch(
-      `${BASE_URL}/ticker/price?symbol=ETHUSDT`
-    );
-
-    if (!response.ok) {
-      console.error("Binance API error:", response.status);
-      return 0;
-    }
-
-    const data = await response.json();
-    const result = PriceSchema.parse(data);
-    return parseFloat(result.price);
-  } catch (error) {
-    console.error("Failed to fetch ETH price:", error);
-    return 0;
-  }
+export async function getPIVXPrice(): Promise<number> {
+  // Simulated PIVX price for demo purposes
+  return 5.23;
 }
 
-export async function getEthStats(): Promise<{
+export async function getPIVXStats(): Promise<{
   priceChange24h: number;
   priceChangePercent24h: number;
   volume24h: number;
@@ -49,61 +34,29 @@ export async function getEthStats(): Promise<{
   lowPrice24h: number;
   weightedAvgPrice: number;
 }> {
-  try {
-    const response = await fetch(
-      `${BASE_URL}/ticker/24hr?symbol=ETHUSDT`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Binance API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const stats = TickerStatsSchema.parse(data);
-
-    return {
-      priceChange24h: parseFloat(stats.priceChange),
-      priceChangePercent24h: parseFloat(stats.priceChangePercent),
-      volume24h: parseFloat(stats.volume),
-      highPrice24h: parseFloat(stats.highPrice),
-      lowPrice24h: parseFloat(stats.lowPrice),
-      weightedAvgPrice: parseFloat(stats.weightedAvgPrice),
-    };
-  } catch (error) {
-    console.error("Failed to fetch ETH stats:", error);
-    return {
-      priceChange24h: 0,
-      priceChangePercent24h: 0,
-      volume24h: 0,
-      highPrice24h: 0,
-      lowPrice24h: 0,
-      weightedAvgPrice: 0,
-    };
-  }
+  // Simulated PIVX stats for demo purposes
+  return {
+    priceChange24h: 0.15,
+    priceChangePercent24h: 2.95,
+    volume24h: 1250000,
+    highPrice24h: 5.45,
+    lowPrice24h: 5.12,
+    weightedAvgPrice: 5.28,
+  };
 }
 
-export async function getEthPriceHistory(days: number = 7): Promise<Array<{ timestamp: number; price: number }>> {
-  try {
-    // Convert days to milliseconds and calculate start time
-    const endTime = Date.now();
-    const startTime = endTime - (days * 24 * 60 * 60 * 1000);
-
-    const response = await fetch(
-      `${BASE_URL}/klines?symbol=ETHUSDT&interval=1h&startTime=${startTime}&endTime=${endTime}`
-    );
-
-    if (!response.ok) {
-      console.error("Binance API error:", response.status);
-      return [];
-    }
-
-    const data = await response.json();
-    return data.map((candle: any[]) => ({
-      timestamp: candle[0], // Open time
-      price: parseFloat(candle[4]), // Close price
-    }));
-  } catch (error) {
-    console.error("Failed to fetch ETH price history:", error);
-    return [];
+export async function getPIVXPriceHistory(days: number = 7): Promise<Array<{ timestamp: number; price: number }>> {
+  // Simulated PIVX price history for demo purposes
+  const now = Date.now();
+  const history = [];
+  for (let i = days; i >= 0; i--) {
+    const timestamp = now - (i * 24 * 60 * 60 * 1000);
+    const basePrice = 5.23;
+    const randomVariation = (Math.random() - 0.5) * 0.2;
+    history.push({
+      timestamp,
+      price: basePrice + randomVariation,
+    });
   }
+  return history;
 }

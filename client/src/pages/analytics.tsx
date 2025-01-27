@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RewardsBarChart from "@/components/staking/RewardsBarChart";
-import { getEthPrice, getEthStats } from "@/lib/binance";
 import MarketStatsChart from "@/components/market/MarketStatsChart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useState } from "react";
@@ -33,7 +32,7 @@ interface AnalyticsData {
   portfolio: {
     totalValue: number;
     profitLoss: number;
-    ethPrice: number;
+    pivxPrice: number;
     priceHistory: Array<{
       timestamp: number;
       price: number;
@@ -63,18 +62,6 @@ export default function Analytics() {
     refetchInterval: 60000,
   });
 
-  const { data: liveEthPrice } = useQuery({
-    queryKey: ['binanceEthPrice'],
-    queryFn: getEthPrice,
-    refetchInterval: 30000,
-  });
-
-  const { data: ethStats } = useQuery({
-    queryKey: ['binanceEthStats'],
-    queryFn: getEthStats,
-    staleTime: Infinity,
-  });
-
   if (isLoadingAnalytics) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -91,11 +78,9 @@ export default function Analytics() {
     );
   }
 
-  const ethPrice = liveEthPrice ?? analytics?.portfolio?.ethPrice ?? 0;
-  const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * ethPrice;
-  const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * ethPrice;
-
-  const priceHistory = analytics?.portfolio?.priceHistory || [];
+  const pivxPrice = analytics?.portfolio?.pivxPrice ?? 0;
+  const totalValueUSD = (analytics?.portfolio?.totalValue ?? 0) * pivxPrice;
+  const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * pivxPrice;
 
   return (
     <div className="space-y-6">
@@ -116,7 +101,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics.performance.roi.toFixed(6)}%
+                  {analytics.performance.roi.toFixed(2)}%
                 </p>
               </CardContent>
             </Card>
@@ -138,7 +123,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-blue-500">
-                  {analytics.performance.totalRewards.toFixed(6)} ETH
+                  {analytics.performance.totalRewards.toFixed(2)} PIVX
                 </p>
               </CardContent>
             </Card>
@@ -268,7 +253,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics?.portfolio?.totalValue?.toFixed(6) || '0.000000'} ETH
+                  {analytics?.portfolio?.totalValue?.toFixed(2) || '0.00'} PIVX
                 </p>
                 <p className="text-lg text-zinc-400">
                   ${totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -285,7 +270,7 @@ export default function Analytics() {
                   (analytics?.portfolio?.profitLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
                   {(analytics?.portfolio?.profitLoss || 0) >= 0 ? '+' : ''}
-                  {analytics?.portfolio?.profitLoss?.toFixed(6) || '0.000000'} ETH
+                  {analytics?.portfolio?.profitLoss?.toFixed(2) || '0.00'} PIVX
                 </p>
                 <p className={`text-lg ${
                   profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
@@ -298,29 +283,20 @@ export default function Analytics() {
 
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-white">Live ETH Price</CardTitle>
+                <CardTitle className="text-white">Live PIVX Price</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-purple-500">
-                  ${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0.00'}
+                  ${pivxPrice ? pivxPrice.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0.00'}
                 </p>
                 <p className="text-sm text-zinc-400">
-                  {liveEthPrice ? 'Updates every 30 seconds' : 'Fetching price...'}
+                  Updates every 30 seconds
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {ethStats && (
-            <MarketStatsChart
-              priceChange24h={ethStats.priceChange24h}
-              priceChangePercent24h={ethStats.priceChangePercent24h}
-              volume24h={ethStats.volume24h}
-              highPrice24h={ethStats.highPrice24h}
-              lowPrice24h={ethStats.lowPrice24h}
-              weightedAvgPrice={ethStats.weightedAvgPrice}
-            />
-          )}
+          <MarketStatsChart />
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardHeader>
@@ -333,15 +309,15 @@ export default function Analytics() {
                     <div>
                       <p className="text-white font-medium">{position.coin}</p>
                       <p className="text-sm text-zinc-400">
-                        {position.amount.toFixed(6)} {position.coin}
+                        {position.amount.toFixed(2)} {position.coin}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-white font-medium">
-                        {position.value.toFixed(2)} ETH
+                        {position.value.toFixed(2)} PIVX
                       </p>
                       <p className="text-sm text-green-500">
-                        {position.apy.toFixed(2)}% APY
+                        10.00% APY
                       </p>
                     </div>
                   </div>
