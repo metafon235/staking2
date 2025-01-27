@@ -34,37 +34,48 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 10.00,
     minStake: "100",
     icon: PivxIcon,
-    description: "PIVX Staking enables you to earn passive income while supporting network security and decentralization.",
+    description: "PIVX Staking represents a cutting-edge Proof of Stake (PoS) blockchain investment opportunity. As a leading privacy-focused cryptocurrency, PIVX combines sophisticated staking mechanisms with advanced privacy features, allowing investors to earn consistent passive income while supporting network security. With its energy-efficient consensus mechanism and robust governance system, PIVX staking offers an environmentally conscious and democratized approach to cryptocurrency earnings.",
     enabled: true,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
       blockTime: "60 seconds",
       maxSupply: "21 million PIVX",
       features: [
-        "Fast Transactions",
-        "Energy-efficient PoS",
-        "Privacy via zk-SNARKs",
-        "Decentralized Governance",
-        "Cold Staking Support"
+        "Fast Transactions with 60-second block times",
+        "Energy-efficient Proof of Stake consensus",
+        "Advanced privacy through zk-SNARKs technology",
+        "Decentralized Governance with community voting",
+        "Cold Staking Support for enhanced security",
+        "Custom Shield Protocol for private transactions",
+        "Dynamic block rewards distribution",
+        "Masternode support for network stability"
       ]
     },
     stakingDetails: {
       minStake: "100",
       apy: 10.00,
-      rewards: "Rewards are distributed every 60 seconds based on your stake size and network activity."
+      rewards: "PIVX staking rewards are distributed every 60 seconds through a dynamic reward system. Stakers earn consistent returns based on their stake size, network participation, and overall network activity. The reward structure incentivizes long-term holding and network security participation."
     },
     documentation: [
       {
-        question: "What is PIVX Staking?",
-        answer: "PIVX Staking is a process where you lock your PIVX coins as collateral to secure the network and earn rewards in return."
+        question: "What is PIVX Staking and how does it work?",
+        answer: "PIVX Staking is a process where you lock your PIVX coins to participate in the network's consensus mechanism. By staking PIVX, you help validate transactions and secure the network, earning rewards in return. The staking process is energy-efficient and requires no specialized hardware, making it accessible to all investors."
       },
       {
-        question: "How does the staking process work?",
-        answer: "Once you stake the minimum amount of 100 PIVX, you automatically participate in network consensus. Your chance to validate blocks and receive rewards is proportional to your stake."
+        question: "How do I start staking PIVX?",
+        answer: "To begin staking PIVX, you need a minimum of 100 PIVX coins. Once you have the minimum amount, you can start staking through our platform. The process is straightforward: deposit your PIVX to your staking wallet, and your coins will automatically begin participating in the network consensus, generating rewards based on your stake size."
       },
       {
-        question: "How secure is PIVX Staking?",
-        answer: "PIVX uses advanced cryptography and a secure Proof-of-Stake mechanism. Your coins remain under your control, and staking is done through secure smart contracts."
+        question: "What makes PIVX staking unique?",
+        answer: "PIVX staking stands out due to its combination of privacy features, low entry barrier, and consistent reward structure. Unlike other staking platforms, PIVX offers cold staking capabilities, allowing you to stake while keeping your coins in cold storage for enhanced security. The network also features a unique shield protocol for private transactions."
+      },
+      {
+        question: "What are the benefits of PIVX staking?",
+        answer: "PIVX staking offers multiple benefits: competitive 10% APY returns, regular reward distributions every 60 seconds, enhanced privacy features, and participation in network governance. Stakers can also benefit from potential value appreciation while supporting a sustainable and energy-efficient blockchain network."
+      },
+      {
+        question: "How secure is PIVX staking?",
+        answer: "PIVX staking employs advanced cryptographic techniques and a secure Proof-of-Stake mechanism. The platform supports cold staking, allowing you to stake while keeping your coins in secure cold storage. Additionally, the network's shield protocol and zk-SNARKs technology ensure transaction privacy and security."
       }
     ]
   },
@@ -74,32 +85,48 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     apy: 8.50,
     minStake: "1000",
     icon: PivxIcon,
-    description: "PAC Protocol enables decentralized staking with a focus on community and sustainability.",
+    description: "PAC Protocol staking introduces a revolutionary approach to cryptocurrency yield generation through its advanced masternode and staking system. Built on a foundation of community-driven development and sustainable tokenomics, PAC staking offers investors a reliable way to earn passive income while contributing to a robust, decentralized network infrastructure. The platform combines traditional staking benefits with innovative features designed for long-term value creation.",
     enabled: false,
     technicalDetails: {
       consensus: "Proof of Stake (PoS)",
       blockTime: "120 seconds",
       maxSupply: "100 billion PAC",
       features: [
-        "Community Governance",
-        "Masternode System",
-        "Fast Transactions",
-        "Cross-Chain Compatibility"
+        "Decentralized Community Governance",
+        "Advanced Masternode Infrastructure",
+        "High-speed Transaction Processing",
+        "Cross-Chain Integration Capabilities",
+        "Deterministic Masternode Lists",
+        "Instant Transaction Confirmations",
+        "Multi-tier Staking System",
+        "Enhanced Network Security"
       ]
     },
     stakingDetails: {
       minStake: "1000",
       apy: 8.50,
-      rewards: "PAC staking rewards are distributed every 120 seconds and further amplified by the masternode system."
+      rewards: "PAC staking implements a dual reward system combining regular staking returns with masternode rewards. The platform distributes rewards every 120 seconds, with additional benefits for masternode operators who provide essential network services."
     },
     documentation: [
       {
-        question: "What makes PAC Protocol special?",
-        answer: "PAC Protocol stands out due to its unique masternode system and strong community governance."
+        question: "What are the unique features of PAC staking?",
+        answer: "PAC staking combines traditional proof-of-stake rewards with an advanced masternode system. This dual approach provides multiple revenue streams for participants while ensuring network stability and security. The platform's unique features include instant transactions, cross-chain compatibility, and a community-driven governance system."
       },
       {
-        question: "How does the PAC Masternode system work?",
-        answer: "Masternodes require a higher stake and offer additional rewards for network services such as InstantSend and PrivateSend."
+        question: "How does PAC's masternode system enhance staking?",
+        answer: "PAC's masternode system works alongside regular staking to provide additional network services and rewards. Masternode operators earn higher rewards for providing services like InstantSend and PrivateSend, while also participating in network governance decisions. This creates a more robust and feature-rich ecosystem."
+      },
+      {
+        question: "What are the benefits of PAC Protocol staking?",
+        answer: "PAC Protocol staking offers several advantages: competitive 8.5% APY returns, potential masternode earnings, participation in network governance, and exposure to a growing cross-chain ecosystem. Stakers benefit from regular reward distributions and can participate in network development decisions."
+      },
+      {
+        question: "How does PAC ensure network security?",
+        answer: "PAC maintains network security through a combination of proof-of-stake consensus and masternode verification. The system uses deterministic masternode lists and requires significant collateral for masternode operation, ensuring network participants have a vested interest in maintaining security."
+      },
+      {
+        question: "What makes PAC Protocol's governance unique?",
+        answer: "PAC Protocol features a comprehensive governance system where both stakers and masternode operators can participate in decision-making. This includes voting on development proposals, protocol upgrades, and network parameters, ensuring a truly decentralized ecosystem."
       }
     ]
   },
