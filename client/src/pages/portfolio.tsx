@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PiCurrencyCircleDollarFill } from "react-icons/pi";
+import { GiTwoCoins } from "react-icons/gi";
+import { PiCurrencyCircleDollarFill } from "react-icons/pi"; // This line is kept because it's used elsewhere
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -124,7 +125,7 @@ export default function Portfolio() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium text-white">
                 <div className="flex items-center gap-2">
-                  <PiCurrencyCircleDollarFill className="w-6 h-6" />
+                  <GiTwoCoins className="w-6 h-6 text-purple-400" />
                   PIVX Staking
                 </div>
               </CardTitle>

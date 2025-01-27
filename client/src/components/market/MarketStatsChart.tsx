@@ -6,12 +6,14 @@ import { useMemo } from "react";
 import { getPIVXStats } from "@/lib/cryptocompare";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GiTwoCoins } from "react-icons/gi";
 
 export default function MarketStatsChart() {
   const { data: pivxStats, isLoading } = useQuery({
     queryKey: ['pivxStats'],
     queryFn: getPIVXStats,
     refetchInterval: 30000,
+    staleTime: 0
   });
 
   const stats = {
@@ -20,7 +22,7 @@ export default function MarketStatsChart() {
     volume24h: pivxStats?.volume24h ?? 0,
     highPrice24h: pivxStats?.highPrice24h ?? 0,
     lowPrice24h: pivxStats?.lowPrice24h ?? 0,
-    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 5.23, // Fallback price
+    weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 1.23, // Updated fallback price
   };
 
   const marketData = useMemo(() => {
@@ -61,7 +63,10 @@ export default function MarketStatsChart() {
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-white">PIVX Price Movement (24h)</CardTitle>
+            <div className="flex items-center gap-2">
+              <GiTwoCoins className="w-6 h-6 text-purple-400" />
+              <CardTitle className="text-white">PIVX Price Movement (24h)</CardTitle>
+            </div>
             <div className={`flex items-center ${stats.priceChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {stats.priceChangePercent24h >= 0 ? (
                 <TrendingUp className="w-4 h-4 mr-1" />

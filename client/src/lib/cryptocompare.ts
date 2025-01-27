@@ -18,25 +18,37 @@ const HistoricalDataSchema = z.object({
     high: z.number(),
     low: z.number(),
   })),
+  Response: z.string(),
 });
 
 export async function getPIVXPrice(): Promise<number> {
   try {
     const response = await fetch(
-      `${BASE_URL}/price?fsym=PIVX&tsyms=USD&api_key=${API_KEY}`
+      `${BASE_URL}/price?fsym=PIVX&tsyms=USD&api_key=${API_KEY}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
     );
 
     if (!response.ok) {
       console.error("CryptoCompare API error:", response.status);
-      return 5.23; // Fallback price for demo
+      throw new Error(`API returned ${response.status}`);
     }
 
     const data = await response.json();
-    const result = PriceSchema.parse(data);
-    return result.PIVX.USD;
+    const result = PriceSchema.safeParse(data);
+
+    if (!result.success) {
+      console.error("Data validation error:", result.error);
+      throw new Error("Invalid data format from API");
+    }
+
+    return result.data.PIVX.USD;
   } catch (error) {
     console.error("Failed to fetch PIVX price:", error);
-    return 5.23; // Fallback price for demo
+    return 1.23; // Updated fallback price to be more realistic
   }
 }
 
@@ -50,7 +62,12 @@ export async function getPIVXStats(): Promise<{
 }> {
   try {
     const response = await fetch(
-      `${BASE_URL}/v2/histohour?fsym=PIVX&tsym=USD&limit=24&api_key=${API_KEY}`
+      `${BASE_URL}/v2/histohour?fsym=PIVX&tsym=USD&limit=24&api_key=${API_KEY}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
     );
 
     if (!response.ok) {
@@ -58,8 +75,18 @@ export async function getPIVXStats(): Promise<{
     }
 
     const data = await response.json();
-    const histData = HistoricalDataSchema.parse(data);
-    const prices = histData.Data;
+    const result = HistoricalDataSchema.safeParse(data);
+
+    if (!result.success) {
+      console.error("Data validation error:", result.error);
+      throw new Error("Invalid data format from API");
+    }
+
+    const prices = result.data.Data;
+
+    if (prices.length === 0) {
+      throw new Error("No price data available");
+    }
 
     const lastPrice = prices[prices.length - 1].close;
     const firstPrice = prices[0].close;
@@ -72,23 +99,23 @@ export async function getPIVXStats(): Promise<{
     const weightedAvgPrice = prices.reduce((sum, price) => sum + price.close, 0) / prices.length;
 
     return {
-      priceChange24h: priceChange,
-      priceChangePercent24h: priceChangePercent,
-      volume24h,
-      highPrice24h,
-      lowPrice24h,
-      weightedAvgPrice,
+      priceChange24h: Number(priceChange.toFixed(4)),
+      priceChangePercent24h: Number(priceChangePercent.toFixed(2)),
+      volume24h: Number(volume24h.toFixed(2)),
+      highPrice24h: Number(highPrice24h.toFixed(4)),
+      lowPrice24h: Number(lowPrice24h.toFixed(4)),
+      weightedAvgPrice: Number(weightedAvgPrice.toFixed(4)),
     };
   } catch (error) {
     console.error("Failed to fetch PIVX stats:", error);
-    // Return demo data as fallback
+    // Return more realistic demo data
     return {
-      priceChange24h: 0.15,
-      priceChangePercent24h: 2.95,
-      volume24h: 1250000,
-      highPrice24h: 5.45,
-      lowPrice24h: 5.12,
-      weightedAvgPrice: 5.28,
+      priceChange24h: 0.05,
+      priceChangePercent24h: 2.15,
+      volume24h: 125000,
+      highPrice24h: 1.45,
+      lowPrice24h: 1.12,
+      weightedAvgPrice: 1.28,
     };
   }
 }
