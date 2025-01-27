@@ -27,8 +27,8 @@ async function handleRequest(
         return { ok: false, message: response.statusText };
       }
 
-      const message = await response.text();
-      return { ok: false, message };
+      const errorText = await response.text();
+      return { ok: false, message: errorText };
     }
 
     const data = await response.json();
@@ -47,12 +47,7 @@ async function fetchUser(): Promise<SelectUser | null> {
     if (response.status === 401) {
       return null;
     }
-
-    if (response.status >= 500) {
-      throw new Error(`${response.status}: ${response.statusText}`);
-    }
-
-    throw new Error(`${response.status}: ${await response.text()}`);
+    throw new Error(await response.text());
   }
 
   return response.json();
@@ -61,33 +56,32 @@ async function fetchUser(): Promise<SelectUser | null> {
 export function useUser() {
   const queryClient = useQueryClient();
 
-  const { data: user, error, isLoading } = useQuery<SelectUser | null, Error>({
+  const { data: user, error, isLoading } = useQuery<SelectUser | null>({
     queryKey: ['user'],
     queryFn: fetchUser,
     staleTime: Infinity,
-    retry: false,
-    refetchOnMount: true
+    retry: false
   });
 
-  const loginMutation = useMutation<RequestResult, Error, InsertUser>({
-    mutationFn: (userData) => handleRequest('/api/login', 'POST', userData),
-    onSuccess: async (data) => {
+  const loginMutation = useMutation({
+    mutationFn: (userData: InsertUser) => handleRequest('/api/login', 'POST', userData),
+    onSuccess: (data) => {
       if (data.ok && data.user) {
         queryClient.setQueryData(['user'], data.user);
       }
     },
   });
 
-  const logoutMutation = useMutation<RequestResult, Error>({
+  const logoutMutation = useMutation({
     mutationFn: () => handleRequest('/api/logout', 'POST'),
     onSuccess: () => {
       queryClient.setQueryData(['user'], null);
     },
   });
 
-  const registerMutation = useMutation<RequestResult, Error, InsertUser>({
-    mutationFn: (userData) => handleRequest('/api/register', 'POST', userData),
-    onSuccess: async (data) => {
+  const registerMutation = useMutation({
+    mutationFn: (userData: InsertUser) => handleRequest('/api/register', 'POST', userData),
+    onSuccess: (data) => {
       if (data.ok && data.user) {
         queryClient.setQueryData(['user'], data.user);
       }
