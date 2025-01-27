@@ -13,10 +13,16 @@ interface CoinCardProps {
 }
 
 export default function CoinCard({ name, symbol, apy, minStake, enabled = true, onClick }: CoinCardProps) {
+  const handleClick = () => {
+    if (enabled && onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Card 
       className={`bg-zinc-900/50 ${enabled ? 'hover:bg-zinc-900/80' : 'opacity-50'} border-zinc-800 transition-all duration-300 ${enabled ? 'cursor-pointer' : ''}`}
-      onClick={enabled ? onClick : undefined}
+      onClick={handleClick}
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">

@@ -14,7 +14,7 @@ import { queryClient } from "./lib/queryClient";
 import { useUser } from "@/hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
   const { user, isLoading } = useUser();
   const [, setLocation] = useLocation();
 
@@ -61,8 +61,8 @@ function Router() {
       <Route path="/app/portfolio">
         {() => <ProtectedRoute component={Portfolio} />}
       </Route>
-      <Route path="/app/coins">
-        {() => <ProtectedRoute component={CoinDetail} />}
+      <Route path="/app/coins/:symbol">
+        {(params) => <ProtectedRoute component={() => <CoinDetail symbol={params.symbol} />} />}
       </Route>
       <Route path="/app/analytics">
         {() => <ProtectedRoute component={Analytics} />}
