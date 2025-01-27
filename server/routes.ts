@@ -770,6 +770,109 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this to the registerRoutes function, before the httpServer creation
+  app.get('/api/analytics', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+
+      // Get user's total staked amount
+      const userStakes = await db.query.stakes.findMany({
+        where: (stakes, { and, eq }) => and(
+          eq(stakes.userId, req.user.id),
+          eq(stakes.status, 'active')
+        )
+      });
+
+      const totalStaked = userStakes.reduce((sum, stake) =>
+        sum + parseFloat(stake.amount.toString()), 0);
+
+      // Calculate rewards
+      const rewards = userStakes.length > 0
+        ? await calculateRewardsForTimestamp(
+          req.user.id,
+          totalStaked,
+          userStakes[0].createdAt.getTime(),
+          now
+        )
+        : 0;
+
+      // Generate mock historical data
+      const rewardsHistory = [];
+      for (let i = 30; i >= 0; i--) {
+        const timestamp = now - (i * dayMs);
+        const value = rewards * (1 + (Math.random() * 0.2 - 0.1)); // ±10% variation
+        rewardsHistory.push({ timestamp, value });
+      }
+
+      // Mock network stats
+      const networkStats = {
+        validatorEffectiveness: 95 + (Math.random() * 4), // 95-99%
+        networkHealth: 98 + (Math.random() * 2), // 98-100%
+        participationRate: 85 + (Math.random() * 10), // 85-95%
+      };
+
+      // Generate validator history
+      const validatorHistory = [];
+      for (let i = 30; i >= 0; i--) {
+        validatorHistory.push({
+          timestamp: now - (i * dayMs),
+          activeValidators: Math.round(1000 * (1 + (Math.random() * 0.2 - 0.1))), // ±10% around 1000
+          effectiveness: Math.round(95 + (Math.random() * 4)) // 95-99%
+        });
+      }
+
+      // Mock portfolio data
+      const pivxPrice = 1.5 + (Math.random() * 0.1); // $1.50 ±$0.05
+      const totalValue = totalStaked + rewards;
+      const initialInvestment = totalStaked;
+      const profitLoss = totalValue - initialInvestment;
+
+      // Generate price history
+      const priceHistory = [];
+      for (let i = 30; i >= 0; i--) {
+        priceHistory.push({
+          timestamp: now - (i * dayMs),
+          price: pivxPrice * (1 + (Math.random() * 0.2 - 0.1)) // ±10% variation
+        });
+      }
+
+      const analyticsData = {
+        performance: {
+          roi: ((profitLoss / initialInvestment) * 100) || 0,
+          apy: 10.00, // Fixed 10% APY
+          totalRewards: rewards,
+          rewardsHistory
+        },
+        network: {
+          ...networkStats,
+          validatorHistory
+        },
+        portfolio: {
+          totalValue,
+          profitLoss,
+          pivxPrice,
+          priceHistory,
+          stakingPositions: [{
+            coin: 'PIVX',
+            amount: totalStaked,
+            value: totalValue,
+            apy: 10.00
+          }]
+        }
+      };
+
+      res.json(analyticsData);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics data' });
+    }
+  });
+
   async function calculateRewardsForTimestamp(
     userId: number,
     stakedAmount: number,

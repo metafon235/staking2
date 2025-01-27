@@ -1,3 +1,4 @@
+import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -54,7 +55,7 @@ async function fetchAnalyticsData(): Promise<AnalyticsData> {
   return response.json();
 }
 
-export default function Analytics() {
+function AnalyticsContent() {
   const [timeRange, setTimeRange] = useState<'days' | 'weeks' | 'months'>('days');
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['/api/analytics'],
@@ -83,7 +84,7 @@ export default function Analytics() {
   const profitLossUSD = (analytics?.portfolio?.profitLoss ?? 0) * pivxPrice;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <h1 className="text-3xl font-bold text-white">Analytics Dashboard</h1>
 
       <Tabs defaultValue="performance" className="space-y-4">
@@ -317,7 +318,7 @@ export default function Analytics() {
                         {position.value.toFixed(2)} PIVX
                       </p>
                       <p className="text-sm text-green-500">
-                        10.00% APY
+                        {position.apy.toFixed(2)}% APY
                       </p>
                     </div>
                   </div>
@@ -328,5 +329,13 @@ export default function Analytics() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function Analytics() {
+  return (
+    <AppLayout>
+      <AnalyticsContent />
+    </AppLayout>
   );
 }
