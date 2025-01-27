@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { type IconType } from "react-icons";
 import { Button } from "@/components/ui/button";
 import { PiCurrencyCircleDollarFill } from "react-icons/pi";
+import { useLocation } from "wouter";
 
 interface CoinCardProps {
   name: string;
@@ -9,13 +10,14 @@ interface CoinCardProps {
   apy: number;
   minStake: string;
   enabled?: boolean;
-  onClick?: () => void;
 }
 
-export default function CoinCard({ name, symbol, apy, minStake, enabled = true, onClick }: CoinCardProps) {
+export default function CoinCard({ name, symbol, apy, minStake, enabled = true }: CoinCardProps) {
+  const [, navigate] = useLocation();
+
   const handleClick = () => {
-    if (enabled && onClick) {
-      onClick();
+    if (enabled) {
+      navigate(`/app/coins/${symbol.toLowerCase()}`);
     }
   };
 
