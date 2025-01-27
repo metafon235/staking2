@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useUser } from "@/hooks/use-user";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +12,8 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { stakePIVX } from "@/lib/web3";
 import { useParams, useLocation } from "wouter";
+import { PivxIcon } from "@/components/icons/PivxIcon";
+import { getPIVXPrice, getPIVXStats } from "@/lib/coingecko";
 
 function CoinDetailContent() {
   const [stakeAmount, setStakeAmount] = useState("");
@@ -20,7 +21,6 @@ function CoinDetailContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
-
 
   const { data: settings } = useQuery({
     queryKey: ['/api/settings'],
@@ -59,8 +59,20 @@ function CoinDetailContent() {
     }
   });
 
-  const coinData = COIN_DATA.pivx;
+  const { data: currentPrice } = useQuery({
+    queryKey: ['pivx-price'],
+    queryFn: getPIVXPrice,
+    refetchInterval: 60000, 
+  });
 
+  const { data: pivxStats } = useQuery({
+    queryKey: ['pivx-stats'],
+    queryFn: getPIVXStats,
+    refetchInterval: 60000,
+  });
+
+
+  const coinData = COIN_DATA.pivx;
 
   const monthlyReward = Number(stakeAmount || "0") * (coinData.apy / 12 / 100);
   const yearlyReward = Number(stakeAmount || "0") * (coinData.apy / 100);
@@ -98,8 +110,15 @@ function CoinDetailContent() {
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <PiCurrencyCircleDollarFill className="w-12 h-12 text-white" />
-          <h1 className="text-4xl font-bold text-white">{coinData.name} Staking</h1>
+          <PivxIcon className="w-12 h-12 text-purple-400" />
+          <div>
+            <h1 className="text-4xl font-bold text-white">{coinData.name} Staking</h1>
+            {currentPrice && (
+              <p className="text-lg text-zinc-400">
+                Current Price: ${currentPrice.toFixed(2)} USD
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -309,7 +328,7 @@ const COIN_DATA = {
     symbol: "PIVX",
     apy: 10.00,
     minStake: "100",
-    icon: PiCurrencyCircleDollarFill,
+    icon: PivxIcon,
     description: "PIVX staking enables you to earn passive income while supporting the network's security and decentralization.",
     enabled: true
   }

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GiTwoCoins } from "react-icons/gi";
 import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,8 @@ import TransactionHistory from "@/components/transaction/TransactionHistory";
 import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
 import { format } from "date-fns";
+import { PivxIcon } from "@/components/icons/PivxIcon";
+import { getPIVXPrice } from "@/lib/coingecko";
 
 interface PortfolioData {
   pivx: {
@@ -56,6 +57,12 @@ function PortfolioContent() {
     queryFn: fetchPortfolioData,
     refetchInterval: 60000,
     staleTime: 0
+  });
+
+  const { data: pivxPrice } = useQuery({
+    queryKey: ['pivx-price'],
+    queryFn: getPIVXPrice,
+    refetchInterval: 60000,
   });
 
   const handleWithdrawAll = async (coin: string) => {
@@ -127,8 +134,13 @@ function PortfolioContent() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium text-white">
                 <div className="flex items-center gap-2">
-                  <GiTwoCoins className="w-6 h-6 text-purple-400" />
+                  <PivxIcon className="w-6 h-6 text-purple-400" />
                   PIVX Staking
+                  {pivxPrice && (
+                    <span className="text-sm text-zinc-400">
+                      (${pivxPrice.toFixed(2)})
+                    </span>
+                  )}
                 </div>
               </CardTitle>
               <Badge variant="secondary" className="bg-green-500/10 text-green-500">

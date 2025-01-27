@@ -110,8 +110,7 @@ export async function getPIVXPrice(): Promise<number> {
     );
 
     if (!response.ok) {
-      console.error("CoinGecko API error:", response.status);
-      return 5.23; // Fallback price
+      throw new Error(`CoinGecko API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -119,13 +118,13 @@ export async function getPIVXPrice(): Promise<number> {
 
     if (!result.success) {
       console.error("Data validation error:", result.error);
-      return 5.23;
+      throw new Error("Invalid data format from API");
     }
 
     return result.data.pivx.usd;
   } catch (error) {
     console.error("Failed to fetch PIVX price:", error);
-    return 5.23;
+    throw error;
   }
 }
 
@@ -141,15 +140,13 @@ export async function getPIVXStats(): Promise<{
     const response = await fetch(`${BASE_URL}/coins/pivx`);
 
     if (!response.ok) {
-      console.error("CoinGecko API error:", response.status);
-      throw new Error(`API returned ${response.status}`);
+      throw new Error(`CoinGecko API error: ${response.status}`);
     }
 
     const data = await response.json();
     const result = CoinStatsSchema.safeParse(data);
 
     if (!result.success) {
-      console.error("Data validation error:", result.error);
       throw new Error("Invalid data format from API");
     }
 
@@ -164,15 +161,7 @@ export async function getPIVXStats(): Promise<{
     };
   } catch (error) {
     console.error("Failed to fetch PIVX stats:", error);
-    // Return realistic PIVX market data as fallback
-    return {
-      priceChange24h: 0.15,
-      priceChangePercent24h: 2.95,
-      volume24h: 125000,
-      highPrice24h: 5.45,
-      lowPrice24h: 5.12,
-      weightedAvgPrice: 5.28,
-    };
+    throw error;
   }
 }
 
