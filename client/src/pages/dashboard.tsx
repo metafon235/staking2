@@ -7,53 +7,88 @@ import NotificationBell from "@/components/layout/NotificationBell";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
 import StakingStats from "@/components/staking/StakingStats";
 import type { PortfolioResponse } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 function DashboardContent() {
-  const { data: portfolioData, isLoading } = useQuery<PortfolioResponse>({
+  const { toast } = useToast();
+
+  const { data: portfolioData, isLoading, error } = useQuery<PortfolioResponse>({
     queryKey: ['/api/portfolio'],
-    refetchInterval: 5000, // Refresh every 5 seconds
-    staleTime: 4000, // Consider data stale after 4 seconds
+    refetchInterval: 5000,
+    staleTime: 4000,
     retry: false,
     refetchOnWindowFocus: true,
-    placeholderData: (previousData) => previousData, // Keep previous data while refetching
+    placeholderData: (previousData) => previousData,
+    onError: (err) => {
+      console.error('Portfolio fetch error:', err);
+      toast({
+        title: "Error loading portfolio data",
+        description: "Please try refreshing the page",
+        variant: "destructive",
+      });
+    },
   });
+
+  console.log('Portfolio Data:', portfolioData); // Debug log
 
   // Generate historical data points for the chart
   const rewardsHistory = useMemo(() => {
     if (!portfolioData?.pivx?.staked) {
+      console.log('No staking data available');
       return [];
     }
 
     const points = [];
     const now = Date.now();
     const startTime = now - (60 * 60 * 1000); // Last hour
-    const stakedTime = now - (24 * 60 * 60 * 1000); // Assume staked 24h ago if no timestamp
+    const stakedTime = now - (24 * 60 * 60 * 1000); // Assume staked 24h ago
 
     // Generate a point every 15 seconds for smoother visualization
     for (let time = startTime; time <= now; time += 15 * 1000) {
-      const elapsedTime = (time - stakedTime) / 1000; // Convert to seconds
+      const elapsedTime = (time - stakedTime) / 1000;
       if (elapsedTime <= 0) continue;
 
-      // Calculate rewards based on APY from the API
       const yearsElapsed = elapsedTime / (365 * 24 * 60 * 60);
-      const apy = portfolioData?.pivx?.apy ?? 10; // Use API APY or fallback to 10%
+      const apy = portfolioData.pivx.apy;
       const reward = portfolioData.pivx.staked * ((apy / 100) * yearsElapsed);
 
       points.push({
         timestamp: time,
-        rewards: reward
+        rewards: reward,
       });
     }
 
+    console.log('Generated reward points:', points); // Debug log
     return points;
   }, [portfolioData?.pivx?.staked, portfolioData?.pivx?.apy]);
 
-  // Memoize the derived data to prevent unnecessary re-renders
-  const data = useMemo(() => ({
-    totalStaked: portfolioData?.pivx?.staked ?? 0,
-    rewards: portfolioData?.pivx?.rewards ?? 0,
-    monthlyRewards: (portfolioData?.pivx?.staked ?? 0) * ((portfolioData?.pivx?.apy ?? 10) / 100) / 12, // Calculate monthly rewards based on API APY
-  }), [portfolioData?.pivx?.staked, portfolioData?.pivx?.rewards, portfolioData?.pivx?.apy]);
+  // Memoize the derived data
+  const data = useMemo(() => {
+    const totalStaked = portfolioData?.pivx?.staked ?? 0;
+    const rewards = portfolioData?.pivx?.rewards ?? 0;
+    const apy = portfolioData?.pivx?.apy ?? 10;
+    const monthlyRewards = totalStaked * (apy / 100) / 12;
+
+    console.log('Calculated data:', { totalStaked, rewards, monthlyRewards }); // Debug log
+
+    return {
+      totalStaked,
+      rewards,
+      monthlyRewards,
+    };
+  }, [portfolioData?.pivx?.staked, portfolioData?.pivx?.rewards, portfolioData?.pivx?.apy]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-red-500">
+            Failed to load portfolio data. Please refresh the page.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black p-6">
