@@ -8,7 +8,7 @@ import { useUser } from "@/hooks/use-user";
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/app" },
   { icon: Wallet, label: "Portfolio", href: "/app/portfolio" },
-  { icon: Coins, label: "Coins", href: "/app/coins/eth" },
+  { icon: Coins, label: "PIVX Staking", href: "/app/coins/pivx" },
   { icon: LineChart, label: "Analytics", href: "/app/analytics" },
   { icon: Settings, label: "Settings", href: "/app/settings" },
 ];

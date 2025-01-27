@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { SiEthereum, SiPolkadot, SiSolana } from "react-icons/si";
 import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useUser } from "@/hooks/use-user";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -98,7 +97,6 @@ export default function CoinDetail() {
     );
   }
 
-  const Icon = coinData.icon;
   const monthlyReward = parseFloat(stakeAmount || "0") * (coinData.apy / 12 / 100);
   const yearlyReward = parseFloat(stakeAmount || "0") * (coinData.apy / 100);
   const hasWallet = settings?.walletAddress && settings.walletAddress.length > 0;
@@ -135,7 +133,7 @@ export default function CoinDetail() {
     <div className="min-h-screen bg-black p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <Icon className="w-12 h-12 text-white" />
+          <PiCurrencyCircleDollarFill className="w-12 h-12 text-white" />
           <h1 className="text-4xl font-bold text-white">{coinData.name} Staking</h1>
         </div>
 
@@ -200,13 +198,13 @@ export default function CoinDetail() {
                   <div>
                     <p className="text-sm text-zinc-400">Monthly Rewards</p>
                     <p className="text-2xl font-bold text-white">
-                      {monthlyReward.toFixed(6)} {coinData.symbol}
+                      {monthlyReward.toFixed(2)} {coinData.symbol}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Yearly Rewards</p>
                     <p className="text-2xl font-bold text-white">
-                      {yearlyReward.toFixed(6)} {coinData.symbol}
+                      {yearlyReward.toFixed(2)} {coinData.symbol}
                     </p>
                   </div>
                 </div>
@@ -277,8 +275,8 @@ export default function CoinDetail() {
                       <p className="text-xs text-zinc-400">Network Rewards</p>
                       <p className="text-lg font-semibold text-white">
                         {networkStats.current.rewards.toLocaleString(undefined, {
-                          minimumFractionDigits: 8,
-                          maximumFractionDigits: 8
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
                         })} {coinData.symbol}
                       </p>
                     </div>
@@ -307,6 +305,7 @@ export default function CoinDetail() {
   );
 }
 
+// Update coin data to only show PIVX
 const COIN_DATA = {
   pivx: {
     name: "PIVX",
@@ -316,23 +315,5 @@ const COIN_DATA = {
     icon: PiCurrencyCircleDollarFill,
     description: "PIVX staking enables you to earn passive income while supporting the network's security and decentralization.",
     enabled: true
-  },
-  dot: {
-    name: "Polkadot",
-    symbol: "DOT",
-    apy: 10.00,
-    minStake: "5.00",
-    icon: SiPolkadot,
-    description: "Stake DOT to secure the network and earn rewards through Polkadot's nominated proof-of-stake system.",
-    enabled: false
-  },
-  sol: {
-    name: "Solana",
-    symbol: "SOL",
-    apy: 10.00,
-    minStake: "1.00",
-    icon: SiSolana,
-    description: "Participate in Solana's proof-of-stake consensus mechanism to earn staking rewards.",
-    enabled: false
   }
 };

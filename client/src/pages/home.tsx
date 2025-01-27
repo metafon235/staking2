@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CoinCard from "@/components/coins/CoinCard";
-import { SiPolkadot, SiSolana } from "react-icons/si";
+import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { RewardsCalculator } from "@/components/staking/RewardsCalculator";
@@ -43,34 +43,16 @@ export default function Home() {
           )}
         </div>
 
-        {/* Coin Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Only show PIVX Card */}
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6 max-w-md mx-auto">
           <CoinCard
             name="PIVX"
             symbol="PIVX"
             apy={10.00}
             minStake="100"
-            icon={SiPolkadot}
+            icon={PiCurrencyCircleDollarFill}
             enabled={true}
             onClick={() => navigate("/coins/pivx")}
-          />
-          <CoinCard
-            name="Polkadot"
-            symbol="DOT"
-            apy={10.00}
-            minStake="5.00"
-            icon={SiPolkadot}
-            enabled={false}
-            onClick={() => navigate("/coins/dot")}
-          />
-          <CoinCard
-            name="Solana"
-            symbol="SOL"
-            apy={10.00}
-            minStake="1.00"
-            icon={SiSolana}
-            enabled={false}
-            onClick={() => navigate("/coins/sol")}
           />
         </div>
 
@@ -109,7 +91,7 @@ export default function Home() {
                 Ready to Start Earning?
               </h2>
               <p className="text-lg text-zinc-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of investors already earning passive income through our staking platform.
+                Join thousands of investors already earning passive income through PIVX staking.
               </p>
               <Button 
                 className="bg-white hover:bg-zinc-100 text-purple-600 px-8 py-6 text-lg"
