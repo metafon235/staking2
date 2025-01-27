@@ -78,7 +78,7 @@ export default function Home() {
               <Coins className="w-12 h-12 text-purple-400 mb-4" />
               <h3 className="text-xl font-semibold text-white mb-3">Low Minimum Investment</h3>
               <p className="text-zinc-400">
-                Start earning rewards with minimal investment. No expensive collateral needed.
+                Start earning rewards with minimal investment and no expensive collateral.
               </p>
             </div>
           </Card>
