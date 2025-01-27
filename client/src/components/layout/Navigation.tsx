@@ -1,5 +1,5 @@
 import { Home, LineChart, Settings, Menu, LogOut, Wallet } from "lucide-react";
-import { GiTwoCoins } from "react-icons/gi";
+import { PivxIcon } from "@/components/icons/PivxIcon";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -9,7 +9,7 @@ import { useUser } from "@/hooks/use-user";
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/app" },
   { icon: Wallet, label: "Portfolio", href: "/app/portfolio" },
-  { icon: GiTwoCoins, label: "PIVX Staking", href: "/app/coins/pivx", iconClass: "text-purple-500" },
+  { icon: PivxIcon, label: "PIVX Staking", href: "/app/coins/pivx", iconClass: "text-purple-500" },
   { icon: LineChart, label: "Analytics", href: "/app/analytics" },
   { icon: Settings, label: "Settings", href: "/app/settings" },
 ];
