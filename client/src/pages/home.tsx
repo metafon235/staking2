@@ -55,7 +55,6 @@ export default function Home() {
               apy={coin.apy}
               minStake={coin.minStake}
               enabled={coin.enabled}
-              icon={coin.icon}
               onClick={() => navigate(`/coins/${key}`)}
             />
           ))}

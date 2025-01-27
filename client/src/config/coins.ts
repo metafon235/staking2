@@ -1,12 +1,5 @@
-import { type IconType } from "react-icons";
-import { FaCoins } from "react-icons/fa";
-import {
-  PivxIcon,
-  CrownIcon,
-  FiroIcon,
-  GnoIcon,
-  DfiIcon
-} from "@/components/icons/CoinIcons";
+import { PivxIcon } from "@/components/icons/PivxIcon";
+import type { IconType } from "react-icons";
 
 export interface CoinConfig {
   name: string;
@@ -91,7 +84,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "PAC",
     apy: 25.00,
     minStake: "1000",
-    icon: FaCoins,
+    icon: PivxIcon,
     description: "PAC Protocol staking introduces a revolutionary approach to cryptocurrency yield generation through its advanced masternode and staking system. Built on a foundation of community-driven development and sustainable tokenomics, PAC staking offers investors a reliable way to earn passive income while contributing to a robust, decentralized network infrastructure. The platform combines traditional staking benefits with innovative features designed for long-term value creation.",
     enabled: false,
     technicalDetails: {
@@ -142,7 +135,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "WGR",
     apy: 134.00,
     minStake: "250",
-    icon: FaCoins,
+    icon: PivxIcon,
     description: "Wagerr enables decentralized sports betting and staking with attractive returns.",
     enabled: false,
     technicalDetails: {
@@ -177,7 +170,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "CRW",
     apy: 211.00,
     minStake: "500",
-    icon: CrownIcon,
+    icon: PivxIcon,
     description: "Crown offers an innovative blockchain infrastructure with a sustainable staking model.",
     enabled: false,
     technicalDetails: {
@@ -212,7 +205,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "NRG",
     apy: 15.00,
     minStake: "100",
-    icon: FaCoins,
+    icon: PivxIcon,
     description: "Energi combines smart contracts with Proof of Stake for maximum scalability.",
     enabled: false,
     technicalDetails: {
@@ -247,7 +240,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "DFI",
     apy: 5.00,
     minStake: "200",
-    icon: DfiIcon,
+    icon: PivxIcon,
     description: "DeFiChain is the blockchain for decentralized finance applications.",
     enabled: false,
     technicalDetails: {
@@ -282,7 +275,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "FIRO",
     apy: 13.00,
     minStake: "100",
-    icon: FiroIcon,
+    icon: PivxIcon,
     description: "Firo (formerly Zcoin) is a leader in blockchain privacy technology.",
     enabled: false,
     technicalDetails: {
@@ -317,7 +310,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "GNO",
     apy: 4.00,
     minStake: "1",
-    icon: GnoIcon,
+    icon: PivxIcon,
     description: "Gnosis Chain is an Ethereum-compatible blockchain with fast, cheap transactions.",
     enabled: false,
     technicalDetails: {
