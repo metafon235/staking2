@@ -1,32 +1,29 @@
 import { IconType } from "react-icons";
-import { SVGProps } from 'react';
+import { SiBitcoinsv } from "react-icons/si"; // Für PIVX (ähnliches Styling)
+import { BsCurrencyExchange, BsCurrencyBitcoin } from "react-icons/bs";
+import { FaCoins } from "react-icons/fa";
 
-// Importiere die Icons direkt aus dem node_modules Verzeichnis
-const PIVX_ICON_PATH = "/node_modules/cryptocurrency-icons/svg/color/pivx.svg";
-const CRW_ICON_PATH = "/node_modules/cryptocurrency-icons/svg/color/crw.svg";
-const FIRO_ICON_PATH = "/node_modules/cryptocurrency-icons/svg/color/firo.svg";
-const GNO_ICON_PATH = "/node_modules/cryptocurrency-icons/svg/color/gno.svg";
-const DFI_ICON_PATH = "/node_modules/cryptocurrency-icons/svg/color/dfi.svg";
+// Erstelle eine Komponente für jedes Icon mit konsistenter Größe und Styling
+const createStyledIcon = (Icon: IconType): IconType => {
+  const StyledIcon = (props: { size?: number }) => {
+    const size = props.size || 24;
+    return (
+      <Icon
+        size={size}
+        style={{
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          color: 'currentColor'
+        }}
+      />
+    );
+  };
+  return StyledIcon as IconType;
+};
 
-function createIconComponent(iconPath: string): IconType {
-  const IconComponent = (props: SVGProps<SVGSVGElement>) => (
-    <img 
-      src={iconPath} 
-      alt="coin icon" 
-      width={props.width || "24"} 
-      height={props.height || "24"}
-      style={{ 
-        display: 'inline-block',
-        verticalAlign: 'middle',
-        ...props.style
-      }}
-    />
-  );
-  return IconComponent as IconType;
-}
-
-export const PivxIcon = createIconComponent(PIVX_ICON_PATH);
-export const CrownIcon = createIconComponent(CRW_ICON_PATH);
-export const FiroIcon = createIconComponent(FIRO_ICON_PATH);
-export const GnoIcon = createIconComponent(GNO_ICON_PATH);
-export const DfiIcon = createIconComponent(DFI_ICON_PATH);
+// Exportiere die Icons mit den besten verfügbaren Varianten
+export const PivxIcon = createStyledIcon(SiBitcoinsv);          // Ähnliches Styling wie PIVX
+export const CrownIcon = createStyledIcon(BsCurrencyExchange);  // Währungssymbol für Crown
+export const FiroIcon = createStyledIcon(BsCurrencyBitcoin);    // Bitcoin-Style für Firo
+export const GnoIcon = createStyledIcon(BsCurrencyExchange);    // Währungssymbol für Gnosis
+export const DfiIcon = createStyledIcon(FaCoins);              // Coin-Symbol für DeFiChain
