@@ -1,5 +1,15 @@
 import { PivxIcon } from "@/components/icons/PivxIcon";
 import type { IconType } from "react-icons";
+import { 
+  SiBitcoin,
+  SiLitecoin,
+  SiDogecoin,
+  SiEthereum,
+  SiBinance
+} from "react-icons/si";
+import {
+  FaCoins
+} from "react-icons/fa";
 
 export interface CoinConfig {
   name: string;
@@ -33,7 +43,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "PIVX",
     apy: 10.00,
     minStake: "100",
-    icon: PivxIcon,
+    icon: PivxIcon, 
     description: "PIVX Staking represents a cutting-edge Proof of Stake (PoS) blockchain investment opportunity. As a leading privacy-focused cryptocurrency, PIVX combines sophisticated staking mechanisms with advanced privacy features, allowing investors to earn consistent passive income while supporting network security. With its energy-efficient consensus mechanism and robust governance system, PIVX staking offers an environmentally conscious and democratized approach to cryptocurrency earnings.",
     enabled: true,
     technicalDetails: {
@@ -84,7 +94,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "PAC",
     apy: 25.00,
     minStake: "1000",
-    icon: PivxIcon,
+    icon: FaCoins,
     description: "PAC Protocol staking introduces a revolutionary approach to cryptocurrency yield generation through its advanced masternode and staking system. Built on a foundation of community-driven development and sustainable tokenomics, PAC staking offers investors a reliable way to earn passive income while contributing to a robust, decentralized network infrastructure. The platform combines traditional staking benefits with innovative features designed for long-term value creation.",
     enabled: false,
     technicalDetails: {
@@ -170,7 +180,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "CRW",
     apy: 211.00,
     minStake: "500",
-    icon: PivxIcon,
+    icon: SiBitcoin,
     description: "Crown offers an innovative blockchain infrastructure with a sustainable staking model.",
     enabled: false,
     technicalDetails: {
@@ -240,7 +250,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "DFI",
     apy: 5.00,
     minStake: "200",
-    icon: PivxIcon,
+    icon: SiBinance,
     description: "DeFiChain is the blockchain for decentralized finance applications.",
     enabled: false,
     technicalDetails: {
@@ -275,7 +285,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "FIRO",
     apy: 13.00,
     minStake: "100",
-    icon: PivxIcon,
+    icon: SiLitecoin,
     description: "Firo (formerly Zcoin) is a leader in blockchain privacy technology.",
     enabled: false,
     technicalDetails: {
@@ -310,7 +320,7 @@ export const COIN_DATA: Record<string, CoinConfig> = {
     symbol: "GNO",
     apy: 4.00,
     minStake: "1",
-    icon: PivxIcon,
+    icon: SiEthereum,
     description: "Gnosis Chain is an Ethereum-compatible blockchain with fast, cheap transactions.",
     enabled: false,
     technicalDetails: {
