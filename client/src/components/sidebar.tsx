@@ -3,8 +3,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
-  Wallet,
-  Trophy,
   Settings,
   LogOut,
   Coins,
@@ -21,8 +19,6 @@ export function Sidebar() {
     { href: "/app", label: "Dashboard", icon: LayoutDashboard },
     { href: "/app/portfolio", label: "Portfolio", icon: Briefcase },
     { href: "/app/coins", label: "Coins", icon: Coins },
-    { href: "/app/staking", label: "Staking", icon: Wallet },
-    { href: "/app/rewards", label: "Rewards", icon: Trophy },
     { href: "/app/analytics", label: "Analytics", icon: BarChart2 },
     { href: "/app/settings", label: "Settings", icon: Settings },
   ];

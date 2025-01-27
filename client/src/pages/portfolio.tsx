@@ -1,9 +1,11 @@
+import { memo } from "react";
+import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GiTwoCoins } from "react-icons/gi";
-import { PiCurrencyCircleDollarFill } from "react-icons/pi"; // This line is kept because it's used elsewhere
+import { PiCurrencyCircleDollarFill } from "react-icons/pi";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -44,7 +46,7 @@ async function withdrawAll(coin: string) {
   return response.json();
 }
 
-export default function Portfolio() {
+function PortfolioContent() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const { toast } = useToast();
   const portfolioRef = useRef<HTMLDivElement>(null);
@@ -82,7 +84,7 @@ export default function Portfolio() {
   const totalValue = totalStaked + totalRewards;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
         <div className="flex items-center gap-4">
@@ -237,3 +239,13 @@ export default function Portfolio() {
     </div>
   );
 }
+
+function Portfolio() {
+  return (
+    <AppLayout>
+      <PortfolioContent />
+    </AppLayout>
+  );
+}
+
+export default memo(Portfolio);
