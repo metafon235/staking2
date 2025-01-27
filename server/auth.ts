@@ -6,6 +6,30 @@ import createMemoryStore from "memorystore";
 import { users, insertUserSchema, type SelectUser } from "@db/schema";
 import { db } from "@db";
 import { eq } from "drizzle-orm";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+const crypto = {
+  hash: async (password: string) => {
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${buf.toString("hex")}.${salt}`;
+  },
+  compare: async (suppliedPassword: string, storedPassword: string) => {
+    const [hashedPassword, salt] = storedPassword.split(".");
+    if (!hashedPassword || !salt) return false;
+
+    const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+    const suppliedPasswordBuf = (await scryptAsync(
+      suppliedPassword,
+      salt,
+      64
+    )) as Buffer;
+    return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+  },
+};
 
 // extend express user object with our schema
 declare global {
@@ -55,14 +79,14 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Incorrect username." });
         }
 
-        // Simple password comparison for development
-        if (password === user.password) {
-          console.log('Login successful');
-          return done(null, user);
+        const isValidPassword = await crypto.compare(password, user.password);
+        if (!isValidPassword) {
+          console.log('Password validation failed');
+          return done(null, false, { message: "Incorrect password." });
         }
 
-        console.log('Password mismatch');
-        return done(null, false, { message: "Incorrect password." });
+        console.log('Login successful');
+        return done(null, user);
       } catch (err) {
         console.error('Login error:', err);
         return done(err);
@@ -114,17 +138,19 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      // Create new user with plain password for development
+      // Hash the password
+      const hashedPassword = await crypto.hash(password);
+
+      // Create new user
       const [newUser] = await db
         .insert(users)
         .values({
           username,
-          password, // Store plain password for development
+          password: hashedPassword,
           isAdmin: false
         })
         .returning();
 
-      // Log the user in after registration
       req.login(newUser, (err) => {
         if (err) {
           return next(err);
