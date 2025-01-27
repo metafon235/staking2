@@ -13,7 +13,7 @@ import SharePortfolioDialog from "@/components/portfolio/SharePortfolioDialog";
 import AutoCompoundingDialog from "@/components/portfolio/AutoCompoundingDialog";
 import { format } from "date-fns";
 import { PivxIcon } from "@/components/icons/PivxIcon";
-import { getPIVXPrice } from "@/lib/binance";  // Changed from coinmarketcap to cryptocompare
+import { getPIVXPrice } from "@/lib/binance";
 
 interface PortfolioData {
   pivx: {
@@ -51,6 +51,7 @@ function PortfolioContent() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const { toast } = useToast();
   const portfolioRef = useRef<HTMLDivElement>(null);
+  const [priceError, setPriceError] = useState(false);
 
   const { data: portfolio, isLoading, refetch } = useQuery({
     queryKey: ['/api/portfolio'],
@@ -59,10 +60,21 @@ function PortfolioContent() {
     staleTime: 0
   });
 
-  const { data: pivxPrice } = useQuery({
+  const { data: pivxPrice, isError: isPriceError } = useQuery({
     queryKey: ['pivx-price'],
-    queryFn: getPIVXPrice,
+    queryFn: async () => {
+      try {
+        const price = await getPIVXPrice();
+        setPriceError(false);
+        return price;
+      } catch (error) {
+        console.error("Failed to fetch PIVX price:", error);
+        setPriceError(true);
+        return null;
+      }
+    },
     refetchInterval: 60000,
+    retry: 3,
   });
 
   const handleWithdrawAll = async (coin: string) => {
@@ -85,7 +97,6 @@ function PortfolioContent() {
     }
   };
 
-  // Calculate totals
   const totalStaked = portfolio?.pivx?.staked || 0;
   const totalRewards = portfolio?.pivx?.rewards || 0;
   const totalValue = totalStaked + totalRewards;
@@ -136,9 +147,17 @@ function PortfolioContent() {
                 <div className="flex items-center gap-2">
                   <PivxIcon className="w-6 h-6 text-purple-400" />
                   PIVX Staking
-                  {pivxPrice && (
+                  {isPriceError ? (
+                    <span className="text-sm text-red-400">
+                      (Price unavailable)
+                    </span>
+                  ) : pivxPrice ? (
                     <span className="text-sm text-zinc-400">
                       (${pivxPrice.toFixed(4)})
+                    </span>
+                  ) : (
+                    <span className="text-sm text-zinc-400">
+                      (Loading...)
                     </span>
                   )}
                 </div>

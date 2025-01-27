@@ -2,7 +2,9 @@ import { z } from "zod";
 
 const BASE_URL = "https://api.binance.com/api/v3";
 
+// Update schema to match Binance API response format
 const PriceSchema = z.object({
+  symbol: z.string(),
   price: z.string(),
 });
 
@@ -23,15 +25,19 @@ const TickerStatsSchema = z.object({
 
 export async function getPIVXPrice(): Promise<number> {
   try {
+    // PIVX/USDT pair is more commonly available than PIVX/EUR
     const response = await fetch(
-      `${BASE_URL}/ticker/price?symbol=PIVXEUR`
+      `${BASE_URL}/ticker/price?symbol=PIVXUSDT`
     );
 
     if (!response.ok) {
-      throw new Error(`Binance API error: ${response.status}`);
+      console.error(`Binance API error: ${response.status}`);
+      throw new Error(`API returned ${response.status}`);
     }
 
     const data = await response.json();
+    console.log("Binance API response:", data); // Debug log
+
     const result = PriceSchema.safeParse(data);
 
     if (!result.success) {
@@ -42,8 +48,7 @@ export async function getPIVXPrice(): Promise<number> {
     return parseFloat(result.data.price);
   } catch (error) {
     console.error("Failed to fetch PIVX price:", error);
-    // Fallback to latest known PIVX price if API fails
-    return 5.23;
+    throw error; // Let the component handle the error
   }
 }
 
