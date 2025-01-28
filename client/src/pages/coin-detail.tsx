@@ -100,14 +100,6 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                   </Button>
                 </CardContent>
               </Card>
-
-              {/* Documentation */}
-              <CoinDocumentation
-                symbol={coinData.symbol}
-                technicalDetails={coinData.technicalDetails}
-                stakingDetails={coinData.stakingDetails}
-                documentation={coinData.documentation}
-              />
             </div>
 
             {/* Right Column */}
@@ -176,6 +168,14 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                   symbol={coinData.symbol}
                 />
               )}
+
+              {/* Documentation */}
+              <CoinDocumentation
+                symbol={coinData.symbol}
+                technicalDetails={coinData.technicalDetails}
+                stakingDetails={coinData.stakingDetails}
+                documentation={coinData.documentation}
+              />
             </div>
           </div>
         </div>
