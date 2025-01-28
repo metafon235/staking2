@@ -30,7 +30,6 @@ export default function Navigation() {
     }
   };
 
-  // Helper function to check if a menu item is active
   const isMenuItemActive = (href: string) => {
     if (href === "/app") {
       return location === "/app";
@@ -42,7 +41,7 @@ export default function Navigation() {
     <>
       {/* Desktop Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 z-40 h-screen transition-all duration-300 hidden lg:block",
+        "fixed left-0 top-0 z-50 h-screen transition-all duration-300 hidden lg:block",
         isCollapsed ? "w-16" : "w-64"
       )}>
         <div className="flex h-full flex-col border-r border-zinc-800 bg-zinc-900">
@@ -97,9 +96,9 @@ export default function Navigation() {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 z-40 h-16 w-full border-t border-zinc-800 bg-zinc-900 lg:hidden">
+      <nav className="fixed bottom-0 left-0 z-50 h-16 w-full border-t border-zinc-800 bg-zinc-900 lg:hidden">
         <div className="grid h-full grid-cols-5">
-          {menuItems.map((item, index) => {
+          {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = isMenuItemActive(item.href);
 

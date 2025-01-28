@@ -8,8 +8,10 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex">
-      <Sidebar />
-      <main className="flex-1 bg-black min-h-screen">
+      <div className="fixed top-0 left-0 h-screen">
+        <Sidebar />
+      </div>
+      <main className="flex-1 ml-64 bg-black min-h-screen">
         {children}
       </main>
     </div>
