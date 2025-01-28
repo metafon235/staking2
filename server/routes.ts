@@ -838,7 +838,7 @@ export function registerRoutes(app: Express): Server {
       });
 
       const roi = initialInvestment > 0
-        ? parseFloat((currentRewardsFloat / initialInvestment * 100).toFixed(8))
+        ? (currentRewardsFloat / initialInvestment) * 100
         : 0;
 
       console.log('Calculated ROI:', roi);
@@ -864,9 +864,9 @@ export function registerRoutes(app: Express): Server {
 
       const analyticsData = {
         performance: {
-          roi: parseFloat(roi.toFixed(2)),
+          roi: roi,
           apy: 10.00, // Fixed 10% APY for PIVX
-          totalRewards: parseFloat(rewards.toFixed(9)),
+          totalRewards: currentRewardsFloat,
           rewardsHistory
         },
         network: {
