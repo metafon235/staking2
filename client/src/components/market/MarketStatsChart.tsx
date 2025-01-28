@@ -7,7 +7,6 @@ import { getPIVXStats as getPIVXStatsCC } from "@/lib/cryptocompare";
 import { getPIVXStats as getPIVXStatsBinance } from "@/lib/binance";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PivxIcon } from "@/components/icons/PivxIcon";
 
 export default function MarketStatsChart() {
   const { data: pivxStats, isLoading } = useQuery({
@@ -86,10 +85,7 @@ export default function MarketStatsChart() {
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <PivxIcon className="w-6 h-6 text-purple-400" />
-              <CardTitle className="text-white">PIVX Price Movement (24h)</CardTitle>
-            </div>
+            <CardTitle className="text-white">PIVX Price Movement (24h)</CardTitle>
             <div className={`flex items-center ${stats.priceChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {stats.priceChangePercent24h >= 0 ? (
                 <TrendingUp className="w-4 h-4 mr-1" />
