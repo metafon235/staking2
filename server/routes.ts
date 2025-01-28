@@ -829,8 +829,8 @@ export function registerRoutes(app: Express): Server {
 
       // Calculate ROI
       const initialInvestment = totalStaked;
-      const currentValue = totalStaked + rewards;
-      const roi = initialInvestment > 0 
+      const currentValue = totalStaked + rewards; // Add rewards to current value
+      const roi = initialInvestment > 0
         ? ((currentValue - initialInvestment) / initialInvestment) * 100
         : 0;
 
@@ -955,7 +955,7 @@ export function registerRoutes(app: Express): Server {
           const formattedReward = parseFloat(reward.toFixed(9));
 
           if (formattedReward >= 0.000000001) { // Minimum reward threshold
-            await db.insert(transactions).values({
+                        await db.insert(transactions).values({
               userId: stake.userId,
               type: 'reward',
               amount: formattedReward.toString(),
