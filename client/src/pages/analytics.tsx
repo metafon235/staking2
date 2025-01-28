@@ -69,22 +69,19 @@ function AnalyticsContent() {
     queryKey: ['pivx-price'],
     queryFn: async () => {
       try {
-        // Try CryptoCompare first
         return await getPIVXPriceCC();
       } catch (error) {
         console.error("CryptoCompare failed:", error);
         try {
-          // Try Binance as fallback
           return await getPIVXPriceBinance();
         } catch (binanceError) {
           console.error("Binance fallback failed:", binanceError);
-          // Return fallback value if both APIs fail
           return 5.23; // Current PIVX price as fallback
         }
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 0, // Consider data immediately stale
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
   if (isLoadingAnalytics || isPivxPriceLoading) {
@@ -147,7 +144,7 @@ function AnalyticsContent() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-blue-500">
-                  {analytics.performance.totalRewards.toFixed(2)} PIVX
+                  {analytics.performance.totalRewards.toFixed(9)} PIVX
                 </p>
               </CardContent>
             </Card>
@@ -199,8 +196,14 @@ function AnalyticsContent() {
                   }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                     <XAxis dataKey="date" stroke="#888" />
-                    <YAxis stroke="#888" />
-                    <Tooltip />
+                    <YAxis 
+                      stroke="#888"
+                      tickFormatter={(value) => value.toFixed(9)}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`${value.toFixed(9)} PIVX`, 'Rewards']}
+                      labelFormatter={(value) => format(new Date(value), 'PPP')}
+                    />
                     <Line type="monotone" dataKey="rewards" stroke="#8884d8" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -277,7 +280,7 @@ function AnalyticsContent() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics?.portfolio?.totalValue?.toFixed(2) || '0.00'} PIVX
+                  {analytics?.portfolio?.totalValue?.toFixed(6) || '0.000000'} PIVX
                 </p>
                 <p className="text-lg text-zinc-400">
                   ${totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -294,7 +297,7 @@ function AnalyticsContent() {
                   (analytics?.portfolio?.profitLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
                   {(analytics?.portfolio?.profitLoss || 0) >= 0 ? '+' : ''}
-                  {analytics?.portfolio?.profitLoss?.toFixed(2) || '0.00'} PIVX
+                  {analytics?.portfolio?.profitLoss?.toFixed(6) || '0.000000'} PIVX
                 </p>
                 <p className={`text-lg ${
                   profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
@@ -333,12 +336,12 @@ function AnalyticsContent() {
                     <div>
                       <p className="text-white font-medium">{position.coin}</p>
                       <p className="text-sm text-zinc-400">
-                        {position.amount.toFixed(2)} {position.coin}
+                        {position.amount.toFixed(6)} {position.coin}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-white font-medium">
-                        {position.value.toFixed(2)} PIVX
+                        {position.value.toFixed(6)} PIVX
                       </p>
                       <p className="text-sm text-green-500">
                         {position.apy.toFixed(2)}% APY
