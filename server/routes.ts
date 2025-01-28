@@ -827,11 +827,10 @@ export function registerRoutes(app: Express): Server {
         )
         : 0;
 
-      // Calculate ROI
+      // Calculate ROI directly from rewards
       const initialInvestment = totalStaked;
-      const currentValue = totalStaked + rewards; // Add rewards to current value
       const roi = initialInvestment > 0
-        ? ((currentValue - initialInvestment) / initialInvestment) * 100
+        ? (rewards / initialInvestment) * 100
         : 0;
 
       // Mock network stats (keep these as they're not part of user rewards)
@@ -865,13 +864,13 @@ export function registerRoutes(app: Express): Server {
           validatorHistory
         },
         portfolio: {
-          totalValue: parseFloat(currentValue.toFixed(6)),
-          profitLoss: parseFloat((currentValue - initialInvestment).toFixed(6)),
+          totalValue: parseFloat(totalStaked + rewards).toFixed(6),
+          profitLoss: parseFloat(rewards.toFixed(6)),
           pivxPrice,
           stakingPositions: [{
             coin: 'PIVX',
             amount: parseFloat(totalStaked.toFixed(6)),
-            value: parseFloat(currentValue.toFixed(6)),
+            value: parseFloat((totalStaked + rewards).toFixed(6)),
             apy: 10.00
           }]
         }
