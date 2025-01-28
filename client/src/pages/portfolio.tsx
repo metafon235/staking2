@@ -115,7 +115,7 @@ function PortfolioContent() {
         </div>
       </div>
 
-      <div ref={portfolioRef} className="space-y-6 bg-zinc-900 p-6 rounded-lg">
+      <div className="space-y-6">
         <Card className="bg-gradient-to-r from-purple-900/50 to-purple-600/50 border-purple-500/20">
           <CardHeader>
             <CardTitle className="text-xl font-medium text-white">
@@ -133,7 +133,7 @@ function PortfolioContent() {
               <div>
                 <p className="text-sm text-zinc-300">Total Current Rewards</p>
                 <p className="text-3xl font-bold text-green-400">
-                  {totalRewards.toFixed(2)} PIVX
+                  {totalRewards.toFixed(6)} PIVX
                 </p>
               </div>
             </div>
@@ -183,19 +183,19 @@ function PortfolioContent() {
                   <div>
                     <p className="text-sm text-zinc-400">Generated Rewards</p>
                     <p className="text-2xl font-bold text-green-500">
-                      +{portfolio.pivx.rewards.toFixed(2)} PIVX
+                      +{portfolio.pivx.rewards.toFixed(6)} PIVX
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Total Value (Stake + Rewards)</p>
                     <p className="text-2xl font-bold text-purple-500">
-                      {totalValue.toFixed(2)} PIVX
+                      {totalValue.toFixed(6)} PIVX
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Current APY</p>
                     <p className="text-lg text-purple-400">
-                      10.00%
+                      {portfolio.pivx.apy.toFixed(2)}%
                     </p>
                   </div>
                 </div>
@@ -237,34 +237,34 @@ function PortfolioContent() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      <div className="mt-6">
-        <div className="grid gap-6">
-          {portfolio?.pivx && (
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex gap-4">
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => handleWithdrawAll('PIVX')}
-                    disabled={isWithdrawing || totalValue <= 0}
-                  >
-                    {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
-                  </Button>
-                  <AutoCompoundingDialog
-                    currentAllocation={{
-                      pivx: 100,
-                      sol: 0,
-                      dot: 0
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="mt-6">
+          <div className="grid gap-6">
+            {portfolio?.pivx && (
+              <Card className="bg-zinc-900/50 border-zinc-800">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex gap-4">
+                    <Button
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      onClick={() => handleWithdrawAll('PIVX')}
+                      disabled={isWithdrawing || totalValue <= 0}
+                    >
+                      {isWithdrawing ? 'Processing Withdrawal...' : 'Withdraw Stake & Rewards'}
+                    </Button>
+                    <AutoCompoundingDialog
+                      currentAllocation={{
+                        pivx: 100,
+                        sol: 0,
+                        dot: 0
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          <TransactionHistory />
+            <TransactionHistory />
+          </div>
         </div>
       </div>
     </div>
