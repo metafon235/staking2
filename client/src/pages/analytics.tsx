@@ -298,7 +298,7 @@ function AnalyticsContent() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics?.portfolio?.totalValue?.toFixed(6) || '0.000000'} PIVX
+                  {analytics?.portfolio?.totalValue || '0.000000'} PIVX
                 </p>
                 <p className="text-lg text-zinc-400">
                   ${totalValueUSD.toLocaleString(undefined, { minimumFractionDigits: 8, maximumFractionDigits: 8 })}
@@ -315,7 +315,7 @@ function AnalyticsContent() {
                   (analytics?.portfolio?.profitLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
                   {(analytics?.portfolio?.profitLoss || 0) >= 0 ? '+' : ''}
-                  {analytics?.portfolio?.profitLoss?.toFixed(6) || '0.000000'} PIVX
+                  {analytics?.portfolio?.profitLoss || '0.000000'} PIVX
                 </p>
                 <p className={`text-lg ${
                   profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
