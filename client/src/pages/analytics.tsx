@@ -189,22 +189,40 @@ function AnalyticsContent() {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.performance.rewardsHistory.map(point => ({
+                  <LineChart data={analytics?.performance?.rewardsHistory?.map(point => ({
                     ...point,
                     date: format(point.timestamp, 'MMM dd'),
-                    rewards: point.value
-                  }))}>
+                    rewards: parseFloat(point.value.toFixed(9))
+                  })) || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="date" stroke="#888" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#888"
+                      fontSize={12}
+                    />
                     <YAxis 
                       stroke="#888"
+                      fontSize={12}
                       tickFormatter={(value) => value.toFixed(9)}
                     />
                     <Tooltip 
+                      contentStyle={{
+                        backgroundColor: "#18181b",
+                        border: "1px solid #3f3f46",
+                        borderRadius: "6px",
+                      }}
+                      labelStyle={{ color: "#e4e4e7" }}
+                      itemStyle={{ color: "#8b5cf6" }}
                       formatter={(value: number) => [`${value.toFixed(9)} PIVX`, 'Rewards']}
                       labelFormatter={(value) => format(new Date(value), 'PPP')}
                     />
-                    <Line type="monotone" dataKey="rewards" stroke="#8884d8" />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rewards" 
+                      stroke="#8b5cf6"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

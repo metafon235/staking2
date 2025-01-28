@@ -29,7 +29,7 @@ function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days
   // Define the start date based on timeRange
   const startDate = {
     days: subDays(now, 7),
-    weeks: subWeeks(now, 12), // Show last 12 weeks
+    weeks: subWeeks(now, 12),
     months: subMonths(now, 6)
   }[timeRange];
 
@@ -49,8 +49,7 @@ function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days
         key = format(date, 'dd.MM.');
         break;
       case 'weeks': {
-        // Get the start and end of the week for better grouping
-        const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Start week on Monday
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
         const week = getISOWeek(date);
         const year = getYear(date);
@@ -68,13 +67,11 @@ function groupTransactionsByPeriod(transactions: Transaction[], timeRange: 'days
     rewardsMap.set(key, (rewardsMap.get(key) || 0) + amount);
   });
 
-  // Convert map to array and sort
   return Array.from(rewardsMap, ([date, amount]) => ({
     date,
     amount: parseFloat(amount.toFixed(9))
   })).sort((a, b) => {
     if (timeRange === 'weeks') {
-      // Extract week numbers for comparison
       const weekA = parseInt(a.date.split(' ')[1]);
       const weekB = parseInt(b.date.split(' ')[1]);
       return weekA - weekB;
@@ -93,7 +90,7 @@ export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
       }
       return response.json();
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
   });
 
   if (isLoading) {
@@ -128,7 +125,7 @@ export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
               <YAxis 
                 stroke="#9ca3af"
                 fontSize={12}
-                tickFormatter={(value) => value.toFixed(8)}
+                tickFormatter={(value) => value.toFixed(9)}
               />
               <Tooltip
                 contentStyle={{
@@ -138,7 +135,7 @@ export default function RewardsBarChart({ timeRange }: RewardsBarChartProps) {
                 }}
                 labelStyle={{ color: '#e4e4e7' }}
                 itemStyle={{ color: '#a855f7' }}
-                formatter={(value: number) => [value.toFixed(9) + ' ETH', 'Rewards']}
+                formatter={(value: number) => [`${value.toFixed(9)} PIVX`, 'Rewards']}
               />
               <Bar 
                 dataKey="amount" 
