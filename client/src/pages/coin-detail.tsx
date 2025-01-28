@@ -9,7 +9,6 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { COIN_DATA } from "@/config/coins";
-import CoinDocumentation from "@/components/coins/CoinDocumentation";
 
 interface CoinDetailProps {
   symbol?: string;
@@ -100,14 +99,6 @@ function CoinDetailContent({ symbol = 'pivx' }: CoinDetailProps) {
                   </Button>
                 </CardContent>
               </Card>
-
-              {/* Documentation */}
-              <CoinDocumentation
-                symbol={coinData.symbol}
-                technicalDetails={coinData.technicalDetails}
-                stakingDetails={coinData.stakingDetails}
-                documentation={coinData.documentation}
-              />
             </div>
 
             {/* Right Column */}
