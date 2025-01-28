@@ -115,7 +115,7 @@ export default function TransactionHistory() {
                   <CardContent className="pt-6">
                     <div className="text-sm text-zinc-400">Total Stake</div>
                     <div className="text-2xl font-bold text-white">
-                      {(summary.stake?.total || 0).toFixed(6)} ETH
+                      {(summary.stake?.total || 0).toFixed(6)} PIVX
                     </div>
                     <div className="text-sm text-zinc-400">
                       {summary.stake?.count || 0} transactions
@@ -126,7 +126,7 @@ export default function TransactionHistory() {
                   <CardContent className="pt-6">
                     <div className="text-sm text-zinc-400">Total Rewards</div>
                     <div className="text-2xl font-bold text-green-400">
-                      {(summary.reward?.total || 0).toFixed(6)} ETH
+                      {(summary.reward?.total || 0).toFixed(9)} PIVX
                     </div>
                     <div className="text-sm text-zinc-400">
                       {summary.reward?.count || 0} transactions
@@ -152,7 +152,9 @@ export default function TransactionHistory() {
                           {getTypeLabel(tx.type)}
                         </td>
                         <td className="py-4 text-white">
-                          {parseFloat(tx.amount).toFixed(9)} ETH
+                          {tx.type === 'reward' 
+                            ? parseFloat(tx.amount).toFixed(9)
+                            : parseFloat(tx.amount).toFixed(6)} PIVX
                         </td>
                         <td className={`py-4 ${getStatusColor(tx.status)} capitalize`}>
                           {tx.status}
@@ -181,7 +183,7 @@ export default function TransactionHistory() {
                     />
                     <YAxis 
                       stroke="#71717a"
-                      tickFormatter={(value) => `${value.toFixed(6)} ETH`}
+                      tickFormatter={(value) => `${value.toFixed(9)} PIVX`}
                     />
                     <Tooltip
                       contentStyle={{
@@ -191,7 +193,7 @@ export default function TransactionHistory() {
                       }}
                       labelStyle={{ color: "#e4e4e7" }}
                       labelFormatter={(value) => format(new Date(value), 'PPP')}
-                      formatter={(value: number) => [`${value.toFixed(6)} ETH`]}
+                      formatter={(value: number) => [`${value.toFixed(9)} PIVX`]}
                     />
                     <Line 
                       type="monotone"

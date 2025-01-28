@@ -902,12 +902,12 @@ export function registerRoutes(app: Express): Server {
         const stakeStartTime = stake.createdAt.getTime();
         if (stakeStartTime <= endTimeMs) {
           const stakeAmount = parseFloat(stake.amount.toString());
-          if (stakeAmount >= 100) {
-            const timePassedMs = endTimeMs - stakeStartTime;
+          if (stakeAmount >= 100) { // Minimum stake amount for PIVX
+            const timePassedMs = endTimeMs - Math.max(stakeStartTime, startTimeMs);
             const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-            const yearlyRate = 0.10; // 10% APY
+            const yearlyRate = 0.10; // 10% APY for PIVX
             const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
-            totalRewards += stakeRewards;
+            totalRewards += parseFloat(stakeRewards.toFixed(9)); // Use 9 decimal places for PIVX
           }
         }
       }
@@ -935,23 +935,26 @@ export function registerRoutes(app: Express): Server {
 
       for (const stake of activeStakes) {
         const stakeAmount = parseFloat(stake.amount.toString());
-        if (stakeAmount >= 100) {
-          const yearlyRate = 0.10; // 10% APY
+        if (stakeAmount >= 100) { // Minimum stake amount for PIVX
+          const yearlyRate = 0.10; // 10% APY for PIVX
           const minutelyRate = yearlyRate / (365 * 24 * 60);
           const reward = stakeAmount * minutelyRate;
 
-          if (reward >= 0.00001) {
+          // Ensure reward has enough precision (9 decimal places for PIVX)
+          const formattedReward = parseFloat(reward.toFixed(9));
+
+          if (formattedReward >= 0.000000001) { // Minimum reward threshold
             await db.insert(transactions).values({
               userId: stake.userId,
               type: 'reward',
-              amount: reward.toString(),
+              amount: formattedReward.toString(),
               status: 'completed',
               createdAt: new Date()
             });
           }
         }
       }
-    } catch (error) {
+        } catch (error) {
       console.error('Error generating rewards:', error);
     }
   }
