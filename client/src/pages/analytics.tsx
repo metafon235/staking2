@@ -195,17 +195,17 @@ function AnalyticsContent() {
                     rewards: parseFloat(point.value.toFixed(9))
                   })) || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis 
-                      dataKey="date" 
+                    <XAxis
+                      dataKey="date"
                       stroke="#888"
                       fontSize={12}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke="#888"
                       fontSize={12}
                       tickFormatter={(value) => value.toFixed(9)}
                     />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: "#18181b",
                         border: "1px solid #3f3f46",
@@ -216,9 +216,9 @@ function AnalyticsContent() {
                       formatter={(value: number) => [`${value.toFixed(9)} PIVX`, 'Rewards']}
                       labelFormatter={(value) => format(new Date(value), 'PPP')}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="rewards" 
+                    <Line
+                      type="monotone"
+                      dataKey="rewards"
                       stroke="#8b5cf6"
                       strokeWidth={2}
                       dot={false}
@@ -301,7 +301,7 @@ function AnalyticsContent() {
                   {analytics?.portfolio?.totalValue?.toFixed(6) || '0.000000'} PIVX
                 </p>
                 <p className="text-lg text-zinc-400">
-                  ${totalValueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${totalValueUSD.toLocaleString(undefined, { minimumFractionDigits: 8, maximumFractionDigits: 8 })}
                 </p>
               </CardContent>
             </Card>
@@ -321,7 +321,7 @@ function AnalyticsContent() {
                   profitLossUSD >= 0 ? 'text-green-400' : 'text-red-400'
                 }`}>
                   {profitLossUSD >= 0 ? '+' : ''}
-                  ${Math.abs(profitLossUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${Math.abs(profitLossUSD).toLocaleString(undefined, { minimumFractionDigits: 8, maximumFractionDigits: 8 })}
                 </p>
               </CardContent>
             </Card>
