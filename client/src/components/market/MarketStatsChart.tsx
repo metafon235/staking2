@@ -27,6 +27,8 @@ export default function MarketStatsChart() {
             priceChange24h: 0.15,
             priceChangePercent24h: 2.95,
             volume24h: 125000,
+            volumeChange24h: 5.23, // Added volume change
+            volumeChangePercent24h: 3.45, // Added volume change percentage
             highPrice24h: 5.45,
             lowPrice24h: 5.12,
             weightedAvgPrice: 5.28,
@@ -34,7 +36,7 @@ export default function MarketStatsChart() {
         }
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
     staleTime: 0
   });
 
@@ -42,6 +44,7 @@ export default function MarketStatsChart() {
     priceChange24h: pivxStats?.priceChange24h ?? 0,
     priceChangePercent24h: pivxStats?.priceChangePercent24h ?? 0,
     volume24h: pivxStats?.volume24h ?? 0,
+    volumeChangePercent24h: pivxStats?.volumeChangePercent24h ?? 0,
     highPrice24h: pivxStats?.highPrice24h ?? 0,
     lowPrice24h: pivxStats?.lowPrice24h ?? 0,
     weightedAvgPrice: pivxStats?.weightedAvgPrice ?? 0,
@@ -147,7 +150,17 @@ export default function MarketStatsChart() {
 
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-white">PIVX Trading Volume (24h)</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-white">PIVX Trading Volume (24h)</CardTitle>
+            <div className={`flex items-center ${stats.volumeChangePercent24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {stats.volumeChangePercent24h >= 0 ? (
+                <TrendingUp className="w-4 h-4 mr-1" />
+              ) : (
+                <TrendingDown className="w-4 h-4 mr-1" />
+              )}
+              <span>{stats.volumeChangePercent24h.toFixed(2)}%</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[200px]">
