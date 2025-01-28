@@ -122,7 +122,7 @@ function AnalyticsContent() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold text-green-500">
-                  {analytics.performance.roi.toFixed(8)}%
+                  {(analytics.performance.roi || 0).toFixed(8)}%
                 </p>
               </CardContent>
             </Card>
