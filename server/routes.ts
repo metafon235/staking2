@@ -828,10 +828,20 @@ export function registerRoutes(app: Express): Server {
         : 0;
 
       // Calculate ROI directly from rewards
-      const initialInvestment = totalStaked;
+      const initialInvestment = parseFloat(totalStaked.toString());
+      const currentRewardsFloat = parseFloat(rewards.toString());
+
+      console.log('ROI Calculation:', {
+        initialInvestment,
+        currentRewardsFloat,
+        rewards
+      });
+
       const roi = initialInvestment > 0
-        ? (rewards / initialInvestment) * 100
+        ? parseFloat((currentRewardsFloat / initialInvestment * 100).toFixed(8))
         : 0;
+
+      console.log('Calculated ROI:', roi);
 
       // Mock network stats (keep these as they're not part of user rewards)
       const networkStats = {
@@ -955,12 +965,12 @@ export function registerRoutes(app: Express): Server {
 
           if (formattedReward >= 0.000000001) { // Minimum reward threshold
                         await db.insert(transactions).values({
-              userId: stake.userId,
-              type: 'reward',
-              amount: formattedReward.toString(),
-              status: 'completed',
-              createdAt: new Date()
-            });
+            userId: stake.userId,
+            type: 'reward',
+            amount: formattedReward.toString(),
+            status: 'completed',
+            createdAt: new Date()
+          });
           }
         }
       }
