@@ -11,7 +11,9 @@ interface StakingCardProps {
   isLoading?: boolean;
 }
 
-export default function StakingCard({ isLoading }: StakingCardProps) {
+import { ErrorBoundary } from 'react-error-boundary';
+
+function StakingCardContent({ isLoading }: StakingCardProps) {
   const [amount, setAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
