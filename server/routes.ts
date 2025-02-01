@@ -900,9 +900,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      // Generate cold staking address (implement actual PIVX wallet generation here)
-      const coldStakingAddress = `cold_${Math.random().toString(36).substring(2, 15)}`;
-      const ownerAddress = `owner_${Math.random().toString(36).substring(2, 15)}`;
+      const coldStakingAddress = await pivxWallet.createColdStakingAddress();
+      const ownerAddress = await pivxWallet.createOwnerAddress();
 
       // Update user settings in database
       await db
@@ -915,7 +914,9 @@ export function registerRoutes(app: Express): Server {
 
       res.json({
         coldStakingAddress,
-        ownerAddress
+        ownerAddress,
+        masternode: process.env.MASTERNODE_ADDRESS,
+        minimumStake: 100 // Minimum PIVX stake
       });
     } catch (error) {
       console.error('Error generating cold staking wallet:', error);
