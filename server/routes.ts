@@ -797,37 +797,6 @@ export function registerRoutes(app: Express): Server {
           amount: transactions.amount,
           createdAt: transactions.createdAt
         })
-
-  // Add cold staking wallet generation endpoint
-  app.post('/api/settings/cold-staking', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      // Generate cold staking address (implement actual PIVX wallet generation here)
-      const coldStakingAddress = `cold_${Math.random().toString(36).substring(2, 15)}`;
-      const ownerAddress = `owner_${Math.random().toString(36).substring(2, 15)}`;
-
-      // Update user settings in database
-      await db
-        .update(users)
-        .set({
-          coldStakingAddress,
-          ownerAddress
-        })
-        .where(eq(users.id, req.user.id));
-
-      res.json({
-        coldStakingAddress,
-        ownerAddress
-      });
-    } catch (error) {
-      console.error('Error generating cold staking wallet:', error);
-      res.status(500).json({ error: 'Failed to generate cold staking wallet' });
-    }
-  });
-
         .from(transactions)
         .where(
           and(
@@ -924,6 +893,36 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add cold staking wallet generation endpoint
+  app.post('/api/settings/cold-staking', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Generate cold staking address (implement actual PIVX wallet generation here)
+      const coldStakingAddress = `cold_${Math.random().toString(36).substring(2, 15)}`;
+      const ownerAddress = `owner_${Math.random().toString(36).substring(2, 15)}`;
+
+      // Update user settings in database
+      await db
+        .update(users)
+        .set({
+          coldStakingAddress,
+          ownerAddress
+        })
+        .where(eq(users.id, req.user.id));
+
+      res.json({
+        coldStakingAddress,
+        ownerAddress
+      });
+    } catch (error) {
+      console.error('Error generating cold staking wallet:', error);
+      res.status(500).json({ error: 'Failed to generate cold staking wallet' });
+    }
+  });
+
   const rewardsCache = new Map<string, {
     rewards: number;
     timestamp: number;
@@ -969,8 +968,7 @@ export function registerRoutes(app: Express): Server {
           if (stakeAmount >= 100) { // Minimum stake amount for PIVX
             const timePassedMs = endTimeMs - Math.max(stakeStartTime, startTimeMs);
             const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-            const yearlyRate = 0.10; // 10% APY for PIVX
-            const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
+            const yearlyRate = 0.10; // 10% APY for PIVX            const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
             totalRewards += parseFloat(stakeRewards.toFixed(9)); // Use 9 decimal places for PIVX
           }
         }
@@ -1013,13 +1011,13 @@ export function registerRoutes(app: Express): Server {
           const formattedReward = parseFloat(reward.toFixed(9));
 
           if (formattedReward >= 0.000000001) { // Minimum reward threshold
-                        await db.insert(transactions).values({
-            userId: stake.userId,
-            type: 'reward',
-            amount: formattedReward.toString(),
-            status: 'completed',
-            createdAt: new Date()
-          });
+            await db.insert(transactions).values({
+              userId: stake.userId,
+              type: 'reward',
+              amount: formattedReward.toString(),
+              status: 'completed',
+              createdAt: new Date()
+            });
           }
         }
       }
