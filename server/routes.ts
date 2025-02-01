@@ -797,6 +797,37 @@ export function registerRoutes(app: Express): Server {
           amount: transactions.amount,
           createdAt: transactions.createdAt
         })
+
+  // Add cold staking wallet generation endpoint
+  app.post('/api/settings/cold-staking', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Generate cold staking address (implement actual PIVX wallet generation here)
+      const coldStakingAddress = `cold_${Math.random().toString(36).substring(2, 15)}`;
+      const ownerAddress = `owner_${Math.random().toString(36).substring(2, 15)}`;
+
+      // Update user settings in database
+      await db
+        .update(users)
+        .set({
+          coldStakingAddress,
+          ownerAddress
+        })
+        .where(eq(users.id, req.user.id));
+
+      res.json({
+        coldStakingAddress,
+        ownerAddress
+      });
+    } catch (error) {
+      console.error('Error generating cold staking wallet:', error);
+      res.status(500).json({ error: 'Failed to generate cold staking wallet' });
+    }
+  });
+
         .from(transactions)
         .where(
           and(
