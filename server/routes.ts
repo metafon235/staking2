@@ -5,8 +5,11 @@ import { stakes, rewards, transactions, users, notifications, notificationSettin
 import { eq, and, desc, asc } from "drizzle-orm";
 import { setupAuth } from "./auth";
 import { NotificationService } from "./services/notifications";
+import { PivxWalletService } from "./services/pivx";
 import { z } from "zod";
 import { sql } from 'drizzle-orm/sql';
+
+const pivxWallet = new PivxWalletService();
 
 const BASE_STATS: Record<string, {
   baseValidators: number;
