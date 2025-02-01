@@ -28,11 +28,11 @@ export const queryClient = new QueryClient({
           throw error;
         }
       },
-      refetchInterval: 5000,
-      refetchOnWindowFocus: true,
-      staleTime: 0,
-      retry: 1,
-      retryDelay: 1000,
+      refetchInterval: 30000, // Reduce polling frequency to 30 seconds
+      refetchOnWindowFocus: 'always',
+      staleTime: 25000, // Cache valid for 25 seconds
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 30000),
     },
     mutations: {
       retry: false,

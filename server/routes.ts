@@ -893,12 +893,25 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  const rewardsCache = new Map<string, {
+    rewards: number;
+    timestamp: number;
+    expiresAt: number;
+  }>();
+
   async function calculateRewardsForTimestamp(
     userId: number,
     stakedAmount: number,
     startTimeMs: number,
     endTimeMs: number
   ): Promise<number> {
+    const cacheKey = `${userId}-${stakedAmount}-${startTimeMs}-${endTimeMs}`;
+    const now = Date.now();
+    const cached = rewardsCache.get(cacheKey);
+
+    if (cached && now < cached.expiresAt) {
+      return cached.rewards;
+    }
     try {
       const lastWithdrawal = await db.query.transactions.findFirst({
         where: (transactions, { and, eq }) => and(
@@ -932,6 +945,11 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
+      rewardsCache.set(cacheKey, {
+        rewards: totalRewards,
+        timestamp: now,
+        expiresAt: now + 60000 // Cache for 1 minute
+      });
       return totalRewards;
     } catch (error) {
       console.error('Error calculating rewards:', error);
