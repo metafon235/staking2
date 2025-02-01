@@ -6,9 +6,6 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
-  walletAddress: text("wallet_address"),
-  coldStakingAddress: text("cold_staking_address"),
-  ownerAddress: text("owner_address"),
   isAdmin: boolean("is_admin").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
