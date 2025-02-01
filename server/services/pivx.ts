@@ -51,7 +51,8 @@ enableaccounts=1
 
   async createColdStakingAddress(): Promise<string> {
     try {
-      const { stdout } = await execAsync(`pivx-cli -datadir=${this.dataDir} getnewaddress`);
+      // Create a new cold staking address
+      const { stdout } = await execAsync(`pivx-cli -datadir=${this.dataDir} getnewstakingaddress`);
       return stdout.trim();
     } catch (error) {
       console.error('Error creating cold staking address:', error);
@@ -61,10 +62,46 @@ enableaccounts=1
 
   async createOwnerAddress(): Promise<string> {
     try {
-      const { stdout } = await execAsync(`pivx-cli -datadir=${this.dataDir} getnewaddress`);
+      // Create a new owner address for delegation control
+      const { stdout } = await execAsync(`pivx-cli -datadir=${this.dataDir} getnewaddress "owner"`);
       return stdout.trim();
     } catch (error) {
       console.error('Error creating owner address:', error);
+      throw error;
+    }
+  }
+
+  async delegateStake(ownerAddress: string, stakingAddress: string, amount: number): Promise<string> {
+    try {
+      // Delegate stake from owner to staking address
+      const { stdout } = await execAsync(
+        `pivx-cli -datadir=${this.dataDir} delegatestake "${stakingAddress}" ${amount} false "${ownerAddress}"`
+      );
+      return stdout.trim(); // Returns delegation transaction ID
+    } catch (error) {
+      console.error('Error delegating stake:', error);
+      throw error;
+    }
+  }
+
+  async getColdStakingInfo(address: string): Promise<any> {
+    try {
+      // Get cold staking information for address
+      const { stdout } = await execAsync(`pivx-cli -datadir=${this.dataDir} getcoldstakinginfo "${address}"`);
+      return JSON.parse(stdout);
+    } catch (error) {
+      console.error('Error getting cold staking info:', error);
+      throw error;
+    }
+  }
+
+  async listDelegations(): Promise<any> {
+    try {
+      // List all delegated cold stakes
+      const { stdout } = await execAsync(`pivx-cli -datadir=${this.dataDir} liststakingaddresses`);
+      return JSON.parse(stdout);
+    } catch (error) {
+      console.error('Error listing delegations:', error);
       throw error;
     }
   }
