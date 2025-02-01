@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { stakingMonitor } from './services/monitoring'; // Added staking monitoring service
 
 const app = express();
 app.use(express.json());
@@ -57,6 +58,7 @@ const startServer = async (port: number) => {
       server.listen(port, "0.0.0.0")
         .once('listening', () => {
           log(`Server started successfully on port ${port}`);
+          stakingMonitor.start(); // Start monitoring after server starts
           resolve(server);
         })
         .once('error', (err: any) => {
@@ -83,3 +85,16 @@ const startServer = async (port: number) => {
     process.exit(1);
   }
 })();
+
+// Add the following in a new file named 'services/monitoring.ts' or similar:
+// export const stakingMonitor = {
+//   start: () => {
+//     //Implementation for starting the staking monitoring process.  This would include
+//     //logic to check the PIVX node's status, wallet balance, and transaction history,
+//     //and possibly send alerts based on predefined thresholds.  
+//     console.log("Staking monitor started.");
+//   }
+// };
+
+//  Further implementation is needed for wallet permissions, RPC access and more robust monitoring.  
+//  These should be added to this file or other relevant services files.
