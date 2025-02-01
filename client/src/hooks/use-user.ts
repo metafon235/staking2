@@ -59,8 +59,7 @@ export function useUser() {
   const { data: user, error, isLoading } = useQuery<SelectUser | null>({
     queryKey: ['user'],
     queryFn: fetchUser,
-    staleTime: 25000, // Reduce polling frequency
-    refetchInterval: 30000, // Reduce polling frequency
+    staleTime: Infinity,
     retry: false
   });
 

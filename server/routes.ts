@@ -893,9 +893,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const rewardsCache = new Map<string, {rewards: number, timestamp: number}>();
-
-async function calculateRewardsForTimestamp(
+  async function calculateRewardsForTimestamp(
     userId: number,
     stakedAmount: number,
     startTimeMs: number,
