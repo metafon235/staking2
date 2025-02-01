@@ -58,4 +58,5 @@ export class StakingMonitor {
   }
 }
 
+const pivxWallet = new PivxWalletService();
 export const stakingMonitor = new StakingMonitor(pivxWallet);
