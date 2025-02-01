@@ -968,7 +968,8 @@ export function registerRoutes(app: Express): Server {
           if (stakeAmount >= 100) { // Minimum stake amount for PIVX
             const timePassedMs = endTimeMs - Math.max(stakeStartTime, startTimeMs);
             const yearsElapsed = timePassedMs / (365 * 24 * 60 * 60 * 1000);
-            const yearlyRate = 0.10; // 10% APY for PIVX            const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
+            const yearlyRate = 0.10; // 10% APY for PIVX
+            const stakeRewards = stakeAmount * yearlyRate * yearsElapsed;
             totalRewards += parseFloat(stakeRewards.toFixed(9)); // Use 9 decimal places for PIVX
           }
         }
